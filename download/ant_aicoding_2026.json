@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://www.nowcoder.com/discuss/767459618661355520",
+    "name": "26年蚂蚁笔试终极攻略：研发/算法/数据岗全解析，附牛客独家真题题单",
+    "snippet": "1. 计算机基础四件套（必拿分） · 数据结构与算法：栈（先进后出特性）、队列（FIFO）、排序算法（时间复杂度）、二叉树遍历。 推荐题单：数据结构与算法专项 · 操作 ... Missing: AICoding 形式",
+    "host_name": "www.nowcoder.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nowcoder.com/discuss/862332534988836864",
+    "name": "【笔试刷题】美团-2026.03.14-算法岗-改编真题 - 牛客",
+    "snippet": "这套 3.14 美团算法岗题的区分度更明显。第一题仍然是结论型热身，第二题开始转到概率模型实现，第三题要求把树上“最近更大祖先”变形成额外跳边最短路，最后 ...",
+    "host_name": "www.nowcoder.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nowcoder.com/discuss/794893022004580352?sourceSSR=post",
+    "name": "【秋招笔试】2025.09.07蚂蚁算法岗秋招笔试改编 - 牛客网",
+    "snippet": "数据解析：从标准输入读取JSON格式的训练和测试数据，将其转换为numpy数组便于处理。 · 特征和标签分离：将训练数据的最后一列作为标签，前面的列作为特征。",
+    "host_name": "www.nowcoder.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nowcoder.com/discuss/comment/22177393",
+    "name": "注意，机考需要装一个软件，只支持windows和mac，不是链接打开就考",
+    "snippet": "注意，机考需要装一个软件，只支持windows和mac，不是链接打开就考，（沉迷Linux的用户临时借了一台vscode都没有的电脑）。考试时，选择IDE要找到IDE启动器的 ...",
+    "host_name": "www.nowcoder.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nowcoder.com/discuss/520719473683202048",
+    "name": "4399 笔试编程题 - 牛客网",
+    "snippet": "4399 笔试编程题 · 1.对于一个长度为n 字符串(字符串中包括大写英文字母、小写英文字母、空格)，我们需要对它做一些变形。 · 2.产品经理小逸在繁忙的工作之余 ...",
+    "host_name": "www.nowcoder.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nowcoder.com/discuss/489176772492259328",
+    "name": "24届菜鸡C++er 的实习经历|该何去何从 - 牛客网",
+    "snippet": "1.介绍团队是干什么的2.问笔试题目，没做出来的都问了一遍。 ... 4.如果一个用户反馈大模型给的不准，你如何排查？5.了没了解过deepseek的深度学习，它的具体 ...",
+    "host_name": "www.nowcoder.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nowcoder.com/discuss/353155323538120704",
+    "name": "虹软cv算法岗，南京8.29现场面试面经！！！！！！_牛客网",
+    "snippet": "ai面规则我的建议是，ai面回答时尽量采用“第一、第二、第三”或“1、2、3”的结构化方式分点陈述，每个分点先抛出核心结论，再用一到两句话简要展开，避免 ...",
+    "host_name": "www.nowcoder.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nowcoder.com/discuss/353158189954834432",
+    "name": "【阿里巴巴】22届校招开始啦，摩酷实验室招CV算法工程师 - 牛客",
+    "snippet": "面试公司：金山云-武汉base  面试时间：26.4.9-半个小时左右  面试岗位：AI应用平台开发❓面试问题：1、自我介绍2、慢SQL优化分析，解决了哪些问题，优化思路是 ...",
+    "host_name": "www.nowcoder.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nowcoder.com/discuss/353158063773392896",
+    "name": "字节C++客户端-抖音剪映实习生（凉经） - 牛客网",
+    "snippet": "12、最后给我退了一道leetcode的算法题，算法题不难大概leetcode中等难度。 ... 蚂蚁集团. 2026春季校园招聘 · 阿里巴巴集团. 2027届实习生校园招聘 · 正浩 ...",
+    "host_name": "www.nowcoder.com",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nowcoder.com/feed/main/detail/b6e1bc57565945e2846b3b1cd7cdb884",
+    "name": "测评也会挂挂人吗 - 牛客网",
+    "snippet": "一、笔试概况研发岗（开发方向）题型：10道选择题&nbsp;+&nbsp;3道编程题时长：90分钟，固定时间段监考：双机位，规定手机方向选择题：涉及LLM大语言模型、模型 ...",
+    "host_name": "www.nowcoder.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

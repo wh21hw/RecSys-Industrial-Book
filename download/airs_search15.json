@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://segmentfault.com/a/1190000045392984",
+    "name": "Koupleless 助力蚂蚁搜推平台Serverless 化演进 - SegmentFault 思否",
+    "snippet": "蚂蚁推荐平台Arec（Ant Recommender Platform, 后续简称Arec）是针对蚂蚁搜索、推荐、营销以及投放等业务特点建设的在线算法FaaS 平台。",
+    "host_name": "segmentfault.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.bianews.com/news/details?id=223111",
+    "name": "蚂蚁组建AIRS整合搜广推能力，AI全面接管内容业务 - 鞭牛士",
+    "snippet": "事实上，蚂蚁此前已在AI 领域积累了扎实的技术底座，其自主研发的推荐平台Arec 已实现百万级QPS 峰值流量承载能力，通过Serverless 化演进解决了多业务隔离与 ...",
+    "host_name": "www.bianews.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.sofastack.tech/guides/kc-serverless-demo",
+    "name": "基于Serverless 轻松构建云上应用· 蚂蚁云原生架构SOFAStack",
+    "snippet": "作为云原生技术前进方向之一，Serverless 架构让您进一步提高资源利用率，更专注于业务研发。通过我们的workshop，您可以体验到快速创建Serveless 应用、根据业务请求秒级0-1- ...",
+    "host_name": "www.sofastack.tech",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.aliyun.com/product/airec",
+    "name": "智能推荐AIRec - 大数据人工智能技术个性化推荐- 阿里云",
+    "snippet": "智能推荐AIRec服务，为企业提供基于电商、内容、新闻行业算法模板，仅需完成基础的数据对接，即可开启个性化推荐功能。且支持通过配置化页面优化算法、运营规则，提升推荐业务 ...",
+    "host_name": "www.aliyun.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://zhuanlan.zhihu.com/p/654701318",
+    "name": "大象转身：支付宝资金技术Serverless 提效总结",
+    "snippet": "当前蚂蚁基于SOFABoot 的应用架构，在规模化创新场景研发的交付效率、分工协作模式上存在局限性。从行业的发展趋势分析，云原生等新技术引领的“集装箱” 架构 ...",
+    "host_name": "zhuanlan.zhihu.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.sofastack.tech/blog/ant-group-sofa-serverless-new-microservices-architecture-exploration-and-practice",
+    "name": "蚂蚁SOFAServerless 微服务新架构的探索与实践",
+    "snippet": "在当下行情下，新技术落地的挑战与蚂蚁的思路 · 无需容器化也可以接入； · 无需使用K8s 平台也可接入； · 无需具备微服务配套设施可也接入； · 无需服务网格化也可 ...",
+    "host_name": "www.sofastack.tech",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://help.aliyun.com/zh/airec/be/product-overview/architecture",
+    "name": "部署架构-智能推荐AIRec-阿里云",
+    "snippet": "引擎采用行列架构，根据请求量和数据量选择合适的集群规模内置filter、粗排功能，支持join详情表，无需做额外开发单个实例支持多种召回引擎（X2I，向量）， ...",
+    "host_name": "help.aliyun.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.vicsdf.com/doc/6ec3306fc324965a",
+    "name": "阿里：搜索推荐Serverless架构和业务中台技术实践.pdf - 报告汇",
+    "snippet": "总而言之，文档展示了阿里巴巴搜索推荐团队如何通过Serverless架构和中台技术，解决业务快速发展和双11大促带来的挑战，并最终实现关注业务逻辑、快速迭代和高性能的目标。",
+    "host_name": "www.vicsdf.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://zhuanlan.zhihu.com/p/77681457",
+    "name": "Serverless 落地挑战与蚂蚁金服实践 - 知乎专栏",
+    "snippet": "目前Serverless 已成为云原生社区关注的重点之一，有人说它是微服务的继承者，将会彻底改变软件研发的现状，那么真实情况如何呢？本文将介绍Serverless ...",
+    "host_name": "zhuanlan.zhihu.com",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://help.aliyun.com/zh/airec",
+    "name": "智能推荐AIRec - 阿里云文档",
+    "snippet": "阿里云智能推荐AIRec基于阿里巴巴大数据和人工智能技术 ... 推荐全链路深度定制开发平台PAIREC，是适用于企业开发者自主搭建、开发、迭代、运维的一整套推荐系统平台级服务。",
+    "host_name": "help.aliyun.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

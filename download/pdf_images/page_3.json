@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "姓名: 学号: glinear20250422\n\n判断以下各题的陈述是否正确，并填涂题编号后的⊙ⓣ⊙ⓕ：判断结论为“正确”的填涂为 ●ⓕ；判断结论为“错误”的填涂为 ⊙ⓣ●. 分数计算公式为$m-n$，其中$m$为判断结论“正确”的题目总数，$n$为判断结论“错误”的题目总数.\n\n1. ⊙ⓕ 考虑二响应模型的模型参数第$i$分量的假设检验问题$H_0:\\beta_i=0$，可以用统计量$\\frac{\\hat{\\beta}_i}{\\sqrt{a_{ii}}}$构建计算$p$值的公式，其中其中$a_{ii}$为$\\left(F\\left(\\hat{\\beta}\\right)\\right)^{-1}$的对角线上的第$i$个元素。\n\n2. ⊙ⓣ⊙ⓕ 在研究二响应变量和通过调查问卷收集的解释变量间关系时，应该基于解释变量量化为效应编码或哑变量编码构建设计向量。\n\n3. ⭕ⓕ 在二响应广义线性模型中，可以通过经验预报公式$\\hat{Y}_c=1_{\\{h(Z(x)\\beta)>c\\}}$预报相应变量的值，其中$c$为阈值。阈值越大，TPR越小。\n\n4. ⭕ⓕ⊙ 考虑二响应广义线性模型的模型参数$\\beta$的假设检验问题\n$$\nH_0:C\\beta=\\xi.\n$$\n$$\n\\left(C\\hat{\\beta}-\\xi\\right)^{\\mathrm{T}}\\left(C\\hat{\\beta}-\\xi\\right) \\text{越小越有利于原假设，其中}\\hat{\\beta}\\text{是似然估计量。}\n$$\n\n5. ⊙ⓣ⊙ⓕ 对应任何设计向量$z$和模型参数$\\beta$有$\\frac{\\partial(z\\beta)}{\\partial\\beta}(u)=z$。\n\n6. ⊙ⓣ⊙ⓕ 在二响应广义线性模型中，可以通过经验预报公式$\\hat{Y}_c=1_{\\{h(Z(x)\\beta)>c\\}}$预报相应变量的值，其中$c$为阈值。阈值越小，FPR越小。\n\n7. ⊙ⓣ⊙ⓕ 对于任何$m\\times p$矩阵$z$和$p$维列向量$\\beta$，有$\\frac{\\partial(z\\beta)}{\\partial\\beta}(u)=z$。\n\n8. ⊙ⓣ⊙ 对于二响应模型。如果$\\mathbb{P}(Y=1|X=x)>0.99$，则断言“解释变量值$x$所对应的相应变量$Y$的值为1”犯错误的概率为0.01。\n\n9. ⊙ⓣ⊙ 考虑二响应广义线性模型的模型参数$\\beta$的假设检验问题\n$$\nH_0:C\\beta=\\xi,\n$$\n$$\nl\\left(\\tilde{\\beta}\\right)-l\\left(\\hat{\\beta}\\right) \\text{越小越有利于原假设，其中}\\hat{\\beta}\\text{和}\\tilde{\\beta}\\text{分别是似然估计量和限制似然估计量。}\n$$\n\n10 ⊙ⓣ⊙ⓕ 在用二响应模型拟合样本观测数据时，当原始样本观测数据严重违背经验知识时，可尝试通过经验样本数据改善样本观测数据的拟合效果。\n\n11. ⊙ⓣ⊙ⓕ ROC曲线是通过预报响应变量值为1的阈值来绘制。\n\n12. ⭕ⓣ⭕ 在二响应广义线性模型中，应该选择ROC曲线上离$(0,1)$最近的点所对应的阈值构建响应变量的经验预报公式。\n\n第1页，共2页",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1779702792,
+  "id": "20260525175245d6cb423227a14a8c",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260525175245d6cb423227a14a8c",
+  "usage": {
+    "completion_tokens": 853,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 4930,
+    "prompt_tokens_details": {
+      "cached_tokens": 8
+    },
+    "total_tokens": 5783
+  }
+}

@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://www.nowcoder.com/discuss/353159214426169344",
+    "name": "蚂蚁-搜广推方向】招算法24届实习生-上海/杭州 - 牛客网",
+    "snippet": "算法类：负责广告核心业务算法和机制设计；负责广告点击率，转化率等模型的优化和创新；负责多目标约束优化算法、不确定性优化算法创新，提升客户收益，提升平台和媒体的商业化 ...",
+    "host_name": "www.nowcoder.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.donews.com/news/detail/8/6186562.html",
+    "name": "蚂蚁集团组建AIRS整合搜广推能力，AI全面接管内容业务- DoNews快讯",
+    "snippet": "10月16日消息，蚂蚁集团宣布重大组织架构调整，将搜索、广告、推荐（简称“搜广推”）的工程与算法团队合并，成立全新的「AIRS」部门。",
+    "host_name": "www.donews.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://zhuanlan.zhihu.com/p/586807237",
+    "name": "蚂蚁集团招图算法研究性实习生 - 知乎专栏",
+    "snippet": "岗位描述：我们是机器智能风险图算法团队，致力于打造基于大数据和人工智能的高效、稳定、灵动的企业金融风控技术平台，支撑蚂蚁集团各个场景金融业务的 ...",
+    "host_name": "zhuanlan.zhihu.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.antgroup.com/news-media/press-releases/1710140400000",
+    "name": "蚂蚁集团2024 年春季校园招聘正式启动，技术岗位占比80%",
+    "snippet": "本次春招面向2025 届实习生、2024 届应届生，我们开放了技术类、产品类、运营类、设计类、风险策略类和综合类，共6 大职类近50 种岗位，工作地覆盖7 座 ...",
+    "host_name": "www.antgroup.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.infoq.cn/article/wd6vuo1amd5ffpsgwlz4",
+    "name": "大模型时代下的搜广推系统实践｜AICon 前瞻- InfoQ",
+    "snippet": "推荐算法经历了从协同过滤到深度特征交互，再到序列推荐的演进。推荐效果依赖于特征工程和特征交互的方式，推荐算法的迭代主要围绕特征选择（senet）、特征 ...",
+    "host_name": "www.infoq.cn",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://tidenews.com.cn/news.html?id=3137787",
+    "name": "蚂蚁集团2025校园春招，AI算法类岗位占比同比增长40% - 潮新闻",
+    "snippet": "目前春季校园招聘正在稳步进行中，已有超过200位应届生和400位实习生加入公司，其余同学将在六七月陆续加入。相较往年，AI算法类岗位占比同比增长40%。 为了 ...",
+    "host_name": "tidenews.com.cn",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://m.liepin.com/job/1973461081.shtml",
+    "name": "蚂蚁集团-AI搜索智能体算法专家-上海/北京/杭州 - 猎聘",
+    "snippet": "蚂蚁集团上海招聘蚂蚁集团-AI搜索智能体算法专家-上海/北京/杭州岗位，薪资40-70k·16薪,蚂蚁集团公司规模5000-10000人,岗位要求硕士学历，3-5年相关经验 ...",
+    "host_name": "m.liepin.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.wondercv.com/blog/EVKj1iec.html",
+    "name": "蚂蚁集团2026暑期实习解读：大模型算法岗值不值得投？2027届必看",
+    "snippet": "结论先看：这是蚂蚁集团面向2027届及以后学生的核心AI基建类实习，虽岗位描述模糊，但技术栈（大模型训练/优化）含金量高，适合有明确AI技术路线的在校生冲刺。",
+    "host_name": "www.wondercv.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://cj.sina.cn/articles/view/7935425109/1d8fcfa5502001blug",
+    "name": "蚂蚁的AI布局还要铺多久 - 新浪财经",
+    "snippet": "10月16日，蚂蚁集团宣布整合搜索、广告、推荐（简称“搜广推”）团队，成立全新的AIRS部门，旨在以AI技术全面接管内容生态，从短视频、直播到短剧分发，实现 ...",
+    "host_name": "cj.sina.cn",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://hub.baai.ac.cn/view/28822",
+    "name": "带你读懂整个推荐系统的核心架构 - 智源社区",
+    "snippet": "许多推荐系统与LLM结合的新成果，还是尝试为主，只是将大模型的能力应用于改造推荐的一部分。但大模型或许可以给全链路的统一推荐提供一种可能。",
+    "host_name": "hub.baai.ac.cn",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

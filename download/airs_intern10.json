@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://opensource.antgroup.com/blogs",
+    "name": "蚂蚁开源博客",
+    "snippet": "该框架是蚂蚁集团探索大模型技术在金融场景中的最新成果，已被真实产业场景论证有效。目前已正式开源，被众多企业及社区开发者用于搭建各类智能应用。 为挖掘用户场景，提升 ...",
+    "host_name": "opensource.antgroup.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://pdf.dfcfw.com/pdf/H3_AP202602051819786202_1.pdf?1770305882000.pdf",
+    "name": "[PDF] 中国软件技术发展洞洞察和趋势预测研究报告2026",
+    "snippet": "... 开源撬动世界影响⼒力力. 开源促进国内创新⽣生态快速迭代，推. 动技术积累和⼈人才培养. 通过开源在全球形成影响⼒力力和标准制. 定能⼒力力，从⽽而增强国际竞争 ...",
+    "host_name": "pdf.dfcfw.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://github.com/tingaicompass/AI-Compass/blob/main/1.4%20LLM%E5%90%88%E9%9B%86-%E5%A4%9A%E6%A8%A1%E6%80%81/%E5%A4%9A%E6%A8%A1%E6%80%81.md",
+    "name": "LLM合集-多模态 - GitHub",
+    "snippet": "Step1X-3D 是一个专注于高质量、可控生成带纹理三维资产的开源框架。它旨在解决当前三维生成领域数据稀缺、算法局限性以及生态系统碎片化等挑战，通过先进的技术实现高保真 ...",
+    "host_name": "github.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "http://techforum-img.cn-hangzhou.oss-pub.aliyun-inc.com/double11_tech_1512962950622.pdf",
+    "name": "[PDF] 阿里巴巴2016 双11 背后的技术",
+    "snippet": "阿里全球运行指挥中心（GOC）基于历史监控数据，通过异常检测、异常标. 注、挖掘训练、机器学习、故障模拟等方式，进行业务故障的自动化定位，并赋. 能监控中心 ...",
+    "host_name": "techforum-img.cn-hangzhou.oss-pub.aliyun-inc.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://adg.csdn.net/69706f9e437a6b40336a3c3b.html",
+    "name": "51c大模型~合集121_人工智能 - 火山引擎ADG 社区",
+    "snippet": "2. 我们设计了一个AdaGRPO 的强化学习算法来引导模型进行模式的选择。 ... 具体方法的介绍和细节请感兴趣的读者参阅下面一节。 我们在多个场景的多个数据集上进行了评测，如图 ...",
+    "host_name": "adg.csdn.net",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://aigc.idigital.com.cn/djyanbao/%E3%80%90%E6%9E%81%E5%AE%A2%E4%BC%A0%E5%AA%92%E3%80%91%E6%9E%B6%E6%9E%84%E5%B8%882025%E5%B9%B4%E7%AC%AC%E4%BA%8C%E5%AD%A3-2025-12-04.pdf",
+    "name": "[PDF] 【极客传媒】架构师2025年第二季-2025-12-04.pdf",
+    "snippet": "• 牛俊龙，蚂蚁集团技术专家，多年互联网系统研发经验，参与过多个亿级流量的重. 点系统设计和研发。目前就职于蚂蚁集团CIO技术部，致力于研发效能领域的AI ...",
+    "host_name": "aigc.idigital.com.cn",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nvidia.cn/llms.txt",
+    "name": "llms.txt - 英伟达",
+    "snippet": "... 技术和产品- [NVIDIA 的人工智能技术：我是AI | NVIDIA](https://www.nvidia.cn/about-nvidia/i-am-ai.md): 从语音识别和推荐系统到医学成像，AI 正在推动各行各业的 ...",
+    "host_name": "www.nvidia.cn",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.aipulse.run",
+    "name": "全球AI 核心动态内参",
+    "snippet": "... 蚂蚁阿福上线健康监测功能，支持远程追踪家人血压数据. 蚂蚁集团旗下产品\"阿福\"发布健康监测应用场景，主打远程健康管理功能，用户可通过阿福记录并追踪家人的血压等 ...",
+    "host_name": "www.aipulse.run",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.cnblogs.com/apachecn/p/18462397",
+    "name": "TowardsDataScience-博客中文翻译-2019-六十四- - 绝不原创的飞龙",
+    "snippet": "... 技术集团积累的个人产生的任何其他潜在数据。 当我们从搜索算法，即鉴别算法，到生成算法，事情变得更加有趣。 一个判别算法获取原始数据，并试图将其分解成一个结果 ...",
+    "host_name": "www.cnblogs.com",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://huggingface.co/openbmb/cpm-bee-1b/commit/bd72a61dd7a59086ed7456f1dfcaa995c8ec58a3.diff",
+    "name": "1 - Hugging Face",
+    "snippet": "... 广+亡+门+丫+义+之+尸+己+已+巳+弓+子+卫+也+女+刃+飞+习+叉+马+乡+丰+王+开+井+ ... 推+埠+掀+授+捻+教+掏+掐+掠+掂+培+接+掷+控+探+据+掘+掺+职+基+聆+勘+聊+娶 ...",
+    "host_name": "huggingface.co",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://www.nowcoder.com/feed/main/detail/2971c842d79343a1b85e5743f9792225",
+    "name": "笔经分享|中国银行信息科技类笔试3.23 - 牛客网",
+    "snippet": "题目总共分为三部分：职业能力（60min）➕英语（20min）➕信息科技（40min），这次是春招和实习笔试一起，我是实习笔试0️⃣准备，总体感觉题目不是很难，前两部分时间 ...",
+    "host_name": "www.nowcoder.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nowcoder.com/feed/main/detail/4aa43c2ade8d434085bb7b38eedaf1e7",
+    "name": "26年蚂蚁笔试终极攻略：研发/算法/数据岗全解析，附牛客独家真题题单_",
+    "snippet": "蚂蚁集团作为国内顶尖的金融科技巨头，技术岗笔试以覆盖广、题型新、难度高著称。 牛客基于最新的蚂蚁笔试真题题单，整理研发、算法、数据岗的备考策略与资源，助你高效冲刺！",
+    "host_name": "www.nowcoder.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://zhuanlan.zhihu.com/p/1921279690141827191",
+    "name": "25年蚂蚁笔试终极攻略：研发/算法/数据岗全解析，附牛客独家真题题单",
+    "snippet": "蚂蚁集团 作为国内顶尖的 金融科技 巨头，技术岗笔试以 覆盖广、题型新、难度高 著称。 牛客基于最新的 蚂蚁笔试真题题单，整理 研发、算法、数据岗 的备考策略与资源，助你高效冲刺！",
+    "host_name": "zhuanlan.zhihu.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://devpress.csdn.net/v1/article/detail/148905140",
+    "name": "25年蚂蚁笔试终极攻略：研发/算法/数据岗全解析，附牛客独家真题题单_",
+    "snippet": "蚂蚁集团 作为国内顶尖的金融科技巨头，技术岗笔试以 覆盖广、题型新、难度高 著称。 牛客基于最新的 蚂蚁笔试真题题单，整理 研发、算法、数据岗 的备考策略与资源，助你高效冲刺！",
+    "host_name": "devpress.csdn.net",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://icode.best/i/848732404286724",
+    "name": "25年蚂蚁笔试终极攻略：研发/算法/数据岗全解析，附牛客独家真题题单_",
+    "snippet": "蚂蚁集团 作为国内顶尖的金融科技巨头，技术岗笔试以 覆盖广、题型新、难度高 著称。 牛客基于最新的 蚂蚁笔试真题题单，整理 研发、算法、数据岗 的备考策略与资源，助你高效冲刺！",
+    "host_name": "icode.best",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://post.smzdm.com/p/a5rexmdk",
+    "name": "蚂蚁AI Coding笔试真题+经验分享第一期_服务软件_什么值得买",
+    "snippet": "蚂蚁集团近期场次的AI Coding笔试真题流出，考察核心为设计并实现一个多端TUI终端早餐店系统。 该题目要求构建顾客端、店主端和叫号牌端三个终端，通过网络端口通信并共享数据，且订单状态需在待确认、已确认、制作中、待取餐及已支付之间合法流转。",
+    "host_name": "post.smzdm.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://leetcode.cn/discuss/post/3779651/ma-yi-qiu-zhao-yan-fa-gang-bi-shi-fu-pan-n3tt",
+    "name": "分享｜蚂蚁秋招研发岗笔试复盘｜2025.09.11场 - 讨论 - 力扣（LeetCod",
+    "snippet": "题目概括 ：\\\\n给定一个长度为 n 的数组 a ，求将其修改为数组 b 的最小代价，代价定义为 \\\\\\\\sum|a_i - b_i| 。数组 b 需满足“和谐”条件：存在某个固定的整数 d ，使得对所有 i 都有 $|b_i - i| = d`。 解题思路 ：\\\\n问题的核心是找到最优的公共差值 d 。直接暴力枚举所有可能的 d 即可。对于每一个固定的 ...",
+    "host_name": "leetcode.cn",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://linux.do/t/topic/1775297",
+    "name": "求佬给蚂蚁集团AI coding笔试经验、拼多多面试经验 - 搞七捻三 - LINU",
+    "snippet": "收到了蚂蚁集团的笔试，但之前没见过这种笔试，有佬参加过吗，或者有类似的经验吗 拼多多也进了一面，可以的话有佬能提供一点拼多多面试经验，昨天在牛客先上逛了一圈 这是我的简历帖子，可以的话也请佬们给给建议",
+    "host_name": "linux.do",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

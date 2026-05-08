@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "姓名: 学号: glinear20250430\n\n判断以下各题的陈述是否正确，并填涂题编号后的⊙◎：判断结论为“正确”的填涂为 ●ⓕ；判断结论为“错误”的填涂为 ⊙●. 分数计算公式为$m-n$，其中$m$为判断结论“正确”的题目总数，$n$为判断结论“错误”的题目总数.\n\n1. ⚫⊙ 考虑二响应广义线性模型的模型参数$\\beta$的假设检验问题\n$$\nH_{0}: C \\beta=\\xi,\n$$\n$l\\left(\\hat{\\beta}\\right)-l\\left(\\bar{\\beta}\\right)$越小越有利于原假设，其中$\\hat{\\beta}$和$\\bar{\\beta}$分别是似然估计量和限制似然估计量。\n\n2. ⚫⊙ 在探讨响应变量和两个分类解释变量间关系时，可将两个解释变量的独热编码作为设计向量的子向量，用此设计向量对应的模型族拟合样本观测数据。\n\n3. ⚫⊙ 现实模型中的模型误差为随机变量。\n\n4. ⚫⊙ 对应任何设计向量$z$和模型参数$\\beta$有$\\frac{\\partial\\left(\\underline{z} \\beta\\right)}{\\partial \\beta}(u)=z$。\n\n5. ⚫⊙ 在用同一响应函数探讨响应变量和分类解释变量间关系时，用$\\mathcal{F}$表示设计向量为解释变量的哑变量编码所对应的模型族，$\\mathcal{G}$表示设计向量为解释变量的效应编码所对应的模型族，则$\\mathcal{F}$和$\\mathcal{G}$是不同的模型族。\n\n6. ⊙● 二响应逻辑回归模型的优势为$\\exp (x \\beta)$，其中$x$为解释变量。\n\n7. ⚫⊙ 统计学认为刻画未知现象的理想模型是客观存在的。\n\n8. ⚫⊙ 似然方程的解是似然估计。\n\n9. ⚫⊙ 条件期望模型$Y=\\mathbb{E}(Y|X)+\\varepsilon$的应用障碍是无法确定$X$的值。\n\n10. ⚫⊙ 在应用同一响应函数探讨响应变量和两个分类解释变量间关系时，不同的设计向量对应着不同的模型族。\n\n11. ⚫⊙ 在二响应广义线性模型中，当模型参数$\\beta$满足条件$C \\beta=\\xi$时，\n$$\n\\left(C \\hat{\\beta}-\\xi\\right)^{\\mathrm{T}}\\left(C\\left(F\\left(\\hat{\\beta}\\right)\\right)^{-1} C^{\\mathrm{T}}\\right)^{-1}\\left(C \\hat{\\beta}-\\xi\\right) \\stackrel{\\circ}{\\sim} \\chi^{2}(r),\n$$\n其中$F\\left(\\hat{\\beta}\\right)$为Fisher信息矩阵在似然估计量处的值，$r$是限制矩阵$C$的秩。\n\n12. ⚫⊙ 函数anova()是用于对数似然比检验的函数。\n\n13. ⚫⊙ 用线性模型拟合样本观测数据时，必须保证模型误差为随机变量。\n\n14. ⚫⊙ 若二响应变量$Y$是取值为1和2，解释变量为$X$，则可以通过条件概率$\\mathbb{E}(Y|X)$建立描述二者关系的模型。\n\n15. ⚫⊙ 对于任何$m \\times p$矩阵$z$和$p$维列向量$\\beta$，有$\\frac{\\partial\\left(z \\beta\\right)}{\\partial \\beta}(u)=z$.\n\n第1页，共2页",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1779702859,
+  "id": "20260525175356fd0ae73b8d5341f4",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260525175356fd0ae73b8d5341f4",
+  "usage": {
+    "completion_tokens": 821,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 4930,
+    "prompt_tokens_details": {
+      "cached_tokens": 17
+    },
+    "total_tokens": 5751
+  }
+}

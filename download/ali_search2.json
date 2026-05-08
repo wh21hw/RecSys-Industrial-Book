@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://www.nowcoder.com/discuss/353159068472778752",
+    "name": "高频知识总结| 算法题如何刷？我的高效刷题方法 - 牛客网",
+    "snippet": "CodeTop 里按类别可以把前30道题给刷了，部分比较高频的类别比如链表，就可以把出现频次大于20的题都给刷了。 以上题大都有重复，总共估计就300题，甚至不到300题，只要会这些题 ...",
+    "host_name": "www.nowcoder.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://leetcode.cn/discuss/topic/bi-shi-ti-2",
+    "name": "笔试题- 讨论- 力扣（LeetCode）",
+    "snippet": "求助｜大佬们看看这道题，牛客上的阿里巴巴笔试题. 小红在二维平面上有n 滴水滴，水滴的坐标为(xi,yi)水滴每秒会向四个方向扩散，如果(x,y) 有一滴水滴，那么在下一秒 ...",
+    "host_name": "leetcode.cn",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://blog.csdn.net/m0_73746866/article/details/131403995",
+    "name": "小白牛客刷题疑难杂症DAY1 原创 - CSDN博客",
+    "snippet": "牛客刷题总结全部汇总 · 一个n×m方格的棋盘，求其方格包含多少正方形、长方形（不包含正方形)。 · 算法题——牛牛的棋盘（容斥原理） · 整数划分1111 · 找出字典序 ...",
+    "host_name": "blog.csdn.net",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nowcoder.com/discuss/868727",
+    "name": "每日一道，LeetCode算法刷题笔记（最新完整版笔记）",
+    "snippet": "前言数据结构和算法可以让程序员脱胎换骨，刷算法题可以帮助我们通过面试和笔试，找到梦寐以求的工作，进入一线大厂或者拿高薪。怎么刷题呢？LeetCode上有2000多道题目， ... Missing: 竞赛 | Show results with: 竞赛",
+    "host_name": "www.nowcoder.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://zhuanlan.zhihu.com/p/1933935175227651281",
+    "name": "2025年阿里巴巴淘天笔面试备考全攻略 - 知乎专栏",
+    "snippet": "难度突破：刷“算法进阶”专题（牛客算法进阶专题），重点练习动态规划（如背包问题、最长公共子序列)、图论（最短路径、最小生成树)等中高难度题目。 3. 数据方向 ... Missing: 竞赛 LeetCode",
+    "host_name": "zhuanlan.zhihu.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://juejin.cn/post/7154179910154584072",
+    "name": "谈一谈这些年来算法的学习，刷题进阿里、腾讯、网易等大厂稳过吗？",
+    "snippet": "在刷leetcode 的时候，你会发现，每道题的题意都很短，你只需要花十几秒的时间，就知道这道题是要你干嘛了，并且每道题所用道的算法思想都很明确，动态规划、 ...",
+    "host_name": "juejin.cn",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://cloud.tencent.com/developer/article/1891527",
+    "name": "卷王，不能倒在刷力扣的路上 - 腾讯云",
+    "snippet": "初学者刷力扣应优先刷剑指Offer和力扣HOT100/前200题，掌握高频算法与数据结构。建议有基础者顺序刷题，小白按专题突破。刷题需理解考察点， ...",
+    "host_name": "cloud.tencent.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.nowcoder.com/discuss/353149932611772416",
+    "name": "看完了阿里大牛的Leetcode刷题笔记, 我成功拿到了字节跳动的offer",
+    "snippet": "内容包含：数组系列、链表系列、动态规划系列、字符串系列、二叉树系列、滑动窗口系列、博弈论系列、位运算系列、二分法系列、其他题目等等。图文兼备，目前 ...",
+    "host_name": "www.nowcoder.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://leetcode.cn",
+    "name": "力扣(LeetCode) 全球极客挚爱的技术成长平台",
+    "snippet": "海量技术面试题库，拥有算法、数据结构、系统设计等1000+题目，帮助你高效提升编程技能，轻松拿下世界IT 名企Dream Offer。 Missing: 牛 | Show results with: 牛",
+    "host_name": "leetcode.cn",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.aliyun.com/sswb/539399.html",
+    "name": "面试刷题问题与内容精选-阿里云",
+    "snippet": "阿里云为您提供专业及时的面试刷题最新最全的文档、文章及解决方案,解决您最关心的面试刷题精选内容,并提供7x24小时售后支持,点击官网了解更多内容。 Missing: 竞赛 | Show results with: 竞赛",
+    "host_name": "www.aliyun.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

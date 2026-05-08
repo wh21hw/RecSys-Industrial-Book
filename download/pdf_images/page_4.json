@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "姓名: 学号: glinear20250422\n13. 〇〇 在二响应广义线性模型中，可以通过经验预报公式$\\hat{Y}_{c}=1_{\\{h(Z(x)\\beta)>c\\}}$预报相应变量的值，其中$c$为阈值。阈值越小，TPR越小。\n14. 〈.〇 若$\\hat{\\beta}_{i}$是二响应模型的模型参数的似然估计量的第$i$分量，则$\\frac{\\hat{\\beta}_{i}}{\\sqrt{a_{ii}}}\\stackrel{a}{\\sim}N(0,1)$。\n15. 〇〇 在二响应广义线性模型中，可以通过经验预报公式$\\hat{Y}_{c}=1_{\\{h(Z(x)\\beta)>c\\}}$预报相应变量的值；其中$c$为阈值。阈值越大，FPR越小。\n16. 〈.〇 在用逐步回归方法筛选最优子模型的过程中，可以用剩余偏差作为模型是否优秀的衡量指标。\n17 〇〇 在二响应广义线性模型中，当模型参数$\\beta$满足条件$C\\beta=\\xi$时，通常\n$$\ns\\left(\\tilde{\\beta}\\right) F^{-1}\\left(\\tilde{\\beta}\\right)\\left(s\\left(\\tilde{\\beta}\\right)\\right)^{\\mathrm{T}},\n$$\n其中$\\tilde{\\beta}$是限制似然估计量，$F\\left(\\tilde{\\beta}\\right)$是Fisher信息矩阵在限制似然估计量处的值，$r$是限制矩阵$C$的秩。\n18. 〇〇 对于二响应模型。如果$\\mathbb{P}(Y=1|X=x)>0.99$，则解释变量值$x$所对应的响应变量$Y$的值是1。\n19. 〇〇 考虑二响应广义线性模型的模型参数$\\beta$的假设检验问题\n$$\nH_{0}: C\\beta=\\xi.\n$$\n$$\ns\\left(\\tilde{\\beta}\\right)\\left(F\\left(\\tilde{\\beta}\\right)\\right)^{-1}\\left(s\\left(\\tilde{\\beta}\\right)\\right)^{\\mathrm{T}}\n$$\n越小越有利于原假设，其中$\\tilde{\\beta}$是限制似然估计量，$F\\left(\\tilde{\\beta}\\right)$是Fisher信息矩阵在限制似然估计量处的值。\n20. 〇〇 考虑二响应模型的模型参数第$i$分量的假设检验问题$H_{0}: \\beta_{i}=0$，则$\\frac{\\hat{\\beta}_{i}}{\\sqrt{a_{ii}}}$越大，越有利于原假设，其中$a_{ii}$为$\\left(F\\left(\\hat{\\beta}\\right)\\right)^{-1}$的对角线上的第$i$个元素。\n21. 〈〇 在二响应广义线性模型中，当模型参数$\\beta$满足条件$C\\beta=\\xi$时，\n$$\n\\left(C\\hat{\\beta}-\\xi\\right)^{\\mathrm{T}}\\left(C\\left(F\\left(\\hat{\\beta}\\right)\\right)^{-1} C^{\\mathrm{T}}\\right)^{-1}\\left(C\\hat{\\beta}-\\xi\\right) \\stackrel{a}{\\sim} \\chi^{2}(r),\n$$\n其中$F\\left(\\hat{\\beta}\\right)$为Fisher信息矩阵在似然估计量处的值，$r$是限制矩阵$C$的秩。\n22. 〇〇 ROC曲线的坐标横轴为FPR，坐标纵轴为TPR。\n23. 〇〇 对于光滑$m$维向量值多元函数函数$f(x)=\\left(f_{1}(x), \\ldots, f_{m}(x)\\right)^{\\mathrm{T}}: \\mathbb{R}^{n} \\rightarrow \\mathbb{R}^{m}$，有\n$$\n\\frac{\\partial f}{\\partial x}(u)=\\left(\\begin{array}{c}\n\\frac{\\partial f_{1}}{\\partial x}(u) \\\\\n\\vdots \\\\\n\\frac{\\partial f_{m}}{\\partial x}(u)\n\\end{array}\\right)\n$$\n第2页，共2页",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1779702902,
+  "id": "20260525175430c699c8a6d3624a8d",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260525175430c699c8a6d3624a8d",
+  "usage": {
+    "completion_tokens": 928,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 4930,
+    "prompt_tokens_details": {
+      "cached_tokens": 17
+    },
+    "total_tokens": 5858
+  }
+}

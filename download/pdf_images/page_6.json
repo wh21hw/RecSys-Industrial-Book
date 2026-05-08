@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "姓名: 学号: glinear20250429\n14.  R语言的神经网络包nnet包中的函数multinom()的功能是用多响应逻辑回归模型拟合样本观测数据。\n15.  在二响应广义线性模型中，可以用$y = 1_{[0,0.5]}(h(Z(x)\\beta))$模拟解释变量$x$所对应的响应变量值，其中$h$是响应函数，$Z(x)$是解释变量$x$所决定的设计向量，$\\beta$是模型参数。\n16.  在使用nnet包中的函数multinom()时，需要建立存放样本观测数据的数据框，在这个数据框中响应变量占$k - 1$列，其中$k$是响应变量的值域中元素的个数。\n17.  $k$响应广义线性模型可以用条件分布函数表示。\n18.  $k$响应逻辑回归模型的响应函数的第$r$分量为$h_r(s_1,\\dots,s_k) = \\frac{\\exp(\\theta_r)}{1 + \\sum_{j = 1}^k \\exp(\\theta_j)}$。\n19.  在用$k$响应广义线性模型拟合样本观测数据时，程序代码$\\text{y} \\sim \\text{x}1:\\text{x}2$表示模型的设计向量为$(1, x_1 x_2)$，其中$\\text{x}1$和$\\text{x}2$分别是$x_1$和$x_2$的样本观测数据。\n20.  在$k$响应广义线性模型$\\mathbb{E}(Y|X) = h(Z\\beta)$中，响应变量$Y$的条件方差矩阵为$\\text{diag}(h(Z\\beta))$。\n21.  当响应变量为分类变量时，可以用响应变量的哑变量编码的条件期望建立多响应广义线性模型。\n22.  在二响应广义线性模型中，可以用$y = \\text{rbinom}(100, 1, h(Z(x)\\beta))$模拟解释变量$x$所对应的100个响应变量值，其中$h$是响应函数，模拟解释变量$x$所对应的设计向量值，其中$h$是响应函数，$Z(x)$是解释变量$x$所决定的设计向量，$\\beta$是模型参数。\n23.  $k$响应广义线性模型的响应函数是$\\mathbb{R}^k$到$\\mathbb{R}^k$的映射。\n24.  运行程序代码$\\text{myF} \\leftarrow \\text{function}() \\{ \\text{x} \\ll - 1 \\}; \\text{x} \\ll - 2; \\text{y} \\ll \\text{myF}()$后，$\\text{x}$和$\\text{y}$的值相等。\n25.  $k$响应广义线性模型的响应函数是$k$维向量值函数。\n26.  在用二响应广义线性模型拟合样本观测矩阵时，程序代码$\\text{y} \\sim \\text{x}1 * \\text{x}2$表示设计向量为$(1, x_1, x_2; x_1 x_2)$，其中$\\text{x}1$和$\\text{x}2$分别是$x_1$和$x_2$的样本观测数据。\n\n第2页，共2页",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1779702836,
+  "id": "20260525175342ce72043496624c9c",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260525175342ce72043496624c9c",
+  "usage": {
+    "completion_tokens": 717,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 4930,
+    "prompt_tokens_details": {
+      "cached_tokens": 8
+    },
+    "total_tokens": 5647
+  }
+}

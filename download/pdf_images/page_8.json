@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "姓名: 学号: glinear20250430\n16. 若$\\hat{\\beta}_{i}$是二响应模型的模型参数的似然估计量的第$i$分量，则$\\frac{\\hat{\\beta}_{i}}{\\sqrt{\\hat{\\sigma}_{ii}}}\\stackrel{a}{\\sim}N(0,1)$。\n17. 对于二响应模型。如果$\\mathbb{P}(Y=1|X=x)>0.99$，则断言“解释变量值$x$所对应的相应变量$Y$的值为1”犯错误的概率为0.01。\n18. 在用同一响应函数探讨响应变量和分类解释变量间关系时，用$\\mathcal{F}$表示设计向量为解释变量的哑变量编码所对应的模型族，$\\mathcal{G}$表示设计向量为解释变量的效应编码所对应的模型族，则$\\mathcal{F}$和$\\mathcal{G}$是相同的模型族。\n19. $k$响应广义线性模型的响应函数是$k$维向量值函数。\n20. $k$响应广义线性模型的响应函数是$\\mathbb{R}^{k}$到$\\mathbb{R}^{k}$的映射。\n21. 运行程序代码myF<-function(){x<<-1};x<-2;y<-myF()后，x和y的值相等。\n22. 如果知道$\\mathbb{E}(Y|X)$，理想预报公式的预报误差就是0。\n23. 称\n$$Y=\\mathbb{E}(Y|X)$$\n为$Y$的理想预报公式的原因之一是：在已知$X$情况下用$\\mathbb{E}(Y|X)$预报$Y$的误差最小。\n24. 在用逐步回归方法筛选最优子模型的过程中，可以用剩余偏差作为模型是否优秀的衡量指标。\n25. $k$响应逻辑回归模型的响应函数的第$r$分量为$h_{r}(s_{1},\\ldots,s_{k})=\\frac{\\exp(s_{r})}{1+\\sum_{j=1}^{k}\\exp(s_{j})}$。\n26. 广义线性模型的模型参数永远不会改变。\n27. 用迭代公式\n$$\\hat{\\beta}^{(k+1)}=\\hat{\\beta}^{(k)}+F_{\\mathrm{obs}}^{-1}\\left(\\hat{\\beta}^{(k)}\\right)\\left(s\\left(\\hat{\\beta}^{(k)}\\right)\\right)^{\\mathrm{T}},\\ k\\geqslant1,$$\n可以得到二响应广义线性模型的模型参数的似然估计值，其中$S$为得分函数，$F_{\\mathrm{obs}}$为观测信息矩阵。\n第2页，共2页",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1779702721,
+  "id": "202605251751347f2d8caa120443ac",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "202605251751347f2d8caa120443ac",
+  "usage": {
+    "completion_tokens": 590,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 4930,
+    "prompt_tokens_details": {
+      "cached_tokens": 8
+    },
+    "total_tokens": 5520
+  }
+}

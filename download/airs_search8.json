@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://github.com/Doragd/Algorithm-Practice-in-Industry",
+    "name": "Doragd/Algorithm-Practice-in-Industry: 搜索、推荐、广告 - GitHub",
+    "snippet": "关于我：2023届毕业，之前做NLP方向，毕业后转去搜广推方向，一枚努力适应的菜鸡。目前在做召回方向。 我的论文阅读笔记：https://github.com/doragd/paperreading ...",
+    "host_name": "github.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://juejin.cn/post/7368255086290665522",
+    "name": "支付宝商业化广告算法优化随着支付宝广告业务发展 - 稀土掘金",
+    "snippet": "所以，目前在搜广推领域基于MAML 的路线也是比较主流的。 场景 ... 实时特征开发上线pipline，依赖蚂蚁集团内Frigate & Arec 完善的工程系统支撑。",
+    "host_name": "juejin.cn",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://pdf.dfcfw.com/pdf/H3_AP202406131636078603_1.pdf",
+    "name": "[PDF] “人工智能+”引爆新质生产力革命",
+    "snippet": "本报告第一章简述AI 技术的进步性与局限性，并展望向通用式人. 工智能（AGI）发展的路径；第二章提供全景式的AI 产业链图谱和. 中美AI 能力对比；第三章阐述了 ...",
+    "host_name": "pdf.dfcfw.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "http://techforum-img.cn-hangzhou.oss-pub.aliyun-inc.com/double11_tech_1512962950622.pdf",
+    "name": "[PDF] 阿里巴巴2016 双11 背后的技术",
+    "snippet": "此外，每个事业群均根据自身特性自主研发了多套监控系统，以满足自身特. 定业务场景的监控需求，如广告的GoldenEye、菜鸟的棱镜、阿里云的天基、. 蚂蚁的金融 ...",
+    "host_name": "techforum-img.cn-hangzhou.oss-pub.aliyun-inc.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.bagevent.com/event/8990882/p/555843",
+    "name": "DA数智大会2025 · 深圳站 - 百格活动",
+    "snippet": "大模型驱动的个性化推荐系统新范式, 大模型增强用户体验与客户服务. Data+AI 一体化平台架构实践 ; 大模型在推荐引擎中的应用. 大模型驱动的精准广告. 召回结果优化与用户 ...",
+    "host_name": "www.bagevent.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.bianews.com/news/details?id=223111",
+    "name": "蚂蚁组建AIRS整合搜广推能力，AI全面接管内容业务 - 鞭牛士",
+    "snippet": "10月16日消息，蚂蚁集团宣布重大组织架构调整，将搜索、广告、推荐（简称“搜广推”）的工程与算法团队合并，成立全新的「AIRS」部门。",
+    "host_name": "www.bianews.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://13115299.s21i.faiusr.com/61/1/ABUIABA9GAAgp9PZpgYov-zNzgc.pdf",
+    "name": "[PDF] 蓝皮书编委及指导专家 - 信息资源系统",
+    "snippet": "天翼云以云操作系统为核心，实现全栈技术自主可控。面对迅速增长的智算需求，推出智能计算. 平台“云骁”，为AI 大模型训练、智能交通、智慧城市等场景提供高效算力服务 ...",
+    "host_name": "13115299.s21i.faiusr.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.xiaoyuzhoufm.com/podcast/681b47122ad01a51a21cd515",
+    "name": "支无不言| 小宇宙- 听播客",
+    "snippet": "《支无不言》是一档新支付领域的垂类播客。我们希望深入追踪区块链技术如何改写全球支付规则，支无不言，言无不尽。 微信公众号：支无不言.",
+    "host_name": "www.xiaoyuzhoufm.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.yepaisz.com/260.html",
+    "name": "每日AI简报- 野湃AI",
+    "snippet": "阿里通义开源大模型可解释性工具套件Qwen-Scope，工具基于稀疏自编码器（SAE）技术，覆盖Qwen3 及Qwen3.5 系列共7 个模型。Qwen-Scope可在推理阶段定向控制输出结果，用少量种子 ...",
+    "host_name": "www.yepaisz.com",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://frontiersonline.com/frontiers_news",
+    "name": "快讯 - 前沿在线FrontiersOnline",
+    "snippet": "2、Grok 推即时语音搜索：即说即搜即答，叫板Google 传统搜索. 3 ... 8、蚂蚁集团Galacean技术亮相中关村论坛：入选未来产业创新发展优秀典型案例.",
+    "host_name": "frontiersonline.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]
