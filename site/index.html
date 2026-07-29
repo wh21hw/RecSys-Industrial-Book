@@ -706,6 +706,30 @@ function loadChapter(num){
   // Scroll to top
   window.scrollTo(0, 0);
   updateProgress();
+  
+  // Render KaTeX formulas after loading new chapter
+  if (typeof renderMathInElement !== 'undefined') {
+    renderMathInElement(article, {
+      delimiters: [
+        {left: '$$', right: '$$', display: true},
+        {left: '$', right: '$', display: false}
+      ],
+      throwOnError: false
+    });
+  } else {
+    // KaTeX might not be loaded yet, retry after delay
+    setTimeout(function() {
+      if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(article, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false}
+          ],
+          throwOnError: false
+        });
+      }
+    }, 300);
+  }
 }
 
 // Theme toggle
@@ -741,7 +765,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Wait for KaTeX to load, then render
   setTimeout(function() {
     if (typeof renderMathInElement !== 'undefined') {
-      var contentEl = document.getElementById('chapter-content');
+      var contentEl = document.getElementById('article');
       if (contentEl) {
         renderMathInElement(contentEl, {
           delimiters: [
