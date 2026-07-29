@@ -7,80 +7,44 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="book-header">
   <div class="book-title">推荐系统：工业架构与核心算法</div>
   <div class="book-subtitle">RecSys-Industrial-Book</div>
   <div class="book-author">作者：刘京欣 · 补充版</div>
 </div>
-
 <div class="chapter-num">第五部分 推荐系统进阶 · 第 22 章</div>
 <h1 class="chapter-title">推荐系统偏差</h1>
 
-<p>推荐系统在数据采集、模型训练和在线推理过程中存在多种偏差（Bias）。这些偏差不仅影响推荐效果，还可能导致"信息茧房"、流量集中和生态恶化等问题。本章将系统介绍推荐系统中的常见偏差类型及其纠偏方法。</p>
-
+<p>推荐系统在数据采集、模型训练和在线推理过程中存在多种偏差。这些偏差不仅影响推荐效果，还可能导致"信息茧房"、流量集中和生态恶化等问题。</p>
 <h2 class="section-title">22.1 偏差类型</h2>
-
 <table>
-  <caption>表 22.1：推荐系统常见偏差</caption>
-  <thead>
-    <tr><th>偏差类型</th><th>成因</th><th>影响</th></tr>
-  </thead>
+  <thead><tr><th>偏差类型</th><th>成因</th><th>影响</th></tr></thead>
   <tbody>
-    <tr><td>位置偏差 (Position Bias)</td><td>靠前位置天然获得更高点击率</td><td>模型高估头部内容质量</td></tr>
-    <tr><td>选择偏差 (Selection Bias)</td><td>只有被曝光的内容才有反馈数据</td><td>训练分布与推理分布不一致</td></tr>
-    <tr><td>曝光偏差 (Exposure Bias)</td><td>曝光由推荐系统自身决定</td><td>数据循环，强化已有偏好</td></tr>
-    <tr><td>流行度偏差 (Popularity Bias)</td><td>热门内容获得更多曝光</td><td>长尾内容被抑制，马太效应</td></tr>
-    <tr><td>一致性偏差 (Consistency Bias)</td><td>用户行为受以往推荐影响</td><td>用户兴趣被推荐系统塑造</td></tr>
+    <tr><td>位置偏差</td><td>靠前位置天然获得更高点击率</td><td>模型高估头部内容质量</td></tr>
+    <tr><td>选择偏差</td><td>只有被曝光的内容才有反馈数据</td><td>训练分布与推理分布不一致</td></tr>
+    <tr><td>曝光偏差</td><td>曝光由推荐系统自身决定</td><td>数据循环，强化已有偏好</td></tr>
+    <tr><td>流行度偏差</td><td>热门内容获得更多曝光</td><td>长尾内容被抑制，马太效应</td></tr>
   </tbody>
 </table>
+<h2 class="section-title">22.2 逆倾向加权 (IPS)</h2>
+<p>IPS 通过对样本进行加权来消除偏差：L_IPS = (1/N)Σ(yᵢ/p̂ᵢ)·L(f(xᵢ),yᵢ)。被低估的样本（低曝光概率）获得更高权重，从而纠正曝光偏差。</p>
+<h2 class="section-title">22.3 Doubly Robust</h2>
+<p>DR 结合 IPS 和直接模型：L_DR = (1/N)Σ[f̂(xᵢ) + (yᵢ-f̂(xᵢ))/p̂ᵢ]。只要倾向分数模型或直接模型其中之一正确，DR 就能实现无偏估计，具有更强的鲁棒性。</p>
+<h2 class="section-title">22.4 流行度纠偏</h2>
+<p>DICE [1] 将用户行为分解为兴趣驱动和流行度驱动两部分。MACAR [2] 通过反事实推理评估去除流行度偏差后的推荐效果。</p>
+<h2 class="section-title">22.5 因果推荐</h2>
+<p>因果推荐从因果推断角度重新审视推荐问题，区分"观察到的行为"和"因果效应"。核心工具是因果图（DAG），通过 IPW、DR、反事实学习等方法消除偏差。</p>
+<h2 class="section-title">22.6 本章小结</h2>
+<p>位置偏差、选择偏差、曝光偏差和流行度偏差是最常见的四种类型。IPS 和 DR 是经典纠偏方法。DICE 和 MACAR 针对流行度偏差提出专门方案。因果推荐从更深层次重新定义推荐问题的本质。</p>
 
-<h2 class="section-title">22.2 位置偏差纠偏</h2>
 
-<h3 class="subsection-title">22.2.1 逆倾向加权 (IPS)</h3>
-
-<p>逆倾向加权（Inverse Propensity Score, IPS）通过对样本进行加权来消除偏差：</p>
-
-<div class="formula-box">
-  L_IPS = (1/N) Σ (yᵢ / p̂ᵢ) · L(f(xᵢ), yᵢ)
-</div>
-
-<p>其中 p̂ᵢ 为样本 i 被曝光的倾向分数。通过逆加权，被低估的样本（低曝光概率）获得更高权重，从而纠正曝光偏差。</p>
-
-<h3 class="subsection-title">22.2.2 Doubly Robust</h3>
-
-<p>Doubly Robust（双重稳健）结合了 IPS 和直接模型两种纠偏方式：</p>
-
-<div class="formula-box">
-  L_DR = (1/N) Σ [f̂(xᵢ) + (yᵢ - f̂(xᵢ)) / p̂ᵢ] · L(f(xᵢ), yᵢ)
-</div>
-
-<p>只要倾向分数模型或直接模型其中之一正确，DR 就能实现无偏估计，因此具有更强的鲁棒性。</p>
-
-<h2 class="section-title">22.3 流行度纠偏</h2>
-
-<h3 class="subsection-title">22.3.1 DICE</h3>
-
-<p>DICE（Disentangling Interest and Conformity）将用户兴趣分解为内在兴趣（Interest）和从众心理（Conformity）两部分，分别建模后组合，减少流行度偏差的影响。</p>
-
-<h3 class="subsection-title">22.3.2 MACR</h3>
-
-<p>MACR（Model-Agnostic Counterfactual Reasoning）通过反事实推理框架，评估去除流行度偏差后的推荐效果，指导模型学习去偏差的表示。</p>
-
-<h2 class="section-title">22.4 因果推荐</h2>
-
-<p>因果推荐（Causal Recommendation）从因果推断角度重新审视推荐问题，核心思想是区分<strong>观察到的行为</strong>和<strong>因果效应</strong>。推荐系统不应只关注"用户点击了什么"，而应关注"推荐系统对用户行为的因果影响"。</p>
-
-<h2 class="section-title">22.5 本章小结</h2>
-
-<p>推荐系统偏差是影响推荐公平性和长期效果的重要因素。位置偏差、选择偏差、曝光偏差和流行度偏差是最常见的四种类型。IPS 和 Doubly Robust 是经典的纠偏方法，DICE 和 MACR 针对流行度偏差提出了专门解决方案。因果推荐从更深层次重新定义推荐问题的本质，是未来重要研究方向。</p>
+<h2 class="section-title">参考文献</h2>
+<p>[1] Zheng et al. "DICE". KDD 2021. [2] Wei et al. "MACR". SIGIR 2023.</p>
 
 <div class="chapter-end">* * *</div>
-
 <div class="nav-bar">
-  <a href="ch21.html">← 上一章：第21章 时长预估</a>
-  <a href="ch23.html">下一章：第23章 个性化参数 →</a>
+  <a href="ch21.html">← 上一章</a>
+  <a href="ch23.html">下一章 →</a>
 </div>
-
 </body>
 </html>

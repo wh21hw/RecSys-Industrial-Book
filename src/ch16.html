@@ -7,84 +7,42 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="book-header">
   <div class="book-title">推荐系统：工业架构与核心算法</div>
   <div class="book-subtitle">RecSys-Industrial-Book</div>
   <div class="book-author">作者：刘京欣 · 补充版</div>
 </div>
-
 <div class="chapter-num">第四部分 推荐系统工程实践 · 第 16 章</div>
 <h1 class="chapter-title">在线服务</h1>
 
 <p>推荐系统的在线服务直接面向用户请求，需要在数十毫秒内完成从召回、排序到结果返回的全流程。在线服务的性能和稳定性直接决定了用户体验。本章将介绍推荐系统在线架构中的核心组件与关键技术。</p>
 
 <h2 class="section-title">16.1 推荐请求链路</h2>
-
-<p>一次完整的推荐请求链路通常包括以下步骤：</p>
-<ol>
-  <li><strong>客户端发起请求</strong>：用户打开 App 或刷新页面，客户端向服务端发起推荐请求</li>
-  <li><strong>服务端转发</strong>：服务端通过推荐 Router 调用推荐系统</li>
-  <li><strong>召回</strong>：多路召回并行执行，从海量物品库中筛选数千个候选</li>
-  <li><strong>粗排</strong>：轻量级模型快速筛选至数百个候选</li>
-  <li><strong>精排</strong>：复杂模型精细排序至数十个候选</li>
-  <li><strong>重排</strong>：序列级优化，多样性打散</li>
-  <li><strong>混排</strong>：多业务融合，流量调控</li>
-  <li><strong>结果返回</strong>：经 Router 返回给服务端，最终下发到客户端</li>
-</ol>
-
-<p>整个链路的端到端延迟通常控制在 200-500ms 以内，其中推荐系统内部耗时通常在 50-100ms。</p>
+<p>一次完整的推荐请求链路通常包括：客户端发起请求→服务端转发→召回（多路并行）→粗排→精排→重排→混排→结果返回。整个链路的端到端延迟通常控制在 200-500ms 以内，其中推荐系统内部耗时通常在 50-100ms。</p>
 
 <h2 class="section-title">16.2 模型推理服务</h2>
-
 <h3 class="subsection-title">16.2.1 推理引擎</h3>
+<p>推荐模型的在线推理通常使用 TensorFlow Serving、TensorRT 或 ONNX Runtime。TensorRT 通过算子融合、精度量化（FP16/INT8）、内核自动调优等优化大幅降低推理延迟，是工业界高性能推理的首选引擎。</p>
 
-<p>推荐模型的在线推理通常使用以下引擎：</p>
+<h3 class="subsection-title">16.2.2 推理加速技术</h3>
 <ul>
-  <li><strong>TensorFlow Serving</strong>：Google 开源的模型服务框架，支持 TF SavedModel 格式</li>
-  <li><strong>TensorRT</strong>：NVIDIA 的推理加速引擎，通过算子融合、量化等优化大幅降低推理延迟</li>
-  <li><strong>ONNX Runtime</strong>：跨框架推理引擎，支持 PyTorch、TF 等多种模型格式</li>
-  <li><strong>自研推理框架</strong>：大型互联网公司通常自研推理引擎以适配业务需求</li>
-</ul>
-
-<h3 class="subsection-title">16.2.2 模型加速技术</h3>
-
-<p>工业界常用的模型加速技术包括：</p>
-<ul>
-  <li><strong>算子融合</strong>（Operator Fusion）：将多个连续算子合并为一个，减少内存访问开销</li>
-  <li><strong>模型量化</strong>（Quantization）：将 FP32 权重压缩为 INT8 或 FP16，减少显存占用和计算延迟</li>
-  <li><strong>模型蒸馏</strong>（Distillation）：用大模型训练小模型，在保持效果的同时降低推理成本</li>
-  <li><strong>并行推理</strong>：对多路召回或多个模型塔并行执行，减少串行延迟</li>
-  <li><strong>缓存优化</strong>：对用户向量等中间结果进行缓存，避免重复计算</li>
+  <li><strong>算子融合</strong>：将多个小算子合并为大算子，减少 GPU 内核启动开销</li>
+  <li><strong>精度量化</strong>：将 FP32 量化为 FP16 或 INT8，减少显存占用和计算量</li>
+  <li><strong>知识蒸馏</strong>：用大模型训练小模型，在保持效果的同时降低推理成本</li>
+  <li><strong>模型并行</strong>：将大模型拆分到多个 GPU 上并行推理</li>
+  <li><strong>请求批处理</strong>：将多个请求合并为一个 batch，提高 GPU 利用率</li>
 </ul>
 
 <h2 class="section-title">16.3 特征服务</h2>
-
-<p>在线特征服务负责在推荐请求到达时，实时获取用户和物品的特征信息。工业界通常采用以下架构：</p>
-
-<h3 class="subsection-title">16.3.1 特征服务架构</h3>
-
+<p>在线推荐需要实时获取用户特征和物品特征。工业界通常采用多级缓存策略：</p>
 <ul>
-  <li><strong>用户特征服务</strong>：从 Redis 或内存数据库读取用户画像、行为序列等特征</li>
-  <li><strong>物品特征服务</strong>：通过正排索引服务，根据 Item ID 批量获取物品特征</li>
-  <li><strong>实时特征计算</strong>：部分特征需要在线实时计算（如"最近 5 分钟点击数"）</li>
-</ul>
-
-<h3 class="subsection-title">16.3.2 特征缓存</h3>
-
-<p>为了降低特征获取延迟，工业界通常采用多级缓存策略：</p>
-<ul>
-  <li><strong>本地缓存</strong>：使用 LRU Cache 缓存热点用户/物品特征，命中率高时延迟 <1ms</li>
-  <li><strong>Redis 缓存</strong>：作为二级缓存，覆盖更广的特征集合</li>
-  <li><strong>持久化存储</strong>：HBase 或 RocksDB，作为兜底数据源</li>
+  <li><strong>L1 本地缓存</strong>：使用 LRU 缓存热点用户/物品特征，延迟 < 1ms</li>
+  <li><strong>L2 Redis 集群</strong>：存储全量特征，延迟 2-5ms</li>
+  <li><strong>L3 HBase/Hive</strong>：存储历史特征，延迟 10-50ms</li>
 </ul>
 
 <h2 class="section-title">16.4 降级与容灾</h2>
-
-<p>推荐系统需要应对流量高峰、资源受限以及异常故障等场景，通常设计多层降级机制：</p>
-
 <h3 class="subsection-title">16.4.1 降级层次</h3>
-
 <ul>
   <li><strong>特征降级</strong>：当特征服务异常时，使用默认特征或缓存特征替代</li>
   <li><strong>模型降级</strong>：当精排模型超时或异常时，回退到粗排结果或更简单的模型</li>
@@ -93,36 +51,22 @@
 </ul>
 
 <h3 class="subsection-title">16.4.2 DCAF 动态算力分配</h3>
-
-<p>DCAF（Dynamic Computation Allocation Framework）是阿里巴巴提出的动态算力分配框架。它将资源分配建模为带约束的背包问题，根据请求价值和算力预算动态选择最优的推理策略：</p>
-
-<div class="formula-box">
-  max Σᵢⱼ xᵢⱼ Qᵢⱼ, &nbsp; s.t. Σᵢⱼ xᵢⱼ qⱼ ≤ C
-</div>
-
-<p>通过拉格朗日对偶分析，最优策略简化为选择使 Qᵢⱼ - λqⱼ 最大的动作，其中 λ 通过二分搜索求解。DCAF 实现了"按请求价值进行差异化降级"，在业务收益与系统成本之间取得更优平衡。</p>
+<p>DCAF [1] 是阿里巴巴提出的动态算力分配框架。它将资源分配建模为带约束的背包问题，根据请求价值和算力预算动态选择最优推理策略。通过拉格朗日对偶分析，最优策略简化为选择使 Qᵢⱼ - λqⱼ 最大的动作，其中 λ 通过二分搜索求解。DCAF 实现了"按请求价值进行差异化降级"，在业务收益与系统成本之间取得更优平衡。</p>
 
 <h2 class="section-title">16.5 监控与告警</h2>
-
-<p>推荐系统在线服务需要完善的监控体系，覆盖以下维度：</p>
-<ul>
-  <li><strong>服务层监控</strong>：QPS、P50/P99 延迟、错误率、GPU 利用率</li>
-  <li><strong>数据层监控</strong>：特征缺失率、特征分布漂移、索引更新延迟</li>
-  <li><strong>模型层监控</strong>：pxtr 均值与分布、PCOC 校准指标、AUC 异常</li>
-  <li><strong>业务层监控</strong>：各业务流量占比、多样性指标、冷启动曝光率</li>
-  <li><strong>降级监控</strong>：降级触发次数、降级流量占比、兜底内容占比</li>
-</ul>
+<p>推荐系统在线服务需要完善的监控体系：服务层监控（QPS、P50/P99 延迟、错误率、GPU 利用率）、数据层监控（特征缺失率、特征分布漂移、索引更新延迟）、模型层监控（pxtr 均值与分布、PCOC 校准指标、AUC 异常）、业务层监控（各业务流量占比、多样性指标、冷启动曝光率）、降级监控（降级触发次数、降级流量占比、兜底内容占比）。</p>
 
 <h2 class="section-title">16.6 本章小结</h2>
+<p>本章系统介绍了推荐系统的在线服务架构。推荐请求链路从客户端到结果返回需要在数百毫秒内完成全流程。模型推理服务通过算子融合、量化、蒸馏等加速技术降低延迟。特征服务采用多级缓存策略。降级与容灾机制通过多层降级保障服务连续性。监控体系覆盖服务、数据、模型、业务和降级五个维度。</p>
 
-<p>本章系统介绍了推荐系统的在线服务架构。推荐请求链路从客户端到结果返回需要在数百毫秒内完成全流程。模型推理服务通过算子融合、量化、蒸馏等加速技术降低延迟。特征服务采用多级缓存策略保证低延迟获取。降级与容灾机制通过多层降级保障服务连续性。监控体系覆盖服务、数据、模型、业务和降级五个维度，是推荐系统稳定运行的重要保障。</p>
+
+<h2 class="section-title">16.7 参考文献</h2>
+<p>[1] Jiang, B., et al. (2020). "DCAF: A Dynamic Computation Allocation Framework for Online Serving System". In <em>arXiv</em>.</p>
 
 <div class="chapter-end">* * *</div>
-
 <div class="nav-bar">
-  <a href="ch15.html">← 上一章：第15章 离线服务</a>
-  <a href="ch17.html">下一章：第17章 向量检索系统 →</a>
+  <a href="ch15.html">← 上一章</a>
+  <a href="ch17.html">下一章 →</a>
 </div>
-
 </body>
 </html>

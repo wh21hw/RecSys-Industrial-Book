@@ -7,56 +7,42 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="book-header">
   <div class="book-title">推荐系统：工业架构与核心算法</div>
   <div class="book-subtitle">RecSys-Industrial-Book</div>
   <div class="book-author">作者：刘京欣 · 补充版</div>
 </div>
-
 <div class="chapter-num">第六部分 强化学习推荐 · 第 28 章</div>
 <h1 class="chapter-title">强化学习推荐场景</h1>
 
-<p>强化学习（Reinforcement Learning, RL）在推荐系统中的应用近年来受到广泛关注。与传统监督学习不同，RL 通过序列决策建模推荐过程，能够优化长期收益而非即时反馈。本章将介绍 RL 在推荐系统中的典型应用场景。</p>
-
+<p>强化学习（RL）在推荐系统中的应用近年来受到广泛关注。与传统监督学习不同，RL 通过序列决策建模推荐过程，能够优化长期收益而非即时反馈。</p>
 <h2 class="section-title">28.1 流量分配与调控</h2>
-
-<p>推荐系统需要在多个业务之间动态分配流量。RL 可以将流量分配建模为 MDP，根据实时业务指标动态调整流量配额。</p>
-
+<p>推荐系统需要在多个业务之间动态分配流量。RL 可以将流量分配建模为 MDP（马尔可夫决策过程），根据实时业务指标动态调整流量配额。Facebook 的 Horizon [1] 和 LinkedIn 的 Reinforce [2] 是工业界 RL 推荐系统的典型实践。</p>
 <h2 class="section-title">28.2 多任务融合</h2>
-
-<p>RL 可以学习排序公式的参数策略，替代传统的人工调参或贝叶斯优化。通过策略梯度方法，RL 能够在长期收益维度上优化融合参数。</p>
-
+<p>RL 可以学习排序公式的参数策略，替代传统人工调参或贝叶斯优化。通过策略梯度方法，RL 能够在长期收益维度上优化融合参数。</p>
 <h2 class="section-title">28.3 层次决策</h2>
-
-<p>推荐系统本身是一个层次化系统（召回→粗排→精排→重排）。层次强化学习（Hierarchical RL）可以建模各层之间的决策关系，实现端到端的策略优化。</p>
-
+<p>推荐系统本身是层次化系统（召回→粗排→精排→重排）。层次强化学习（Hierarchical RL）可以建模各层之间的决策关系。</p>
 <h2 class="section-title">28.4 流量降级优化</h2>
-
 <p>在流量高峰或系统异常时，RL 可以动态选择降级策略，在推荐效果和系统稳定性之间取得平衡。</p>
-
 <h2 class="section-title">28.5 Session 优化</h2>
-
 <p>用户在一次 Session 中的行为是序列依赖的。RL 能够建模 Session 级的长期收益，优化整个浏览序列的推荐策略。</p>
-
 <h2 class="section-title">28.6 重排混排序列生成</h2>
-
 <p>重排和混排阶段的序列生成可以建模为 RL 问题：序列生成器是 Actor，序列评估器是 Critic，通过策略梯度优化序列生成策略。</p>
-
 <h2 class="section-title">28.7 个性化探索</h2>
-
 <p>RL 天然具备探索与利用的平衡能力。Contextual Bandit 和 Thompson Sampling 等 RL 方法可以用于推荐系统的个性化探索。</p>
+<h2 class="section-title">28.8 RL 推荐的挑战</h2>
+<p>尽管 RL 在推荐系统中有广泛应用前景，但也面临诸多挑战：Q 值估计不稳定、样本效率较低、训练过程难以收敛、线上探索带来业务风险、Reward 设计困难、延迟反馈问题等。因此，目前大多数工业界推荐系统仍然采用"序列生成+序列评估"的两阶段架构，RL 更多作为局部优化手段。</p>
+<h2 class="section-title">28.9 本章小结</h2>
+<p>RL 在推荐系统中的应用场景广泛，包括流量调控、多任务融合、层次决策、降级优化、Session 优化、序列生成和个性化探索等。RL 的核心优势在于能够优化长期收益和序列级目标，但也面临样本效率低、训练不稳定和线上探索风险等挑战。</p>
 
-<h2 class="section-title">28.8 本章小结</h2>
 
-<p>RL 在推荐系统中的应用场景广泛，包括流量调控、多任务融合、层次决策、降级优化、Session 优化、序列生成和个性化探索等。RL 的核心优势在于能够优化长期收益和序列级目标，但同时也面临样本效率低、训练不稳定和线上探索风险等挑战。</p>
+<h2 class="section-title">参考文献</h2>
+<p>[1] Facebook. "Horizon: Facebook's Open Source Applied Reinforcement Learning Platform". 2018. [2] LinkedIn. "Reinforce: Reinforcement Learning for Recommendations". 2022.</p>
 
 <div class="chapter-end">* * *</div>
-
 <div class="nav-bar">
-  <a href="ch27.html">← 上一章：第27章 因果推荐</a>
-  <a href="ch29.html">下一章：第29章 强化学习流量调控 →</a>
+  <a href="ch27.html">← 上一章</a>
+  <a href="ch29.html">下一章 →</a>
 </div>
-
 </body>
 </html>

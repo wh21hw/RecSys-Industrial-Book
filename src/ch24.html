@@ -7,78 +7,39 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="book-header">
   <div class="book-title">推荐系统：工业架构与核心算法</div>
   <div class="book-subtitle">RecSys-Industrial-Book</div>
   <div class="book-author">作者：刘京欣 · 补充版</div>
 </div>
-
 <div class="chapter-num">第五部分 推荐系统进阶 · 第 24 章</div>
 <h1 class="chapter-title">多任务融合</h1>
 
 <p>第 5 章和第 6 章已经介绍了粗排和精排阶段的多目标融合方法。本章将进一步深入讨论多任务融合的理论基础、数学分析以及工业界的自动化融合方案。</p>
-
 <h2 class="section-title">24.1 融合公式分类</h2>
-
-<p>工业界常见的多目标融合方法可分为四类：</p>
-<ol>
-  <li><strong>基于值的融合（Value-Based）</strong>：直接利用 pxtr 数值计算，如线性加法、乘法</li>
-  <li><strong>基于序的融合（Rank-Based）</strong>：利用排序位置而非数值，如倒数变换</li>
-  <li><strong>值序融合（Hybrid）</strong>：同时保留数值和序信息</li>
-  <li><strong>自动化融合（Auto Fusion）</strong>：通过搜索算法自动优化参数</li>
-</ol>
-
+<p>工业界常见的多目标融合方法可分为四类：基于值的融合（线性加法、乘法）、基于序的融合（倒数变换）、值序融合（Hybrid）、自动化融合（贝叶斯优化、CEM）。</p>
 <h2 class="section-title">24.2 加法 vs 乘法的数学分析</h2>
-
 <h3 class="subsection-title">24.2.1 Taylor 展开分析</h3>
-
-<p>广义乘法公式 Score = Π(βᵢ + αᵢpᵢ) 可通过 Taylor 展开：</p>
-
-<div class="formula-box">
-  Score = Const · [1 + Σ(αᵢpᵢ/βᵢ) + Σ(αᵢαⱼpᵢpⱼ/(βᵢβⱼ)) + ...]
-</div>
-
-<p>一阶项对应线性加权求和，二阶项对应两两协同，三阶项对应三目标同时优秀。当 βᵢ → ∞ 时高阶项消失，退化为加法；当 βᵢ → 0 时高阶项主导，强调多目标协同。</p>
-
+<p>广义乘法公式 Score = Π(βᵢ + αᵢpᵢ) 可通过 Taylor 展开：Score = Const·[1 + Σ(αᵢpᵢ/βᵢ) + Σ(αᵢαⱼpᵢpⱼ/(βᵢβⱼ)) + ...]。一阶项对应线性加权，二阶项对应两两协同，三阶项对应三目标同时优秀。当 βᵢ→∞ 时退化为加法，当 βᵢ→0 时高阶项主导。</p>
 <h3 class="subsection-title">24.2.2 梯度分析</h3>
-
-<p>乘法融合的梯度 ∂Score/∂p₁ ∝ (β₂ + α₂p₂)，即一个目标的提升价值受其他目标状态影响，体现<strong>正向协同</strong>。加法融合的梯度为常数，各目标彼此独立。</p>
-
+<p>乘法融合的梯度 ∂Score/∂p₁ ∝ (β₂+α₂p₂)，即一个目标的提升价值受其他目标状态影响，体现正向协同。加法融合的梯度为常数，各目标彼此独立。</p>
 <h2 class="section-title">24.3 序变换函数分析</h2>
-
-<p>常见序变换函数包括：</p>
-<ul>
-  <li><strong>倒数变换</strong>：S = 1/Rank，激进头部强化</li>
-  <li><strong>平滑倒数</strong>：S = w/(Rank^λ + b)，可调形状</li>
-  <li><strong>归一化幂次</strong>：S = w·(1 - (Rank/N)^λ)，灵活控制分布</li>
-  <li><strong>指数双曲</strong>：S = w·sinh(k(2Rank/N - 1))，非单调曲率</li>
-</ul>
-
+<p>常见序变换函数包括：倒数变换（S=1/Rank，激进头部强化）、平滑倒数（S=w/(Rank^λ+b)）、归一化幂次（S=w·(1-(Rank/N)^λ)）、指数双曲（S=w·sinh(k(2Rank/N-1))）。</p>
 <h2 class="section-title">24.4 自动化融合</h2>
-
 <h3 class="subsection-title">24.4.1 贝叶斯优化</h3>
-
-<p>使用高斯过程或 TPE 作为代理模型，通过采集函数指导参数搜索，适合低维参数空间。</p>
-
+<p>使用高斯过程或 TPE 作为代理模型，通过采集函数指导参数搜索。适合低维参数空间。</p>
 <h3 class="subsection-title">24.4.2 CEM (Cross-Entropy Method)</h3>
-
 <p>通过维护参数分布并迭代更新，逐步向高收益区域收敛。适合中等维度参数空间。</p>
-
 <h3 class="subsection-title">24.4.3 强化学习融合</h3>
-
 <p>将参数选择建模为序列决策问题，通过 RL 策略学习最优融合方案。</p>
-
 <h2 class="section-title">24.5 本章小结</h2>
+<p>加法融合是补偿型机制，乘法融合是协同增强型机制。广义乘法公式通过 Taylor 展开揭示了从线性加法到高阶交互的连续过渡。自动化融合方法正在替代人工调参。</p>
 
-<p>多任务融合是推荐系统策略优化的核心环节。加法融合是补偿型机制，乘法融合是协同增强型机制。广义乘法公式通过 Taylor 展开揭示了从线性加法到高阶交互的连续过渡。自动化融合方法（贝叶斯优化、CEM、RL）正在替代人工调参，成为工业界的主流方案。</p>
 
 <div class="chapter-end">* * *</div>
-
 <div class="nav-bar">
-  <a href="ch23.html">← 上一章：第23章 个性化参数</a>
-  <a href="ch25.html">下一章：第25章 长期价值 →</a>
+  <a href="ch23.html">← 上一章</a>
+  <a href="ch25.html">下一章 →</a>
 </div>
-
 </body>
 </html>

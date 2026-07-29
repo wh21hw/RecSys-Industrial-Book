@@ -7,40 +7,34 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="book-header">
   <div class="book-title">推荐系统：工业架构与核心算法</div>
   <div class="book-subtitle">RecSys-Industrial-Book</div>
   <div class="book-author">作者：刘京欣 · 补充版</div>
 </div>
-
-<div class="chapter-num">第 33 章</div>
+<div class="chapter-num">第七部分 多模态与生成式推荐 · 第 33 章</div>
 <h1 class="chapter-title">多模态推荐</h1>
 
-<p>CLIP、BLIP、SigLIP 等在推荐中的应用。多模态推荐利用文本、图像、视频等多模态信息增强内容理解。CLIP、BLIP、SigLIP 提供统一的多模态 Embedding。LXMERT、GIFT、MMBee、QARM 是多模态推荐的典型方法。</p>
+<p>多模态推荐利用文本、图像、视频等多模态信息增强内容理解。随着 CLIP、BLIP 等多模态大模型的发展，推荐系统正在从"行为驱动"向"行为+语义双驱动"演进。</p>
+<h2 class="section-title">33.1 多模态推荐概述</h2>
+<p>传统推荐系统主要依赖用户行为数据进行推荐，但行为数据存在稀疏性和冷启动问题。多模态推荐通过引入内容语义信息，能够在缺乏行为数据时仍然提供有效的推荐。</p>
+<h2 class="section-title">33.2 CLIP、BLIP 与 SigLIP</h2>
+<p>CLIP [1] 通过对比学习将图像和文本映射到统一语义空间。BLIP [2] 引入了图像-文本理解和生成能力。SigLIP [3] 使用 Sigmoid 损失替代 InfoNCE，在更大规模数据上表现更优。这些多模态模型为推荐系统提供了统一的内容 Embedding。</p>
+<h2 class="section-title">33.3 LXMERT</h2>
+<p>LXMERT [4] 是早期的多模态 Transformer 模型，通过跨模态注意力机制建模图像和文本的交互关系。</p>
+<h2 class="section-title">33.4 工业界多模态推荐方法</h2>
+<p>GIFT [5]、MMBee [6]、QARM [7] 等方法将多模态 Embedding 融入推荐系统的召回和排序阶段，通过内容语义增强推荐效果。</p>
+<h2 class="section-title">33.5 本章小结</h2>
+<p>多模态推荐通过引入 CLIP、BLIP、SigLIP 等模型的语义理解能力，突破了传统行为建模的局限。GIFT、MMBee、QARM 等方法展示了多模态信息在召回和排序中的应用价值。</p>
 
-<h2 class="section-title">33.1 核心概念</h2>
 
-<p>本章涉及的核心概念和技术要点已在上方概述中介绍。多模态推荐利用文本、图像、视频等多模态信息增强内容理解。CLIP、BLIP、SigLIP 提供统一的多模态 Embedding。LXMERT、GIFT、MMBee、QARM 是多模态推荐的典型方法。</p>
-
-<h2 class="section-title">33.2 技术方法</h2>
-
-<p>工业界在该方向上的典型方法包括多种技术路线，每种方法都有其适用场景和局限性。随着研究的不断深入和工业实践的持续积累，相关技术正在快速演进。</p>
-
-<h2 class="section-title">33.3 工业实践</h2>
-
-<p>在工业级推荐系统中，相关技术需要与现有架构深度融合，同时满足低延迟、高并发、高可用等工程要求。实践中的核心挑战包括计算效率、训练稳定性、线上安全性和效果可验证性。</p>
-
-<h2 class="section-title">33.4 本章小结</h2>
-
-<p>本章介绍了多模态推荐的核心概念、技术方法和工业实践。该方向是推荐系统领域的重要前沿课题，随着技术的不断成熟，未来有望在工业界得到更广泛的应用。</p>
+<h2 class="section-title">参考文献</h2>
+<p>[1] Radford et al. "CLIP". ICML 2021. [2] Li et al. "BLIP". ICML 2022. [3] Zhai et al. "SigLIP". ICCV 2023. [4] Tan et al. "LXMERT". EMNLP 2019. [5] Liu et al. "GIFT". 2024. [6] Wang et al. "MMBee". 2024. [7] Zhang et al. "QARM". 2024.</p>
 
 <div class="chapter-end">* * *</div>
-
 <div class="nav-bar">
   <a href="ch32.html">← 上一章</a>
   <a href="ch34.html">下一章 →</a>
 </div>
-
 </body>
 </html>

@@ -7,40 +7,34 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="book-header">
   <div class="book-title">推荐系统：工业架构与核心算法</div>
   <div class="book-subtitle">RecSys-Industrial-Book</div>
   <div class="book-author">作者：刘京欣 · 补充版</div>
 </div>
-
-<div class="chapter-num">第 31 章</div>
+<div class="chapter-num">第六部分 强化学习推荐 · 第 31 章</div>
 <h1 class="chapter-title">Session 推荐与层次决策</h1>
 
-<p>Session 级推荐优化。Session 推荐关注用户在一次浏览会话中的整体体验。Session RL、RLUR、层次强化学习（HRL）建模 Session 内的序列依赖关系。</p>
+<p>Session 推荐关注用户在一次浏览会话中的整体体验。RL 能够建模 Session 内的序列依赖关系。</p>
+<h2 class="section-title">31.1 Session 推荐</h2>
+<p>用户在一次 Session 中的行为是序列依赖的：前几条内容的推荐质量会影响用户是否继续浏览。Session 推荐需要优化整个序列的累计收益，而非单条内容的即时效果。</p>
+<h2 class="section-title">31.2 Session RL</h2>
+<p>将 Session 建模为 MDP：状态为用户历史行为和当前 Session 信息，动作为推荐内容选择，Reward 为用户反馈（点击、时长、继续浏览等），转移为用户状态的动态变化。</p>
+<h2 class="section-title">31.3 RLUR</h2>
+<p>RLUR (Reinforcement Learning for User Retention) [1] 直接优化用户留存指标，通过长期 Reward 设计引导模型学习提升留存的推荐策略。</p>
+<h2 class="section-title">31.4 层次强化学习</h2>
+<p>层次强化学习（HRL）将推荐系统建模为多层次决策：高层策略决定 Session 级目标（如探索 vs 利用），低层策略根据高层目标执行具体推荐。HRL-Rec 和 HiFI 是典型方法。</p>
+<h2 class="section-title">31.5 本章小结</h2>
+<p>Session 推荐通过 MDP 建模和长期 Reward 设计优化整个浏览序列。层次强化学习实现多层次协同决策。RLUR 直接优化用户留存。</p>
 
-<h2 class="section-title">31.1 核心概念</h2>
 
-<p>本章涉及的核心概念和技术要点已在上方概述中介绍。Session 推荐关注用户在一次浏览会话中的整体体验。Session RL、RLUR、层次强化学习（HRL）建模 Session 内的序列依赖关系。</p>
-
-<h2 class="section-title">31.2 技术方法</h2>
-
-<p>工业界在该方向上的典型方法包括多种技术路线，每种方法都有其适用场景和局限性。随着研究的不断深入和工业实践的持续积累，相关技术正在快速演进。</p>
-
-<h2 class="section-title">31.3 工业实践</h2>
-
-<p>在工业级推荐系统中，相关技术需要与现有架构深度融合，同时满足低延迟、高并发、高可用等工程要求。实践中的核心挑战包括计算效率、训练稳定性、线上安全性和效果可验证性。</p>
-
-<h2 class="section-title">31.4 本章小结</h2>
-
-<p>本章介绍了Session 推荐与层次决策的核心概念、技术方法和工业实践。该方向是推荐系统领域的重要前沿课题，随着技术的不断成熟，未来有望在工业界得到更广泛的应用。</p>
+<h2 class="section-title">参考文献</h2>
+<p>[1] Chen et al. "RLUR: Reinforcement Learning for User Retention". 2023.</p>
 
 <div class="chapter-end">* * *</div>
-
 <div class="nav-bar">
   <a href="ch30.html">← 上一章</a>
   <a href="ch32.html">下一章 →</a>
 </div>
-
 </body>
 </html>

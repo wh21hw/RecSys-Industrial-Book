@@ -7,99 +7,40 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="book-header">
   <div class="book-title">推荐系统：工业架构与核心算法</div>
   <div class="book-subtitle">RecSys-Industrial-Book</div>
   <div class="book-author">作者：刘京欣 · 补充版</div>
 </div>
-
 <div class="chapter-num">第五部分 推荐系统进阶 · 第 18 章</div>
 <h1 class="chapter-title">用户兴趣建模</h1>
 
 <p>用户兴趣建模是推荐系统精排模型的核心能力之一。如何从用户海量历史行为中提取有效的兴趣表示，直接决定了推荐结果的个性化程度。本章将系统介绍从静态兴趣表示到动态兴趣演化建模的完整技术脉络。</p>
-
 <h2 class="section-title">18.1 静态兴趣表示</h2>
-
-<p>早期推荐系统采用静态向量表示用户兴趣，典型方法包括：</p>
-<ul>
-  <li><strong>Embedding 求和/均值</strong>：将用户历史交互物品的 Embedding 进行求和或均值池化，得到固定维度的兴趣向量</li>
-  <li><strong>矩阵分解</strong>：通过 MF 学习用户隐向量，直接作为兴趣表示</li>
-  <li><strong>Word2Vec 思想</strong>：将用户行为序列视为"句子"，通过 Skip-gram 或 CBOW 学习物品 Embedding</li>
-</ul>
-
-<p>静态表示的局限在于无法捕捉兴趣的动态变化和多样性。</p>
-
+<p>早期推荐系统采用静态向量表示用户兴趣，典型方法包括 Embedding 求和/均值、矩阵分解、Word2Vec 思想等。静态表示的局限在于无法捕捉兴趣的动态变化和多样性。</p>
 <h2 class="section-title">18.2 DIN (Deep Interest Network)</h2>
-
-<p>DIN 引入了<strong>目标级注意力机制</strong>，根据当前候选物品动态激活用户历史行为中的相关部分：</p>
-
-<div class="formula-box">
-  v_U = Σᵢ a(i) · eᵢ, &nbsp; a(i) = MLP([eᵢ, e_a, eᵢ⊙e_a])
-</div>
-
-<p>其中 eᵢ 为用户第 i 次行为物品的 Embedding，e_a 为候选物品 Embedding，a(i) 为注意力权重。DIN 的核心创新是：对于不同的候选物品，用户的历史行为会被赋予不同的权重，从而实现"因物而异"的兴趣表达。</p>
-
+<p>DIN [1] 引入了目标级注意力机制，根据当前候选物品动态激活用户历史行为中的相关部分：</p>
+<div class="formula-box">v_U = Σᵢ a(i) · eᵢ, &nbsp; a(i) = MLP([eᵢ, e_a, eᵢ ⊙ e_a])</div>
+<p>DIN 的核心创新是：对于不同的候选物品，用户的历史行为会被赋予不同的权重，实现"因物而异"的兴趣表达。</p>
 <h2 class="section-title">18.3 DIEN (Deep Interest Evolution Network)</h2>
-
-<p>DIEN 在 DIN 基础上引入了<strong>兴趣演化层</strong>，建模用户兴趣随时间的动态变化。DIEN 采用 GRU 序列建模：</p>
-
-<ul>
-  <li><strong>行为层</strong>：将用户行为序列转换为行为特征</li>
-  <li><strong>兴趣层</strong>：通过 GRU 提取兴趣序列</li>
-  <li><strong>演化层</strong>：结合注意力机制，建模目标相关的兴趣演化轨迹</li>
-</ul>
-
-<p>DIEN 还引入了辅助损失（Auxiliary Loss），利用真实点击行为监督兴趣提取过程，提升兴趣表示的准确性。</p>
-
+<p>DIEN [2] 引入兴趣演化层，采用 GRU 建模兴趣随时间的动态变化。包含行为序列层、兴趣抽取层和兴趣演化层（AUGRU）。还引入辅助损失利用真实点击行为监督兴趣提取过程。</p>
 <h2 class="section-title">18.4 BST (Behavior Sequence Transformer)</h2>
-
-<p>BST 使用 Transformer 的自注意力机制建模用户行为序列：</p>
-
-<div class="formula-box">
-  H = Transformer([e₁, e₂, ..., e_n] + PE)
-</div>
-
-<p>相比 GRU，Transformer 能够建模序列中任意位置之间的依赖关系，不受距离限制。BST 在阿里巴巴的电商推荐场景中取得了显著效果提升。</p>
-
+<p>BST [3] 使用 Transformer 自注意力机制建模用户行为序列，能够建模序列中任意位置之间的依赖关系。</p>
 <h2 class="section-title">18.5 多兴趣建模</h2>
-
-<p>用户兴趣通常是多方面的（如同时喜欢美食、旅行、科技），单一向量难以表达。多兴趣模型将用户表示为多个兴趣向量：</p>
-
-<h3 class="subsection-title">18.5.1 MIND (Multi-Interest Network)</h3>
-
-<p>MIND 使用<strong>动态路由</strong>（Dynamic Routing）机制将用户行为聚类为多个兴趣胶囊：</p>
-
-<div class="formula-box">
-  cᵢ = Σⱼ wᵢⱼ · eⱼ, &nbsp; wᵢⱼ = softmax(bᵢⱼ)
-</div>
-
-<p>每个兴趣胶囊对应一个兴趣向量，在线推理时分别进行 ANN 检索，最终合并多路召回结果。</p>
-
-<h3 class="subsection-title">18.5.2 ComiRec</h3>
-
-<p>ComiRec 在 MIND 基础上引入了注意力机制，根据候选物品动态选择最相关的兴趣向量参与排序。</p>
-
+<p>用户兴趣通常是多方面的，单一向量难以表达。MIND [4] 使用动态路由将用户行为聚类为多个兴趣胶囊。ComiRec [5] 在 MIND 基础上引入注意力机制动态选择最相关的兴趣向量。</p>
 <h2 class="section-title">18.6 长序列建模</h2>
-
-<p>对于高活跃用户，行为序列可能长达数千条。传统 Transformer 的 O(n²) 复杂度难以处理。工业界提出了多种长序列方案：</p>
-
-<ul>
-  <li><strong>SIM</strong>：两阶段方案，先通过 GSU 粗筛再通过 ESU 精排</li>
-  <li><strong>ETA</strong>：使用 LSH 加速 Target Attention</li>
-  <li><strong>SDIM</strong>：使用 SimHash 进行行为序列检索</li>
-</ul>
-
+<p>对于高活跃用户，行为序列可能长达数千条。SIM [6] 采用两阶段方案（GSU+ESU），ETA [7] 使用 LSH 加速，SDIM 使用 SimHash 进行行为序列检索。</p>
 <h2 class="section-title">18.7 本章小结</h2>
+<p>用户兴趣建模经历了从静态到动态、从单一到多兴趣、从短序列到长序列的演进。DIN、DIEN、BST、MIND、SIM 等方法共同构成了现代推荐系统用户兴趣建模的技术栈。</p>
 
-<p>用户兴趣建模经历了从静态表示到动态建模、从单一兴趣到多兴趣、从短序列到长序列的演进过程。DIN 引入目标级注意力实现因物而异的兴趣表达，DIEN 建模兴趣演化轨迹，BST 使用 Transformer 增强序列建模能力，MIND 实现多兴趣表示，SIM 等方法突破长序列计算瓶颈。这些技术共同构成了现代推荐系统用户兴趣建模的技术栈。</p>
+
+<h2 class="section-title">参考文献</h2>
+<p>[1] Zhou et al. "DIN". KDD 2018. [2] Zhou et al. "DIEN". KDD 2019. [3] Chen et al. "BST". 2019. [4] Li et al. "MIND". CIKM 2019. [5] Cen et al. "ComiRec". RecSys 2020. [6] Pi et al. "SIM". SIGIR 2020. [7] Chen et al. "ETA". KDD 2022.</p>
 
 <div class="chapter-end">* * *</div>
-
 <div class="nav-bar">
-  <a href="ch17.html">← 上一章：第17章 向量检索系统</a>
-  <a href="ch19.html">下一章：第19章 多目标与多场景 →</a>
+  <a href="ch17.html">← 上一章</a>
+  <a href="ch19.html">下一章 →</a>
 </div>
-
 </body>
 </html>

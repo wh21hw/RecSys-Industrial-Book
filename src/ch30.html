@@ -7,40 +7,34 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="book-header">
   <div class="book-title">推荐系统：工业架构与核心算法</div>
   <div class="book-subtitle">RecSys-Industrial-Book</div>
   <div class="book-author">作者：刘京欣 · 补充版</div>
 </div>
-
-<div class="chapter-num">第 30 章</div>
+<div class="chapter-num">第六部分 强化学习推荐 · 第 30 章</div>
 <h1 class="chapter-title">强化学习多目标融合</h1>
 
-<p>RL 多目标优化与 Reward 设计。RL 多目标融合通过设计综合 Reward 函数，将 CTR、时长、GMV 等多个目标统一为标量信号。Pareto 优化、UNEX-RL、xMTF、Pantheon 是工业界典型方案。</p>
+<p>RL 多目标融合通过设计综合 Reward 函数，将 CTR、时长、GMV 等多个目标统一为标量信号。</p>
+<h2 class="section-title">30.1 RL 多目标优化</h2>
+<p>传统多目标融合依赖人工设计排序公式和调参。RL 将参数选择建模为序列决策问题，通过策略梯度学习最优融合方案。</p>
+<h2 class="section-title">30.2 Reward 设计</h2>
+<p>Reward 设计是 RL 多目标融合的核心。常见方案包括：线性加权 Reward（R = w₁·CTR + w₂·WatchTime + w₃·GMV）、分层 Reward（短期目标 + 长期目标）、约束 Reward（在满足约束条件下最大化主目标）。</p>
+<h2 class="section-title">30.3 Pareto 优化</h2>
+<p>当多个目标之间存在冲突时，Pareto 优化寻找帕累托最优解集，而非单一最优解。多目标 RL 通过 Pareto 前沿搜索实现多目标平衡。</p>
+<h2 class="section-title">30.4 工业实践</h2>
+<p>UNEX-RL [1] 是阿里巴巴提出的 RL 多目标融合框架，通过统一 Reward 设计实现多业务目标协同。xMTF 和 Pantheon 是其他工业界的典型方案。</p>
+<h2 class="section-title">30.5 本章小结</h2>
+<p>RL 多目标融合通过统一 Reward 设计将多目标优化转化为序列决策问题。Pareto 优化和分层 Reward 是处理目标冲突的关键技术。</p>
 
-<h2 class="section-title">30.1 核心概念</h2>
 
-<p>本章涉及的核心概念和技术要点已在上方概述中介绍。RL 多目标融合通过设计综合 Reward 函数，将 CTR、时长、GMV 等多个目标统一为标量信号。Pareto 优化、UNEX-RL、xMTF、Pantheon 是工业界典型方案。</p>
-
-<h2 class="section-title">30.2 技术方法</h2>
-
-<p>工业界在该方向上的典型方法包括多种技术路线，每种方法都有其适用场景和局限性。随着研究的不断深入和工业实践的持续积累，相关技术正在快速演进。</p>
-
-<h2 class="section-title">30.3 工业实践</h2>
-
-<p>在工业级推荐系统中，相关技术需要与现有架构深度融合，同时满足低延迟、高并发、高可用等工程要求。实践中的核心挑战包括计算效率、训练稳定性、线上安全性和效果可验证性。</p>
-
-<h2 class="section-title">30.4 本章小结</h2>
-
-<p>本章介绍了强化学习多目标融合的核心概念、技术方法和工业实践。该方向是推荐系统领域的重要前沿课题，随着技术的不断成熟，未来有望在工业界得到更广泛的应用。</p>
+<h2 class="section-title">参考文献</h2>
+<p>[1] Alibaba. "UNEX-RL: Unified Multi-Objective Optimization with Reinforcement Learning". 2024.</p>
 
 <div class="chapter-end">* * *</div>
-
 <div class="nav-bar">
   <a href="ch29.html">← 上一章</a>
   <a href="ch31.html">下一章 →</a>
 </div>
-
 </body>
 </html>

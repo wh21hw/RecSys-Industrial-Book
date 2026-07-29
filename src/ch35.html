@@ -7,40 +7,36 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="book-header">
   <div class="book-title">推荐系统：工业架构与核心算法</div>
   <div class="book-subtitle">RecSys-Industrial-Book</div>
   <div class="book-author">作者：刘京欣 · 补充版</div>
 </div>
-
-<div class="chapter-num">第 35 章</div>
+<div class="chapter-num">第八部分 前沿趋势 · 第 35 章</div>
 <h1 class="chapter-title">推荐大模型</h1>
 
-<p>MARM、TokenMixer、RankMixer。推荐大模型将 LLM 的架构和训练方法引入推荐系统。MARM、TokenMixer、RankMixer、UniMixer、LONGER 等模型探索了大规模推荐模型的可能性。</p>
+<p>推荐大模型将 LLM 的架构和训练方法引入推荐系统，探索大规模推荐模型的可能性。</p>
+<h2 class="section-title">35.1 MARM</h2>
+<p>MARM [1] (Multi-Action Recommender Model) 是阿里巴巴提出的推荐大模型，通过统一的多行为建模框架，在单一模型中同时处理点击、购买、收藏等多种行为预测。</p>
+<h2 class="section-title">35.2 TokenMixer</h2>
+<p>TokenMixer [2] 将推荐特征转化为 Token 序列，使用类似 LLM 的架构进行建模，实现了推荐模型与大语言模型架构的统一。</p>
+<h2 class="section-title">35.3 RankMixer</h2>
+<p>RankMixer [3] 是一种基于混合专家的排序大模型，通过动态路由机制处理不同业务场景的排序需求。</p>
+<h2 class="section-title">35.4 UniMixer</h2>
+<p>UniMixer [4] 统一了召回和排序的建模框架，通过单一模型同时完成候选生成和排序决策。</p>
+<h2 class="section-title">35.5 LONGER</h2>
+<p>LONGER [5] 关注长序列建模在大模型中的应用，通过高效的注意力机制处理超长用户行为序列。</p>
+<h2 class="section-title">35.6 本章小结</h2>
+<p>推荐大模型正在探索将 LLM 的架构和训练方法引入推荐系统。MARM、TokenMixer、RankMixer、UniMixer、LONGER 等模型代表了这一方向的前沿进展。随着 Scaling Law 在推荐领域的验证，推荐大模型有望成为下一代推荐系统的核心架构。</p>
 
-<h2 class="section-title">35.1 核心概念</h2>
 
-<p>本章涉及的核心概念和技术要点已在上方概述中介绍。推荐大模型将 LLM 的架构和训练方法引入推荐系统。MARM、TokenMixer、RankMixer、UniMixer、LONGER 等模型探索了大规模推荐模型的可能性。</p>
-
-<h2 class="section-title">35.2 技术方法</h2>
-
-<p>工业界在该方向上的典型方法包括多种技术路线，每种方法都有其适用场景和局限性。随着研究的不断深入和工业实践的持续积累，相关技术正在快速演进。</p>
-
-<h2 class="section-title">35.3 工业实践</h2>
-
-<p>在工业级推荐系统中，相关技术需要与现有架构深度融合，同时满足低延迟、高并发、高可用等工程要求。实践中的核心挑战包括计算效率、训练稳定性、线上安全性和效果可验证性。</p>
-
-<h2 class="section-title">35.4 本章小结</h2>
-
-<p>本章介绍了推荐大模型的核心概念、技术方法和工业实践。该方向是推荐系统领域的重要前沿课题，随着技术的不断成熟，未来有望在工业界得到更广泛的应用。</p>
+<h2 class="section-title">参考文献</h2>
+<p>[1] Alibaba. "MARM". 2024. [2] "TokenMixer". 2024. [3] "RankMixer". 2024. [4] "UniMixer". 2024. [5] "LONGER". 2024.</p>
 
 <div class="chapter-end">* * *</div>
-
 <div class="nav-bar">
   <a href="ch34.html">← 上一章</a>
   <a href="ch36.html">下一章 →</a>
 </div>
-
 </body>
 </html>

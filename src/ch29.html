@@ -7,40 +7,31 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="book-header">
   <div class="book-title">推荐系统：工业架构与核心算法</div>
   <div class="book-subtitle">RecSys-Industrial-Book</div>
   <div class="book-author">作者：刘京欣 · 补充版</div>
 </div>
-
-<div class="chapter-num">第 29 章</div>
+<div class="chapter-num">第六部分 强化学习推荐 · 第 29 章</div>
 <h1 class="chapter-title">强化学习流量调控</h1>
 
-<p>流量调控是推荐系统稳定运行的重要保障。RL 可以将流量调控建模为 MDP，根据实时业务指标动态调整流量配额。Load 调控、广告流量控制、直播流量控制、降级流量优化是典型应用场景。</p>
+<p>流量调控是推荐系统稳定运行的重要保障。RL 可以将流量调控建模为 MDP，根据实时业务指标动态调整流量配额。</p>
+<h2 class="section-title">29.1 Load 调控</h2>
+<p>Load 调控关注各业务在推荐结果中的流量占比是否达到目标值。RL 通过学习最优调控策略，在流量波动时快速收敛到目标占比。相比传统 PID 控制，RL 能够前瞻性地调整策略，而非仅依赖当前误差。</p>
+<h2 class="section-title">29.2 广告流量控制</h2>
+<p>广告流量控制需要同时考虑广告主预算、用户体验和平台收入。RL 可以将多维度约束统一建模为 MDP 的状态和动作空间，通过 Reward 设计平衡短期收入和长期用户价值。</p>
+<h2 class="section-title">29.3 直播流量控制</h2>
+<p>直播推荐面临内容供给有限、实时性要求高、主播质量差异大等挑战。RL 可以根据实时观看人数、互动率等指标动态调整直播流量分配。</p>
+<h2 class="section-title">29.4 降级流量优化</h2>
+<p>在系统资源紧张时，RL 可以根据请求价值和算力预算动态选择降级策略，优先保障高价值流量的推荐质量。</p>
+<h2 class="section-title">29.5 本章小结</h2>
+<p>RL 流量调控通过 MDP 建模和 Reward 设计，实现了比传统 PID 控制更智能的流量分配。Load 调控、广告流量控制、直播流量控制和降级流量优化是典型应用场景。</p>
 
-<h2 class="section-title">29.1 核心概念</h2>
-
-<p>本章涉及的核心概念和技术要点已在上方概述中介绍。RL 可以将流量调控建模为 MDP，根据实时业务指标动态调整流量配额。Load 调控、广告流量控制、直播流量控制、降级流量优化是典型应用场景。</p>
-
-<h2 class="section-title">29.2 技术方法</h2>
-
-<p>工业界在该方向上的典型方法包括多种技术路线，每种方法都有其适用场景和局限性。随着研究的不断深入和工业实践的持续积累，相关技术正在快速演进。</p>
-
-<h2 class="section-title">29.3 工业实践</h2>
-
-<p>在工业级推荐系统中，相关技术需要与现有架构深度融合，同时满足低延迟、高并发、高可用等工程要求。实践中的核心挑战包括计算效率、训练稳定性、线上安全性和效果可验证性。</p>
-
-<h2 class="section-title">29.4 本章小结</h2>
-
-<p>本章介绍了强化学习流量调控的核心概念、技术方法和工业实践。该方向是推荐系统领域的重要前沿课题，随着技术的不断成熟，未来有望在工业界得到更广泛的应用。</p>
 
 <div class="chapter-end">* * *</div>
-
 <div class="nav-bar">
   <a href="ch28.html">← 上一章</a>
   <a href="ch30.html">下一章 →</a>
 </div>
-
 </body>
 </html>

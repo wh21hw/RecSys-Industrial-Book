@@ -7,40 +7,38 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="book-header">
   <div class="book-title">推荐系统：工业架构与核心算法</div>
   <div class="book-subtitle">RecSys-Industrial-Book</div>
   <div class="book-author">作者：刘京欣 · 补充版</div>
 </div>
-
-<div class="chapter-num">第 36 章</div>
+<div class="chapter-num">第八部分 前沿趋势 · 第 36 章</div>
 <h1 class="chapter-title">LLM 与 Agent 推荐</h1>
 
-<p>LLM4Rec 与 Agent 驱动推荐。LLM4Rec、RecGPT、TALLRec、Agent4Rec 等方法将大语言模型和 Agent 框架引入推荐系统。推荐调参 Agent 和检索生成与 AI 搜索是新兴方向。</p>
+<p>LLM 与 Agent 驱动的推荐是推荐系统领域最新的前沿方向。大语言模型的强大理解和推理能力为推荐系统带来了新的可能性。</p>
+<h2 class="section-title">36.1 LLM4Rec 概述</h2>
+<p>LLM4Rec [1] 探索将大语言模型直接应用于推荐任务。与传统推荐模型不同，LLM 能够理解用户自然语言描述、物品文本信息以及上下文环境，实现基于语义理解的推荐。</p>
+<h2 class="section-title">36.2 RecGPT</h2>
+<p>RecGPT [2] 将推荐系统建模为对话式推荐，用户可以通过自然语言与推荐系统交互，表达细粒度的偏好和需求。</p>
+<h2 class="section-title">36.3 TALLRec</h2>
+<p>TALLRec [3] 通过指令微调（Instruction Tuning）将 LLM 适配到推荐任务，在少量推荐数据上实现良好的推荐效果。</p>
+<h2 class="section-title">36.4 Agent4Rec</h2>
+<p>Agent4Rec [4] 将推荐系统建模为多 Agent 协作问题：不同的 Agent 负责不同的推荐子任务（如用户理解、候选生成、排序决策），通过 Agent 间的通信和协作完成推荐流程。</p>
+<h2 class="section-title">36.5 推荐调参 Agent</h2>
+<p>利用 LLM Agent 自动分析实验结果、生成新的排序策略、进行超参数调整和实验规划，实现推荐系统策略优化的自动化。</p>
+<h2 class="section-title">36.6 检索生成与 AI 搜索</h2>
+<p>检索增强生成（RAG）在推荐系统中的应用：通过检索相关物品信息增强 LLM 的推荐能力。AI 搜索将推荐与搜索融合，通过 LLM 理解用户意图并生成个性化搜索结果。</p>
+<h2 class="section-title">36.7 本章小结</h2>
+<p>LLM 与 Agent 推荐代表了推荐系统的最新前沿。RecGPT 实现对话式推荐，TALLRec 通过指令微调适配推荐任务，Agent4Rec 实现多 Agent 协作推荐。随着 LLM 能力的不断提升，LLM 驱动的推荐有望成为推荐系统的新范式。</p>
 
-<h2 class="section-title">36.1 核心概念</h2>
 
-<p>本章涉及的核心概念和技术要点已在上方概述中介绍。LLM4Rec、RecGPT、TALLRec、Agent4Rec 等方法将大语言模型和 Agent 框架引入推荐系统。推荐调参 Agent 和检索生成与 AI 搜索是新兴方向。</p>
-
-<h2 class="section-title">36.2 技术方法</h2>
-
-<p>工业界在该方向上的典型方法包括多种技术路线，每种方法都有其适用场景和局限性。随着研究的不断深入和工业实践的持续积累，相关技术正在快速演进。</p>
-
-<h2 class="section-title">36.3 工业实践</h2>
-
-<p>在工业级推荐系统中，相关技术需要与现有架构深度融合，同时满足低延迟、高并发、高可用等工程要求。实践中的核心挑战包括计算效率、训练稳定性、线上安全性和效果可验证性。</p>
-
-<h2 class="section-title">36.4 本章小结</h2>
-
-<p>本章介绍了LLM 与 Agent 推荐的核心概念、技术方法和工业实践。该方向是推荐系统领域的重要前沿课题，随着技术的不断成熟，未来有望在工业界得到更广泛的应用。</p>
+<h2 class="section-title">参考文献</h2>
+<p>[1] "LLM4Rec Survey". 2024. [2] "RecGPT". 2024. [3] "TALLRec". 2024. [4] "Agent4Rec". 2024.</p>
 
 <div class="chapter-end">* * *</div>
-
 <div class="nav-bar">
   <a href="ch35.html">← 上一章</a>
   <a href="ch37.html">下一章 →</a>
 </div>
-
 </body>
 </html>

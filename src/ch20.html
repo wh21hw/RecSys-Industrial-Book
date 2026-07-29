@@ -7,75 +7,36 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="book-header">
   <div class="book-title">推荐系统：工业架构与核心算法</div>
   <div class="book-subtitle">RecSys-Industrial-Book</div>
   <div class="book-author">作者：刘京欣 · 补充版</div>
 </div>
-
 <div class="chapter-num">第五部分 推荐系统进阶 · 第 20 章</div>
 <h1 class="chapter-title">链路一致性</h1>
 
-<p>级联式推荐系统中，召回、粗排、精排各阶段独立训练，对"优质内容"的定义可能存在差异。这种链路不一致会导致"漏斗效应"——优质内容在早期阶段被错误过滤，即使后续精排模型再强也无法恢复。本章将深入讨论链路一致性问题及其解决方案。</p>
-
+<p>级联式推荐系统中，召回、粗排、精排各阶段独立训练，对"优质内容"的定义可能存在差异。这种链路不一致会导致"漏斗效应"——优质内容在早期阶段被错误过滤。</p>
 <h2 class="section-title">20.1 漏斗效应</h2>
-
-<p>推荐系统的级联架构本质上是一个逐层过滤的漏斗。每一层都会永久丢失一部分候选物品。如果上游阶段（如粗排）与下游阶段（如精排）的排序偏好不一致，就会导致精排偏好的优质内容在粗排阶段被提前过滤。</p>
-
-<div class="definition-box">
-  <div class="def-label">漏斗效应</div>
-  <p>由于上下游模型对"优质内容"的判断标准不一致，导致下游偏好的内容在上游被提前过滤，无法进入后续阶段，从而限制了整体推荐效果上限。</p>
-</div>
-
+<p>推荐系统的级联架构本质上是一个逐层过滤的漏斗。每一层都会永久丢失一部分候选物品。如果上游阶段与下游阶段的排序偏好不一致，就会导致精排偏好的优质内容在粗排阶段被提前过滤，从而限制了整体推荐效果上限。</p>
 <h2 class="section-title">20.2 一致性度量</h2>
-
-<p>衡量上下游模型一致性的常见指标包括：</p>
-<ul>
-  <li><strong>Overlap@K</strong>：上游 Top-K 与下游 Top-K 的交集比例</li>
-  <li><strong>Jaccard Similarity</strong>：上游与下游候选集的 Jaccard 相似度</li>
-  <li><strong>Spearman Rank Correlation</strong>：上下游排序位置的相关性</li>
-  <li><strong>Recall@K</strong>：下游偏好的内容在上游被保留的比例</li>
-</ul>
-
+<p>常见指标包括：Overlap@K（上游 Top-K 与下游 Top-K 的交集比例）、Jaccard Similarity、Spearman Rank Correlation、Recall@K（下游偏好的内容在上游被保留的比例）。</p>
 <h2 class="section-title">20.3 知识蒸馏</h2>
-
-<p>知识蒸馏是提升链路一致性最常用的方法。将精排模型作为 Teacher，粗排模型作为 Student，通过蒸馏让粗排学习精排的排序偏好：</p>
-
 <h3 class="subsection-title">20.3.1 软标签蒸馏</h3>
-
-<p>使用精排输出的软标签（Soft Label）作为粗排的训练目标：</p>
-
-<div class="formula-box">
-  L = α · CE(y, ŷ_student) + (1-α) · KL(q_teacher || q_student)
-</div>
-
+<p>使用精排输出的软标签作为粗排训练目标：L = α·CE(y,ŷ_S) + (1-α)·KL(q_T||q_S)。</p>
 <h3 class="subsection-title">20.3.2 排序关系蒸馏</h3>
-
-<p>不关注具体预估值，而是让粗排学习精排的排序关系：</p>
-
-<div class="formula-box">
-  L_rank = -Σ_{i<j} I(rank_teacher(i) < rank_teacher(j)) · log(sigmoid(s_student(i) - s_student(j)))
-</div>
-
+<p>让粗排学习精排的排序关系而非具体预估值：L_rank = -Σ_{i<j} I(rank_T(i)<rank_T(j))·log(σ(s_S(i)-s_S(j)))。对分数尺度差异更鲁棒。</p>
 <h3 class="subsection-title">20.3.3 列表级蒸馏</h3>
-
-<p>以列表为单位进行蒸馏，让粗排学习精排对整个候选集的排序偏好。</p>
-
+<p>以列表为单位进行蒸馏，使用 ListNet、ListMLE 等列表级排序学习算法。</p>
 <h2 class="section-title">20.4 一致性的局限</h2>
-
-<p>链路一致性本质上是<strong>系统内部指标</strong>，而非业务指标。当粗排完全模仿精排时，虽然一致性最高，但整个链路退化为两个功能相同但复杂度不同的排序器串联，失去了级联架构的意义。因此，一致性应被视为提升候选集质量的工程手段，而非最终优化目标。</p>
-
+<p>链路一致性本质上是系统内部指标而非业务指标。当粗排完全模仿精排时，整个链路退化为两个功能相同但复杂度不同的排序器串联，失去级联架构的意义。因此一致性应被视为提升候选集质量的工程手段，而非最终优化目标。</p>
 <h2 class="section-title">20.5 本章小结</h2>
+<p>漏斗效应是链路不一致的核心危害。知识蒸馏是提升一致性的主流方法。但一致性本质上是系统内部指标，过度追求会导致粗排退化为精排的"复读机"。</p>
 
-<p>本章介绍了级联式推荐系统中的链路一致性问题。漏斗效应是链路不一致的核心危害。知识蒸馏是提升一致性的主流方法，包括软标签蒸馏、排序关系蒸馏和列表级蒸馏。但一致性本质上是系统内部指标，过度追求一致性会导致粗排退化为精排的"复读机"，失去级联架构的工程意义。</p>
 
 <div class="chapter-end">* * *</div>
-
 <div class="nav-bar">
-  <a href="ch19.html">← 上一章：第19章 多目标与多场景</a>
-  <a href="ch21.html">下一章：第21章 时长预估 →</a>
+  <a href="ch19.html">← 上一章</a>
+  <a href="ch21.html">下一章 →</a>
 </div>
-
 </body>
 </html>

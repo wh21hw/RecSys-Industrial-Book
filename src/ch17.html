@@ -7,118 +7,81 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="book-header">
   <div class="book-title">推荐系统：工业架构与核心算法</div>
   <div class="book-subtitle">RecSys-Industrial-Book</div>
   <div class="book-author">作者：刘京欣 · 补充版</div>
 </div>
-
 <div class="chapter-num">第四部分 推荐系统工程实践 · 第 17 章</div>
 <h1 class="chapter-title">向量检索系统</h1>
 
 <p>向量检索（Vector Retrieval / ANN Search）是现代推荐系统召回层的核心基础设施。双塔模型、图神经网络、多兴趣模型等召回算法都需要将物品 Embedding 存储在向量索引中，在线阶段通过近似最近邻搜索（ANN）快速检索与用户向量最相似的物品。本章将系统介绍向量检索的核心算法与工程实践。</p>
 
 <h2 class="section-title">17.1 为什么需要 ANN</h2>
+<p>在推荐系统中，物品库规模通常达到数千万甚至数十亿级别。精确最近邻搜索（KNN）的计算复杂度为 O(N·d)，当 N 达到亿级时，暴力搜索的延迟远超系统预算。因此，工业界采用近似最近邻搜索（ANN）算法，在牺牲少量精度的情况下大幅降低搜索延迟。</p>
 
-<p>在推荐系统中，物品库规模通常达到数千万甚至数十亿级别。对于一次推荐请求，系统需要在毫秒级时间内从海量物品向量中找到与用户向量最相似的 Top-K 物品。</p>
+<h2 class="section-title">17.2 量化方法</h2>
+<h3 class="subsection-title">17.2.1 乘积量化 (PQ)</h3>
+<p>PQ [1] 将原始向量空间分解为 M 个子空间的乘积，每个子空间独立进行 K-Means 聚类，得到 M 个码本。原始向量被压缩为 M 个聚类中心的索引（Code），存储开销从 O(N·d) 降低到 O(N·M)。查询时通过查表方式快速计算近似距离。PQ 是 Faiss [2] 中最常用的量化方法之一。</p>
 
-<p>精确最近邻搜索（KNN）的计算复杂度为 O(N·d)，其中 N 为物品数量，d 为向量维度。当 N 达到亿级时，暴力搜索的延迟远超系统预算。因此，工业界采用近似最近邻搜索（Approximate Nearest Neighbor, ANN）算法，在牺牲少量精度的情况下大幅降低搜索延迟。</p>
+<h3 class="subsection-title">17.2.2 优化乘积量化 (OPQ)</h3>
+<p>OPQ [3] 在 PQ 基础上引入正交旋转矩阵，使各子空间的方差更加均衡，提升量化质量。</p>
 
-<h2 class="section-title">17.2 树基方法</h2>
+<h2 class="section-title">17.3 图基方法</h2>
+<h3 class="subsection-title">17.3.1 HNSW (Hierarchical Navigable Small World)</h3>
+<p>HNSW [4] 是当前工业界最主流的 ANN 算法。其核心思想是构建一个层次化的小世界图：上层图稀疏，用于快速导航；下层图密集，用于精确搜索。搜索时从上层开始，逐层向下细化，最终在底层找到最近邻。HNSW 在召回率和延迟方面表现优异，是 Faiss、Milvus [5] 等向量检索库的核心索引类型。</p>
 
-<h3 class="subsection-title">17.2.1 KD-Tree</h3>
-
-<p>KD-Tree 是一种对 k 维空间进行划分的二叉树结构。每个内部节点选择一个维度进行分裂，将空间划分为两个半空间。KD-Tree 在低维空间（d < 20）中效率较高，但在高维空间中由于"维度灾难"效果急剧下降。</p>
-
-<h3 class="subsection-title">17.2.2 Annoy</h3>
-
-<p>Annoy（Approximate Nearest Neighbors Oh Yeah）是 Spotify 开源的向量检索库。其核心思想是通过随机超平面对空间进行二分划分，构建一棵森林（Ensemble of Trees）。每棵树通过随机选择两个点构造超平面进行分裂，直到每个叶子节点包含的向量数小于阈值。搜索时在所有树中并行查找候选叶子，再对候选集进行精确排序。</p>
-
-<h2 class="section-title">17.3 量化方法</h2>
-
-<h3 class="subsection-title">17.3.1 乘积量化 (PQ)</h3>
-
-<p>乘积量化（Product Quantization）将 d 维向量切分为 m 个子向量，每个子向量独立进行 K-Means 聚类，得到 m 个码本（Codebook）。原始向量被压缩为 m 个聚类中心 ID 的组合，存储空间从 O(N·d) 降低到 O(N·m + m·k·d/m)。</p>
-
-<p>搜索时，通过预计算查询向量到各码本中心的距离表，可以快速估算查询向量到任意物品向量的距离，计算复杂度从 O(d) 降低到 O(m)。</p>
-
-<h3 class="subsection-title">17.3.2 优化乘积量化 (OPQ)</h3>
-
-<p>OPQ（Optimized Product Quantization）在 PQ 基础上引入正交变换矩阵 R，对原始向量进行旋转后再进行量化，使得各子空间的方差分布更加均衡，从而提升量化质量。</p>
-
-<h2 class="section-title">17.4 图基方法</h2>
-
-<h3 class="subsection-title">17.4.1 NSW (Navigable Small World)</h3>
-
-<p>NSW 构建一个可导航小世界图，每个节点与若干近邻节点相连。搜索时从任意节点出发，通过贪心导航逐步逼近查询点的最近邻。NSW 的搜索复杂度接近 O(log N)，但构建图索引的时间复杂度较高。</p>
-
-<h3 class="subsection-title">17.4.2 HNSW (Hierarchical NSW)</h3>
-
-<p>HNSW 是目前工业界最广泛使用的 ANN 算法之一。它在 NSW 基础上引入了层次结构：</p>
-
+<p>HNSW 的关键参数包括：</p>
 <ul>
-  <li><strong>上层图</strong>：节点稀疏、连接长距离，用于快速定位目标区域</li>
-  <li><strong>下层图</strong>：节点密集、连接短距离，用于精确搜索</li>
+  <li><strong>M</strong>：每个节点的最大邻居数，影响图的密度和内存占用</li>
+  <li><strong>efConstruction</strong>：构建时的搜索宽度，影响索引质量</li>
+  <li><strong>efSearch</strong>：查询时的搜索宽度，影响召回率和延迟</li>
 </ul>
 
-<p>搜索时从最上层开始贪心导航，逐层下降直到最底层完成精确搜索。HNSW 的搜索复杂度为 O(log N)，在召回率和延迟方面均表现优异，是 Faiss、Milvus 等向量检索库的核心算法。</p>
+<h2 class="section-title">17.4 倒排方法</h2>
+<h3 class="subsection-title">17.4.1 IVF (Inverted File Index)</h3>
+<p>IVF 通过 K-Means 聚类将向量空间划分为 nlist 个 Voronoi 单元。查询时只搜索最近的 nprobe 个单元，将搜索范围从 N 缩小到 N×nprobe/nlist。IVF 可以与 PQ 结合（IVF-PQ），同时实现搜索加速和向量压缩。</p>
 
-<h3 class="subsection-title">17.4.3 CAGRA</h3>
+<h3 class="subsection-title">17.4.2 IVF-HNSW</h3>
+<p>IVF-HNSW 将 IVF 的聚类中心查找替换为 HNSW 检索，避免了暴力查找最近聚类中心的开销，在大规模数据集上表现优异。</p>
 
-<p>CAGRA（CUDA-Accelerated Graph Search）是 NVIDIA 提出的 GPU 加速图搜索算法，针对 GPU 并行计算特性进行了深度优化，在亿级向量库上实现了亚毫秒级搜索延迟。</p>
+<h2 class="section-title">17.5 工业实践</h2>
+<h3 class="subsection-title">17.5.1 Faiss</h3>
+<p>Faiss [2] 是 Facebook 开源的向量检索库，支持 IVF、PQ、HNSW 等多种索引类型，以及它们的组合。Faiss 同时支持 CPU 和 GPU，是工业界使用最广泛的向量检索工具之一。</p>
 
-<h2 class="section-title">17.5 倒排方法</h2>
+<h3 class="subsection-title">17.5.2 Milvus</h3>
+<p>Milvus [5] 是 Zilliz 开源的云原生向量数据库，支持十亿级向量检索，提供完善的索引管理、数据增删改查以及分布式部署能力。</p>
 
-<h3 class="subsection-title">17.5.1 IVF (Inverted File Index)</h3>
-
-<p>IVF 通过 K-Means 将向量空间划分为 K 个聚类（Voronoi Cell），每个聚类维护一个倒排链表。搜索时只扫描查询向量最近的 nprobe 个聚类，将搜索范围从 N 缩小到 N·nprobe/K。</p>
-
-<h3 class="subsection-title">17.5.2 IVF-PQ</h3>
-
-<p>IVF-PQ 将 IVF 和 PQ 结合：先用 IVF 进行粗粒度聚类筛选，再在候选聚类内使用 PQ 进行快速距离计算。这种组合在 Faiss 中被广泛使用，是亿级向量检索的标准方案。</p>
-
-<h3 class="subsection-title">17.5.3 IVF-HNSW</h3>
-
-<p>IVF-HNSW 用 HNSW 替代 K-Means 进行聚类中心查找，进一步提升 IVF 的搜索效率。Faiss 中的 IVF-HNSW 实现在大规模数据集上表现优异。</p>
-
-<h2 class="section-title">17.6 工业实践</h2>
-
-<h3 class="subsection-title">17.6.1 Faiss</h3>
-
-<p>Faiss 是 Facebook 开源的向量检索库，支持 IVF、PQ、HNSW 等多种索引类型，以及它们的组合。Faiss 同时支持 CPU 和 GPU，是工业界使用最广泛的向量检索工具之一。</p>
-
-<h3 class="subsection-title">17.6.2 Milvus</h3>
-
-<p>Milvus 是 Zilliz 开源的云原生向量数据库，支持十亿级向量检索，提供完善的索引管理、数据增删改查以及分布式部署能力。</p>
-
-<h3 class="subsection-title">17.6.3 索引选择策略</h3>
-
+<h3 class="subsection-title">17.5.3 索引选择策略</h3>
 <table>
   <caption>表 17.1：常见 ANN 算法对比</caption>
   <thead>
-    <tr><th>算法</th><th>召回率</th><th>延迟</th><th>内存占用</th><th>构建速度</th><th>适用规模</th></tr>
+    <tr><th>算法</th><th>召回率</th><th>延迟</th><th>内存占用</th><th>适用规模</th></tr>
   </thead>
   <tbody>
-    <tr><td>暴力搜索</td><td>100%</td><td>极高</td><td>O(Nd)</td><td>-</td><td><100 万</td></tr>
-    <tr><td>KD-Tree</td><td>高</td><td>低（低维）</td><td>O(Nd)</td><td>快</td><td><100 万，d<20</td></tr>
-    <tr><td>IVF</td><td>中高</td><td>低</td><td>O(Nd)</td><td>快</td><td>千万级</td></tr>
-    <tr><td>IVF-PQ</td><td>中</td><td>极低</td><td>O(Nm)</td><td>中</td><td>亿级</td></tr>
-    <tr><td>HNSW</td><td>高</td><td>极低</td><td>O(Nd)</td><td>慢</td><td>千万级</td></tr>
-    <tr><td>IVF-HNSW</td><td>高</td><td>极低</td><td>O(Nm)</td><td>中</td><td>亿级</td></tr>
+    <tr><td>暴力搜索</td><td>100%</td><td>极高</td><td>O(Nd)</td><td><100 万</td></tr>
+    <tr><td>IVF</td><td>中高</td><td>低</td><td>O(Nd)</td><td>千万级</td></tr>
+    <tr><td>IVF-PQ</td><td>中</td><td>极低</td><td>O(Nm)</td><td>亿级</td></tr>
+    <tr><td>HNSW</td><td>高</td><td>极低</td><td>O(Nd)</td><td>千万级</td></tr>
+    <tr><td>IVF-HNSW</td><td>高</td><td>极低</td><td>O(Nm)</td><td>亿级</td></tr>
   </tbody>
 </table>
 
-<h2 class="section-title">17.7 本章小结</h2>
+<h2 class="section-title">17.6 本章小结</h2>
+<p>本章系统介绍了推荐系统中的向量检索技术。量化方法（PQ、OPQ）通过压缩向量降低存储和计算成本；图基方法（HNSW）在召回率和延迟方面表现最优，是当前工业界的主流选择；倒排方法（IVF）通过聚类筛选缩小搜索范围。工业实践中通常采用 IVF-PQ 或 IVF-HNSW 等组合方案，在亿级向量库上实现毫秒级搜索。</p>
 
-<p>本章系统介绍了推荐系统中的向量检索技术。树基方法（KD-Tree、Annoy）适合低维空间；量化方法（PQ、OPQ）通过压缩向量降低存储和计算成本；图基方法（HNSW）在召回率和延迟方面表现最优，是当前工业界的主流选择；倒排方法（IVF）通过聚类筛选缩小搜索范围。工业实践中通常采用 IVF-PQ 或 IVF-HNSW 等组合方案，在亿级向量库上实现毫秒级搜索。</p>
+
+<h2 class="section-title">17.7 参考文献</h2>
+<p>[1] Jégou, H., et al. (2011). "Product Quantization for Nearest Neighbor Search". <em>IEEE TPAMI</em>.</p>
+<p>[2] Johnson, J., et al. (2019). "Billion-scale Similarity Search with GPUs". <em>IEEE TBD</em>.</p>
+<p>[3] Babenko, A., & Lempitsky, V. (2014). "The Inverted Multi-Index". In <em>CVPR</em>.</p>
+<p>[4] Malkov, Y., & Yashunin, D. (2020). "Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Navigable Small World Graphs". <em>IEEE TPAMI</em>.</p>
+<p>[5] Wang, J., et al. (2021). "Milvus: A Purpose-Built Vector Data Management System". In <em>SIGMOD</em>.</p>
 
 <div class="chapter-end">* * *</div>
-
 <div class="nav-bar">
-  <a href="ch16.html">← 上一章：第16章 在线服务</a>
-  <a href="ch18.html">下一章：第18章 用户兴趣建模 →</a>
+  <a href="ch16.html">← 上一章</a>
+  <a href="ch18.html">下一章 →</a>
 </div>
-
 </body>
 </html>

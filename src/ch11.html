@@ -7,123 +7,101 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="book-header">
   <div class="book-title">推荐系统：工业架构与核心算法</div>
   <div class="book-subtitle">RecSys-Industrial-Book</div>
   <div class="book-author">作者：刘京欣 · 补充版</div>
 </div>
-
 <div class="chapter-num">第三部分 推荐系统核心算法 · 第 11 章</div>
 <h1 class="chapter-title">粗排模型</h1>
 
-<p>第 10 章系统介绍了推荐系统中的召回模型。召回模型从海量物品库中快速筛选出数千个候选物品，为后续排序阶段提供输入。然而，召回阶段的主要目标是"找得到"而非"排得准"，其输出的候选集合规模通常仍然较大，且包含大量噪声。因此，在召回与精排之间需要引入粗排阶段，利用轻量级模型对候选集进行进一步筛选。本章将深入介绍粗排阶段常用的模型算法，包括双塔模型、三塔模型、知识蒸馏、链路一致性优化以及集合建模等方法。</p>
+<p>第 10 章系统介绍了推荐系统中的召回模型。召回模型从海量物品库中快速筛选出数千个候选物品，为后续排序阶段提供输入。然而，召回阶段的主要目标是"找得到"而非"排得准"，其输出的候选集合规模通常仍然较大，且包含大量噪声。因此，在召回与精排之间需要引入粗排阶段，利用轻量级模型对候选集进行进一步筛选。本章将深入介绍粗排阶段常用的模型算法。</p>
 
 <h2 class="section-title">11.1 双塔粗排模型</h2>
 
 <h3 class="subsection-title">11.1.1 经典双塔架构</h3>
 
-<p>双塔模型（Two-Tower Model）是工业界粗排阶段最经典的模型架构。其核心思想是将用户特征和物品特征分别通过独立的神经网络（用户塔和物品塔）进行编码，得到固定维度的向量表示，再通过向量点积或余弦相似度计算匹配分数。</p>
+<p>双塔模型（Two-Tower Model）是工业界粗排阶段最经典的模型架构。其核心思想是将用户特征和物品特征分别通过独立的神经网络（用户塔和物品塔）进行编码，得到固定维度的向量表示，再通过向量点积或余弦相似度计算匹配分数：</p>
 
 <div class="formula-box">
   score = ⟨f_user(x_user), f_item(x_item)⟩
 </div>
 
-<p>双塔架构的最大优势在于<strong>计算效率高</strong>。由于用户向量和物品向量可以分别独立计算，因此物品向量可以离线批量计算并存储在向量索引中，在线阶段只需要计算一次用户向量，再通过 ANN 检索即可快速完成数千个候选物品的打分。这种特性使得双塔模型非常适合粗排场景对于高吞吐、低延迟的要求。</p>
+<p>其中 f_user 和 f_item 分别为用户塔和物品塔的编码网络。用户塔通常接收用户画像特征、历史行为序列特征以及上下文特征；物品塔接收物品属性特征、统计特征以及内容理解特征。</p>
 
-<p>然而，双塔架构也存在一个核心局限：<strong>特征交叉能力不足</strong>。由于用户特征和物品特征在编码阶段完全解耦，模型无法在编码过程中建模用户与物品之间的交叉特征。例如，用户年龄与内容类别之间的交互关系、用户历史兴趣与当前物品属性之间的匹配关系等，都难以在双塔架构中被充分捕捉。</p>
+<p>双塔架构的最大优势在于<strong>计算效率高</strong>。由于用户向量和物品向量可以分别独立计算，物品向量可以离线批量计算并存储在向量索引中。在线阶段只需要计算一次用户向量，再通过 ANN 检索即可快速完成数千个候选物品的打分。这种特性使得双塔模型非常适合粗排场景对于高吞吐、低延迟的要求。Google 的 YouTube DNN [1] 是双塔架构在推荐系统中的经典应用，其将用户侧特征通过 DNN 编码为用户向量，物品侧通过 Embedding 查表获得物品向量，在线阶段通过向量检索完成召回。</p>
+
+<p>然而，双塔架构也存在一个核心局限：<strong>特征交叉能力不足</strong>。由于用户特征和物品特征在编码阶段完全解耦，模型无法在编码过程中建模用户与物品之间的交叉特征。例如，用户年龄与内容类别之间的交互关系、用户历史兴趣与当前物品属性之间的匹配关系等，都难以在双塔架构中被充分捕捉。这一局限也被称为"双塔模型的表征瓶颈"。</p>
 
 <h3 class="subsection-title">11.1.2 特征交叉增强</h3>
 
 <p>为了缓解双塔模型特征交叉不足的问题，工业界提出了多种改进方案：</p>
 
-<p><strong>（1）交叉特征拼接</strong>：在双塔输出向量之后，将用户向量、物品向量以及它们的 Hadamard 积（逐元素乘积）拼接在一起，再通过一层 MLP 进行交叉建模：</p>
+<p><strong>（1）交叉特征拼接</strong>：在双塔输出向量之后，将用户向量 u、物品向量 v 以及它们的 Hadamard 积（逐元素乘积 u⊙v）拼接在一起，再通过一层 MLP 输出最终分数：</p>
 
 <div class="formula-box">
-  score = MLP([e_user; e_item; e_user ⊙ e_item])
+  score = MLP([u; v; u ⊙ v])
 </div>
 
-<p>这种方式在保持双塔高效推理的同时，引入了一定程度的交叉能力。</p>
+<p>这种方法引入了用户与物品的交叉信息，但代价是失去了离线预计算物品向量的能力，在线推理时需要对每个候选物品单独计算交叉特征，计算开销显著增加。</p>
 
-<p><strong>（2）SENet 特征选择</strong>：在用户塔和物品塔的输入层引入 SENet（Squeeze-and-Excitation Network）进行特征选择，动态学习不同特征的重要性权重，从而提升有效特征的表达能力。</p>
+<p><strong>（2）SENet 特征重要性加权</strong>：在双塔模型的 Embedding 层之后引入 SENet（Squeeze-and-Excitation Network），动态学习各特征的重要性权重，增强有效特征、抑制噪声特征。SENet 通过全局平均池化获取通道描述符，再通过两层全连接学习各通道的注意力权重，最后对原始 Embedding 进行逐元素加权。</p>
 
-<p><strong>（3）多塔架构</strong>：将传统的双塔扩展为三塔甚至多塔结构。例如，将用户侧拆分为"用户基础特征塔"和"用户行为序列塔"，分别建模静态画像和动态兴趣，再通过注意力机制进行融合。</p>
+<p><strong>（3）多塔架构</strong>：将用户兴趣拆分为多个维度（如短期兴趣、长期兴趣、实时兴趣），每个维度独立建塔，最终通过注意力机制或加权求和融合。三塔模型 [2] 是这一方向的典型代表，通过引入辅助塔（如上下文塔、实时行为塔）增强模型的表达能力。</p>
 
 <h2 class="section-title">11.2 知识蒸馏与链路一致性</h2>
 
-<p>在级联式推荐系统中，粗排和精排往往由不同团队独立优化，其特征体系、训练样本、模型结构并不完全相同。这种不一致会导致一个重要问题：<strong>粗排认为优质的候选物品，精排未必认为优质</strong>。一旦优质内容在粗排阶段被过滤，即使精排模型再强大也无法将其召回。这种现象被称为<strong>漏斗效应</strong>（Funnel Effect）。</p>
+<p>级联式推荐系统中，粗排和精排独立训练，对"优质内容"的定义可能存在差异。这种不一致会导致"漏斗效应"——精排偏好的优质内容在粗排阶段被提前过滤。知识蒸馏（Knowledge Distillation）是提升链路一致性最常用的方法。</p>
 
-<p>为了缓解这一问题，工业界引入了<strong>知识蒸馏</strong>（Knowledge Distillation）技术，让粗排模型学习精排模型的排序偏好。</p>
+<h3 class="subsection-title">11.2.1 软标签蒸馏</h3>
 
-<h3 class="subsection-title">11.2.1 蒸馏信号设计</h3>
-
-<p>知识蒸馏的核心思想是将精排模型作为教师模型（Teacher），粗排模型作为学生模型（Student）。常见的蒸馏信号设计包括：</p>
-
-<p><strong>（1）软标签蒸馏</strong>：直接使用精排模型的输出概率作为软标签：</p>
+<p>将精排模型作为 Teacher，粗排模型作为 Student，使用精排输出的软标签（Soft Label）作为粗排的训练目标：</p>
 
 <div class="formula-box">
-  L_distill = KL(p_teacher || p_student)
+  L = α · CE(y, ŷ_student) + (1-α) · KL(q_teacher || q_student)
 </div>
 
-<p>其中 p_teacher 为精排模型输出的概率分布，p_student 为粗排模型输出的概率分布。</p>
+<p>其中 CE 为交叉熵损失，KL 为 KL 散度，q_teacher 和 q_student 分别为 Teacher 和 Student 的输出分布，α 为损失权重。软标签蒸馏的核心思想是让 Student 学习 Teacher 的输出分布，而非仅仅学习硬标签。由于 Teacher 的输出分布包含了物品之间的相对排序关系，Student 能够从中获取比硬标签更丰富的监督信号。</p>
 
-<p><strong>（2）排序关系蒸馏</strong>：不关注具体概率值，只关注精排的排序顺序。将精排 Top-K 物品构造为正样本，未进入 Top-K 的物品构造为负样本：</p>
+<h3 class="subsection-title">11.2.2 排序关系蒸馏</h3>
+
+<p>不关注具体预估值，而是让粗排学习精排的排序关系。对于候选集合中的物品对 (i, j)，如果精排认为 i 应排在 j 前面（s_teacher(i) > s_teacher(j)），则鼓励粗排也保持这一顺序：</p>
 
 <div class="formula-box">
-  L_rank = -Σ log σ(s_student(i⁺) - s_student(i⁻))
+  L_rank = -Σ_{i<j} I(rank_T(i) < rank_T(j)) · log(sigmoid(s_S(i) - s_S(j)))
 </div>
 
-<p>其中 i⁺ 为精排高分物品，i⁻ 为精排低分物品。</p>
+<p>这种方法不依赖 Teacher 的具体预估值，只关注排序关系，因此对 Teacher 和 Student 之间的分数尺度差异更加鲁棒。Ranking-based 蒸馏在工业实践中通常比软标签蒸馏效果更好，因为推荐系统最终关注的是排序质量而非预估精度。</p>
 
-<p><strong>（3）列表级蒸馏</strong>：直接对精排输出的排序列表进行整体蒸馏，使用 ListNet 或 Soft-NDCG 等列表级损失函数。</p>
+<h3 class="subsection-title">11.2.3 列表级蒸馏</h3>
 
-<h3 class="subsection-title">11.2.2 蒸馏的局限</h3>
+<p>以列表为单位进行蒸馏，让粗排学习精排对整个候选集的排序偏好。典型方法包括 ListNet、ListMLE 等列表级排序学习算法。列表级蒸馏能够捕捉物品之间的全局排序关系，但计算复杂度较高。</p>
 
-<p>虽然知识蒸馏能够在首次上线时获得明显收益，但也存在固有局限：</p>
+<h2 class="section-title">11.3 集合建模</h2>
 
-<ul>
-  <li><strong>复读机问题</strong>：粗排不断模仿精排，但精排本身的能力没有提升。当粗排与精排完全一致时，继续优化一致性已失去意义</li>
-  <li><strong>系统指标 vs 业务指标</strong>：链路一致性属于系统内部指标，与用户时长、留存等业务指标之间不存在严格因果关系</li>
-  <li><strong>收益衰减</strong>：随着蒸馏轮次增加，边际收益逐渐递减</li>
-</ul>
-
-<p>因此，近年来工业界对链路一致性的理解逐渐发生变化：一致性不再被视为最终优化目标，而更多被视为一种减少漏斗损失的工程手段。真正决定推荐系统上限的，仍然是精排模型本身的预测能力和多目标优化能力。</p>
-
-<h2 class="section-title">11.3 集合建模方法</h2>
-
-<p>传统粗排模型大多采用 Point-wise 建模方式，即对每个 (user, item) 对独立打分。然而，粗排阶段真正优化的对象并不是单个物品，而是整个候选集合。因此，近年来工业界开始引入 List-wise 和 Set-wise 建模方法。</p>
+<p>传统粗排模型采用 Point-wise 建模，即对每个候选物品独立打分。然而，粗排阶段真正优化的不是单个物品的质量，而是整个候选集合（Candidate Set）的质量。近年来，工业界开始探索 List-wise 和 Set-wise 建模方法。</p>
 
 <h3 class="subsection-title">11.3.1 List-wise 建模</h3>
 
-<p>List-wise 方法直接对整个候选列表进行优化。假设候选集为 L = {i₁, i₂, ..., iₙ}，优化目标变为 P(L|u) 而非 Σ P(i|u)。典型的 List-wise 优化目标包括：</p>
-
-<ul>
-  <li><strong>ListNet</strong>：基于 Top-1 概率的列表级损失</li>
-  <li><strong>ListMLE</strong>：基于极大似然的列表级排序损失</li>
-  <li><strong>LambdaRank</strong>：基于 NDCG 梯度的排序优化</li>
-  <li><strong>Soft-NDCG</strong>：直接优化可微版本的 NDCG</li>
-</ul>
+<p>List-wise 方法将候选列表作为整体进行建模，优化目标为列表级别的排序质量。典型方法包括 ListNet [3]、ListMLE [4]、LambdaRank 等。List-wise 方法能够捕捉候选集内部物品之间的相互关系，但训练和推理复杂度较高。</p>
 
 <h3 class="subsection-title">11.3.2 Set-wise 建模</h3>
 
-<p>候选集本质上是一个集合（Set），而非序列（Sequence）。{i₁, i₂, i₃} 与 {i₃, i₂, i₁} 表示同一个候选集合。因此，Set-wise 方法要求模型对输入顺序不敏感：</p>
+<p>Set-wise 方法直接评估整个候选集合的质量，要求模型对输入顺序不敏感（Permutation Invariant）：</p>
 
 <div class="formula-box">
-  f(x₁, x₂, ..., xₙ) = f(x_π(1), x_π(2), ..., x_π(n))
+  f(x₁, x₂, ..., x_n) = f(x_π(1), x_π(2), ..., x_π(n))
 </div>
 
-<p>其中 π 表示任意排列。典型的 Set-wise 方法包括：</p>
-
+<p>其中 π 表示任意排列。典型方法包括：</p>
 <ul>
-  <li><strong>Deep Sets</strong>：通过对所有物品特征进行对称函数（如求和、均值）聚合来实现排列不变性</li>
-  <li><strong>Set Transformer</strong>：引入排列不变的注意力机制（ISAB、PMA 等），建模集合内部物品之间的关系</li>
+  <li><strong>Deep Sets [5]</strong>：通过对所有物品特征进行对称函数（如求和、均值）聚合来实现排列不变性</li>
+  <li><strong>Set Transformer [6]</strong>：引入排列不变的注意力机制（ISAB、PMA 等），建模集合内部物品之间的关系</li>
 </ul>
 
-<p>Set-wise 建模能够显式建模候选集的覆盖度、多样性、类目分布等全局属性，因此更符合粗排阶段优化候选集合质量的本质目标。</p>
+<p>Set-wise 建模能够显式建模候选集的覆盖度、多样性、类目分布等全局属性，因此更符合粗排阶段优化候选集合质量的本质目标。爱奇艺 [7] 和字节跳动 [8] 均在工业实践中验证了集合建模的有效性。</p>
 
 <h2 class="section-title">11.4 粗排模型实践讨论</h2>
-
-<p>在实际工业系统中，粗排模型的选择和设计需要综合考虑以下因素：</p>
 
 <table>
   <caption>表 11.1：粗排模型对比</caption>
@@ -143,14 +121,23 @@
 
 <h2 class="section-title">11.5 本章小结</h2>
 
-<p>本章系统介绍了粗排阶段的模型算法。首先介绍了双塔模型作为粗排基础架构的原理与局限，并分析了特征交叉增强、多塔架构等改进方案。随后深入讨论了知识蒸馏与链路一致性优化，包括软标签蒸馏、排序关系蒸馏以及列表级蒸馏等方法，并分析了蒸馏方法的固有局限。最后介绍了从 Point-wise 到 List-wise 再到 Set-wise 的建模演进趋势，强调了粗排阶段优化候选集合质量的本质目标。</p>
+<p>本章系统介绍了粗排阶段的模型算法。首先介绍了双塔模型作为粗排基础架构的原理与局限，并分析了特征交叉增强、SENet 加权、多塔架构等改进方案。随后深入讨论了知识蒸馏与链路一致性优化，包括软标签蒸馏、排序关系蒸馏以及列表级蒸馏等方法。最后介绍了从 Point-wise 到 List-wise 再到 Set-wise 的建模演进趋势，强调了粗排阶段优化候选集合质量的本质目标。</p>
+
+
+<h2 class="section-title">11.6 参考文献</h2>
+<p>[1] Covington, P., Adams, J., & Sargin, E. (2016). "Deep Neural Networks for YouTube Recommendations". In <em>RecSys</em>.</p>
+<p>[2] 爱奇艺技术团队. "如何提升链路目标一致性？爱奇艺短视频推荐之粗排模型". InfoQ, 2021.</p>
+<p>[3] Cao, Z., et al. (2007). "Learning to Rank: From Pairwise Approach to Listwise Approach". In <em>ICML</em>.</p>
+<p>[4] Xia, F., et al. (2008). "Listwise Approach to Learning to Rank: Theory and Algorithm". In <em>ICML</em>.</p>
+<p>[5] Zaheer, M., et al. (2017). "Deep Sets". In <em>NeurIPS</em>.</p>
+<p>[6] Lee, J., et al. (2019). "Set Transformer: A Framework for Attention-Based Permutation-Invariant Neural Networks". In <em>ICML</em>.</p>
+<p>[7] 爱奇艺. "粗排模型优化实践". 2021.</p>
+<p>[8] 字节跳动. "粗排集合建模技术报告". 2023.</p>
 
 <div class="chapter-end">* * *</div>
-
 <div class="nav-bar">
-  <a href="ch10.html">← 上一章：第10章 召回模型</a>
-  <a href="ch12.html">下一章：第12章 精排模型 →</a>
+  <a href="ch10.html">← 上一章</a>
+  <a href="ch12.html">下一章 →</a>
 </div>
-
 </body>
 </html>
