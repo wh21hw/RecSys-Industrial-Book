@@ -6,6 +6,10 @@
 <title>推荐系统：工业架构与核心算法</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ===== CSS Reset & Variables ===== */
@@ -482,6 +486,87 @@ body{font-family:var(--font-sans);background:var(--bg);color:var(--text);line-he
   .article h2{font-size:1.15rem}
   .topbar{padding:0 16px}
 }
+
+/* ===== Formula & Image Styles ===== */
+.formula-box{
+  background:var(--accent-bg);
+  border-left:3px solid var(--accent-light);
+  border-radius:0 6px 6px 0;
+  padding:12px 20px;
+  margin:16px 0;
+  font-family:var(--font-mono),'KaTeX_Main',serif;
+  font-size:0.95em;
+  overflow-x:auto;
+  position:relative;
+}
+.formula-box::before{
+  content:'Formula';
+  position:absolute;
+  top:-8px;
+  right:12px;
+  font-size:0.65em;
+  color:var(--text-muted);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  background:var(--bg-content);
+  padding:0 6px;
+  border-radius:3px;
+}
+.formula-box .katex{font-size:1.1em}
+.formula-box .katex-display{margin:0}
+
+.article-content img{
+  max-width:100%;
+  height:auto;
+  border-radius:8px;
+  box-shadow:var(--shadow-lg);
+  margin:16px auto;
+  display:block;
+}
+
+.article-content .figure-caption{
+  text-align:center;
+  font-size:0.85em;
+  color:var(--text-muted);
+  margin-top:-8px;
+  margin-bottom:16px;
+}
+
+.article-content table{
+  width:100%;
+  border-collapse:collapse;
+  margin:16px 0;
+  font-size:0.9em;
+}
+.article-content th,.article-content td{
+  border:1px solid var(--border);
+  padding:8px 12px;
+  text-align:left;
+}
+.article-content th{
+  background:var(--bg-sidebar);
+  font-weight:600;
+}
+.article-content tr:nth-child(even){background:var(--bg-sidebar)}
+
+.article-content .definition-box,.article-content .note-box{
+  border-radius:8px;
+  padding:12px 20px;
+  margin:16px 0;
+}
+.article-content .definition-box{
+  background:var(--accent-bg);
+  border-left:3px solid var(--accent-light);
+}
+.article-content .note-box{
+  background:#eef5ff;
+  border-left:3px solid #4a90d9;
+}
+.dark .article-content .note-box{
+  background:#1a2030;
+  border-left-color:#3a7bc8;
+}
+
 </style>
 </head>
 <body>
@@ -652,6 +737,23 @@ document.addEventListener('DOMContentLoaded', () => {
   if(localStorage.getItem('theme') === 'dark') toggleTheme();
   
   renderSidebar();
+  
+  // Wait for KaTeX to load, then render
+  setTimeout(function() {
+    if (typeof renderMathInElement !== 'undefined') {
+      var contentEl = document.getElementById('chapter-content');
+      if (contentEl) {
+        renderMathInElement(contentEl, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false}
+          ],
+          throwOnError: false
+        });
+      }
+    }
+  }, 500);
+
   loadChapter(0);
   
   // Event listeners
