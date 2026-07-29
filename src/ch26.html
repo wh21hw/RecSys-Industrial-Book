@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第26章 探索与利用 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣 · 补充版</div>
+</div>
+
+<div class="chapter-num">第五部分 推荐系统进阶 · 第 26 章</div>
+<h1 class="chapter-title">探索与利用</h1>
+
+<p>推荐系统面临一个根本性矛盾：利用（Exploitation）已有知识推荐用户最可能喜欢的内容，还是探索（Exploration）新内容以发现潜在兴趣。过度利用导致信息茧房和马太效应，过度探索则损害用户体验。本章将介绍工业界常用的探索与利用（Explore-Exploit）策略。</p>
+
+<h2 class="section-title">26.1 Epsilon-Greedy</h2>
+
+<p>最简单的探索策略：以 ε 概率随机探索，以 1-ε 概率利用已有模型。实现简单但探索效率低，且随机探索可能推荐完全不相关内容。</p>
+
+<h2 class="section-title">26.2 UCB (Upper Confidence Bound)</h2>
+
+<p>UCB 基于"面对不确定性时的乐观主义"原则，为每个物品维护均值和置信区间：</p>
+
+<div class="formula-box">
+  score = μ + α · √(2·ln(N)/nᵢ)
+</div>
+
+<p>其中 μ 为历史均值，nᵢ 为物品 i 被探索次数，N 为总次数。探索次数少的物品置信区间大，更容易被选中。随着探索次数增加，不确定性降低，逐渐转向利用。</p>
+
+<h2 class="section-title">26.3 Thompson Sampling</h2>
+
+<p>Thompson Sampling 基于贝叶斯思想，为每个物品维护一个后验分布，每次从后验分布中采样一个值作为预估值：</p>
+
+<div class="formula-box">
+  score ~ Beta(α + clicks, β + non_clicks)
+</div>
+
+<p>Thompson Sampling 在理论上优于 UCB，且对延迟反馈更鲁棒。</p>
+
+<h2 class="section-title">26.4 Contextual Bandit</h2>
+
+<p>Contextual Bandit 将上下文信息引入探索策略，根据用户特征和物品特征动态调整探索方向。LinUCB 是最经典的 Contextual Bandit 算法，通过线性模型建模上下文与奖励的关系。</p>
+
+<h2 class="section-title">26.5 工业界探索策略</h2>
+
+<p>工业界通常采用更安全的探索方式：</p>
+<ul>
+  <li><strong>新内容保量</strong>：为新内容预留固定曝光配额</li>
+  <li><strong>兴趣拓展</strong>：在用户兴趣标签的相邻区域进行探索</li>
+  <li><strong>多样性约束</strong>：通过多样性打散间接实现探索</li>
+  <li><strong>模拟环境</strong>：在离线模拟环境中评估探索策略风险</li>
+</ul>
+
+<h2 class="section-title">26.6 本章小结</h2>
+
+<p>探索与利用是推荐系统的核心矛盾。Epsilon-Greedy 简单但低效，UCB 和 Thompson Sampling 提供了更智能的探索策略，Contextual Bandit 引入上下文信息实现个性化探索。工业界通常采用新内容保量、兴趣拓展等安全策略，在控制风险的前提下实现有效探索。</p>
+
+<div class="chapter-end">* * *</div>
+
+<div class="nav-bar">
+  <a href="ch25.html">← 上一章：第25章 长期价值</a>
+  <a href="ch27.html">下一章：第27章 因果推荐 →</a>
+</div>
+
+</body>
+</html>

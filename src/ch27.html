@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第27章 因果推荐 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣 · 补充版</div>
+</div>
+
+<div class="chapter-num">第五部分 推荐系统进阶 · 第 27 章</div>
+<h1 class="chapter-title">因果推荐</h1>
+
+<p>传统推荐系统基于相关性（Correlation）进行推荐：用户点击过 A，A 与 B 相似，所以推荐 B。但相关性不等于因果性（Causation）。因果推荐（Causal Recommendation）从因果推断角度重新审视推荐问题，关注推荐系统对用户行为的因果影响而非简单关联。</p>
+
+<h2 class="section-title">27.1 因果动机</h2>
+
+<p>推荐系统中的偏差本质上都是因果问题：</p>
+<ul>
+  <li><strong>位置偏差</strong>：用户点击是因为内容好还是因为位置靠前？</li>
+  <li><strong>流行度偏差</strong>：用户喜欢是因为内容好还是因为流行？</li>
+  <li><strong>曝光偏差</strong>：内容被推荐是因为用户喜欢还是因为推荐系统偏好？</li>
+</ul>
+
+<p>因果推断的核心工具是<strong>因果图</strong>（Causal Graph），通过有向无环图（DAG）描述变量之间的因果关系。</p>
+
+<h2 class="section-title">27.2 IPW (Inverse Propensity Weighting)</h2>
+
+<p>逆倾向加权通过对样本进行加权来消除偏差：</p>
+
+<div class="formula-box">
+  ĉ_IPW = (1/N) Σ (yᵢ / p̂ᵢ) · L(f(xᵢ), yᵢ)
+</div>
+
+<p>其中 p̂ᵢ 为样本 i 被曝光的倾向分数。IPS 的核心思想是：被低估的样本（低曝光概率）应获得更高权重。</p>
+
+<h2 class="section-title">27.3 Doubly Robust</h2>
+
+<p>Doubly Robust 结合 IPS 和直接模型：</p>
+
+<div class="formula-box">
+  ĉ_DR = (1/N) Σ [f̂(xᵢ) + (yᵢ - f̂(xᵢ)) / p̂ᵢ]
+</div>
+
+<p>只要倾向分数模型或直接模型其中之一正确，DR 就能实现无偏估计。</p>
+
+<h2 class="section-title">27.4 Counterfactual Learning</h2>
+
+<p>反事实学习（Counterfactual Learning）关注"如果推荐了不同内容，用户行为会怎样"的问题。通过构建反事实估计器，评估推荐策略的因果效应，指导模型学习去偏差的排序策略。</p>
+
+<h2 class="section-title">27.5 OPE (Off-Policy Evaluation)</h2>
+
+<p>离线策略评估（Off-Policy Evaluation, OPE）是因果推荐的核心工具。给定历史日志数据（由旧策略生成），评估新策略的效果，无需在线 A/B 实验。常用方法包括 IPS、Direct Method 和 DR。</p>
+
+<h2 class="section-title">27.6 流行度纠偏</h2>
+
+<h3 class="subsection-title">27.6.1 DICE</h3>
+
+<p>DICE 将用户行为分解为兴趣驱动和流行度驱动两部分，分别建模后组合。</p>
+
+<h3 class="subsection-title">27.6.2 MACAR</h3>
+
+<p>MACAR 通过反事实推理评估去除流行度偏差后的推荐效果。</p>
+
+<h2 class="section-title">27.7 Uplift 模型</h2>
+
+<p>Uplift 模型关注推荐系统对用户行为的<strong>增量效应</strong>（Treatment Effect）：</p>
+
+<div class="formula-box">
+  Uplift = P(y | do(recommend)) - P(y | do(not recommend))
+</div>
+
+<p>Uplift 模型帮助识别"被推荐说服的用户"（Persuadable Users），提升推荐投入产出比。</p>
+
+<h2 class="section-title">27.8 本章小结</h2>
+
+<p>因果推荐从因果推断角度重新定义推荐问题。IPS 和 DR 是经典的纠偏方法，反事实学习和 OPE 提供了评估因果效应的工具。DICE 和 MACAR 针对流行度偏差提出专门方案。Uplift 模型关注推荐的增量效应。因果推荐是推荐系统领域的重要前沿方向。</p>
+
+<div class="chapter-end">* * *</div>
+
+<div class="nav-bar">
+  <a href="ch26.html">← 上一章：第26章 探索与利用</a>
+  <a href="ch28.html">下一章：第28章 强化学习推荐场景 →</a>
+</div>
+
+</body>
+</html>

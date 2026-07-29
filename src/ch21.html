@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第21章 时长预估 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣 · 补充版</div>
+</div>
+
+<div class="chapter-num">第五部分 推荐系统进阶 · 第 21 章</div>
+<h1 class="chapter-title">时长预估</h1>
+
+<p>在短视频、直播等场景中，用户观看时长比点击行为更能反映真实满意度。时长预估（Watch Time Prediction）已成为现代推荐系统最核心的优化目标之一。本章将介绍工业界时长预估的常见建模方法。</p>
+
+<h2 class="section-title">21.1 时长预估的挑战</h2>
+
+<p>直接对播放时长进行回归建模面临以下问题：</p>
+<ul>
+  <li><strong>长尾分布</strong>：大量样本集中于短时长区间，少数样本时长极长</li>
+  <li><strong>行为噪声</strong>：相同内容在不同场景下观看时长波动大</li>
+  <li><strong>异常值敏感</strong>：MSE 损失对极端值敏感，训练不稳定</li>
+  <li><strong>收敛困难</strong>：回归任务通常比分类任务更难收敛</li>
+</ul>
+
+<h2 class="section-title">21.2 分类建模</h2>
+
+<p>将连续时长转换为分类问题是工业界最常用的做法。通过设定阈值，将观看行为离散化为二分类或多分类：</p>
+
+<div class="formula-box">
+  label = 1 if watch_time > threshold, else 0
+</div>
+
+<p>常见阈值包括：3 秒（有效播放）、6 秒（深度播放）、完整播放（完播率）等。多分类则将时长划分为多个区间，如 [0-3s]、[3-10s]、[10-30s]、[30s+]。</p>
+
+<h2 class="section-title">21.3 回归建模</h2>
+
+<h3 class="subsection-title">21.3.1 MSE 回归</h3>
+
+<p>直接使用 MSE 损失预测原始时长。简单但容易受异常值影响。</p>
+
+<h3 class="subsection-title">21.3.2 对数变换</h3>
+
+<p>对时长取对数后再回归，压缩长尾分布：</p>
+
+<div class="formula-box">
+  L = (log(ŷ + 1) - log(y + 1))²
+</div>
+
+<h3 class="subsection-title">21.3.3 Weighted MSE</h3>
+
+<p>对不同时长区间赋予不同权重，降低极端值影响。</p>
+
+<h2 class="section-title">21.4 混合建模</h2>
+
+<p>工业界通常采用分类 + 回归的混合方案：</p>
+<ul>
+  <li>先预测是否为有效播放（分类）</li>
+  <li>在有效播放条件下预测具体时长（回归）</li>
+</ul>
+
+<p>这种两阶段方案结合了分类的稳定性和回归的精度。</p>
+
+<h2 class="section-title">21.5 时长偏差</h2>
+
+<p>时长预估存在多种偏差：</p>
+<ul>
+  <li><strong>时长偏差</strong>：长视频天然有更高观看时长，需按视频时长归一化</li>
+  <li><strong>位置偏差</strong>：靠前位置的内容天然有更高观看时长</li>
+  <li><strong>选择偏差</strong>：只有被点击的内容才有观看时长标签</li>
+</ul>
+
+<p>工业界通常通过完播率（Finish Rate）、有效播放率（EVR）等归一化指标来缓解时长偏差。</p>
+
+<h2 class="section-title">21.6 本章小结</h2>
+
+<p>时长预估是短视频推荐的核心任务。直接回归面临长尾分布和噪声问题，工业界通常采用分类建模、对数回归或混合方案。时长偏差是需要重点处理的问题，通过完播率等归一化指标可以缓解。</p>
+
+<div class="chapter-end">* * *</div>
+
+<div class="nav-bar">
+  <a href="ch20.html">← 上一章：第20章 链路一致性</a>
+  <a href="ch22.html">下一章：第22章 推荐系统偏差 →</a>
+</div>
+
+</body>
+</html>

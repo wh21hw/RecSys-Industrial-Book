@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第19章 多目标与多场景 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣 · 补充版</div>
+</div>
+
+<div class="chapter-num">第五部分 推荐系统进阶 · 第 19 章</div>
+<h1 class="chapter-title">多目标与多场景</h1>
+
+<p>现代推荐系统需要同时优化点击率、转化率、观看时长、互动率等多个目标，同时服务于短视频、直播、电商等多个业务场景。多任务学习与多场景建模是解决这一问题的核心技术。本章将系统介绍工业界主流的多任务学习框架和多场景建模方法。</p>
+
+<h2 class="section-title">19.1 多任务学习概述</h2>
+
+<p>多任务学习（Multi-Task Learning, MTL）通过统一模型同时预测多个用户行为目标。其核心优势包括：</p>
+<ul>
+  <li><strong>参数共享</strong>：多个任务共享底层 Embedding，减少参数量</li>
+  <li><strong>正则化效果</strong>：辅助任务为主任务提供额外监督信号</li>
+  <li><strong>推理效率</strong>：一次前向计算输出多个预估值</li>
+</ul>
+
+<p>但 MTL 也面临<strong>负迁移</strong>（Negative Transfer）问题：当任务之间相关性较弱时，联合训练可能导致各任务效果下降。</p>
+
+<h2 class="section-title">19.2 Shared-Bottom</h2>
+
+<p>最简单的 MTL 架构是 Shared-Bottom：所有任务共享底层的表示网络，在顶层分别使用独立的任务塔输出不同目标的预估值。这种架构简单高效，但当任务差异较大时容易产生负迁移。</p>
+
+<h2 class="section-title">19.3 MMoE (Multi-gate Mixture-of-Experts)</h2>
+
+<p>MMoE 为每个任务引入独立的门控网络，从多个共享专家（Expert）网络中动态选择：</p>
+
+<div class="formula-box">
+  y_t = Σᵢ g_t(i) · fᵢ(x), &nbsp; g_t = softmax(W_t · x)
+</div>
+
+<p>其中 fᵢ 为第 i 个专家网络，g_t 为任务 t 的门控权重。MMoE 通过软性路由机制让不同任务侧重不同专家，有效缓解负迁移问题。</p>
+
+<h2 class="section-title">19.4 PLE (Progressive Layered Extraction)</h2>
+
+<p>PLE 在 MMoE 基础上引入了<strong>层次化专家分组</strong>：将专家分为共享专家（Shared Experts）和任务专属专家（Task-specific Experts），通过多层路由实现更精细的参数共享控制：</p>
+
+<ul>
+  <li><strong>共享专家</strong>：所有任务共用，学习通用表示</li>
+  <li><strong>专属专家</strong>：每个任务独有，学习任务特有信息</li>
+  <li><strong>多层路由</strong>：通过多层 CGC（Customized Gate Control）逐步提取不同层次的表示</li>
+</ul>
+
+<p>PLE 在腾讯视频推荐场景中取得了显著效果提升，已成为工业界 MTL 的主流方案之一。</p>
+
+<h2 class="section-title">19.5 ESMM (Entire Space Multi-Task Model)</h2>
+
+<p>ESMM 解决了 CVR 建模中的<strong>样本选择偏差</strong>问题。传统 CVR 模型只在点击样本上训练，但推理时需要对全部曝光样本预测。ESMM 联合建模 CTR 和 CVR：</p>
+
+<div class="formula-box">
+  pCTCVR = pCTR × pCVR
+</div>
+
+<p>在全部曝光样本上训练，通过 CTR 任务间接学习 CVR，消除分布偏差。ESMM 还引入了<strong>延迟反馈</strong>建模，处理转化行为延迟到达的问题。</p>
+
+<h2 class="section-title">19.6 多场景建模</h2>
+
+<p>多场景建模（Multi-Domain Modeling）关注如何在统一模型中服务多个业务场景（如首页推荐、搜索结果、详情页推荐等），同时保持各场景的差异化特征。</p>
+
+<h3 class="subsection-title">19.6.1 STAR (Star Topology)</h3>
+
+<p>STAR 采用星形拓扑结构：所有场景共享主干网络（Central Network），每个场景有独立的子网络（Domain-specific Network），通过元素级乘法融合：</p>
+
+<div class="formula-box">
+  W* = W_central ⊙ W_domain
+</div>
+
+<h3 class="subsection-title">19.6.2 PEPNet</h3>
+
+<p>PEPNet 通过场景特征生成动态缩放因子，对共享网络的输出进行场景级个性化调整。</p>
+
+<h2 class="section-title">19.7 本章小结</h2>
+
+<p>本章系统介绍了推荐系统中的多任务学习与多场景建模技术。从 Shared-Bottom 到 MMoE 再到 PLE，展示了从硬共享到软路由的演进。ESMM 解决了 CVR 建模的样本选择偏差问题。多场景建模通过 STAR、PEPNet 等方法实现统一模型下的场景差异化表达。这些技术共同构成了现代推荐系统多目标多场景优化的技术基础。</p>
+
+<div class="chapter-end">* * *</div>
+
+<div class="nav-bar">
+  <a href="ch18.html">← 上一章：第18章 用户兴趣建模</a>
+  <a href="ch20.html">下一章：第20章 链路一致性 →</a>
+</div>
+
+</body>
+</html>
