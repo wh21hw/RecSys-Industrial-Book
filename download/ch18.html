@@ -150,21 +150,206 @@
 
 <h2 class="section-title">18.8 ETA：端到端长序列</h2>
 
-<p>ETA（End-to-end Target Attention）[7] 由阿里巴巴于 2022 年提出，使用局部敏感哈希（LSH）对行为序列进行降维和加速。ETA 通过 SimHash 将行为 Embedding 压缩为二进制串，通过 Hamming 距离快速检索相关行为，避免了 SIM 中两阶段策略的信息损失，实现了端到端的长序列建模。</p>
+<p>ETA（End-to-end Target Attention）[7] 由阿里巴巴于 KDD 2022 提出，使用局部敏感哈希（LSH）对行为序列进行降维和加速。ETA 通过 SimHash 将行为 Embedding 压缩为二进制串，通过 Hamming 距离快速检索相关行为，避免了 SIM 中两阶段策略的信息损失，实现了端到端的长序列建模。</p>
 
-<h2 class="section-title">18.9 技术演进总结</h2>
+<h3 class="subsection-title">18.8.1 SimHash 降维原理</h3>
 
-<p>用户兴趣建模经历了以下演进过程：</p>
+<p>ETA 的核心创新是使用 SimHash 将高维 Embedding 压缩为低维二进制串。对于行为 Embedding $\mathbf{e}_i \in \mathbb{R}^d$，SimHash 通过随机投影矩阵 $\mathbf{R} \in \mathbb{R}^{d \times L}$ 将其映射为 $L$ 位二进制串：</p>
+
+<div class="formula-box">$$ \mathbf{h}_i = \text{sign}(\mathbf{e}_i \cdot \mathbf{R}), \quad \mathbf{h}_i \in \{-1, +1\}^L $$</div>
+
+<p>两个 Embedding 的相似度通过 Hamming 距离近似计算：</p>
+
+<div class="formula-box">$$ \text{sim}(\mathbf{e}_i, \mathbf{e}_j) \approx 1 - \frac{d_H(\mathbf{h}_i, \mathbf{h}_j)}{L} $$</div>
+
+<p>其中 $d_H$ 为 Hamming 距离。$L$ 越大精度越高但计算开销越大，工业实践中通常取 $L = 64$ 或 $128$。</p>
+
+<h3 class="subsection-title">18.8.2 在线推理流程</h3>
+
+<p>ETA 在线推理时：（1）将候选物品 Embedding 通过 SimHash 生成二进制串；（2）将用户所有行为 Embedding 预计算为二进制串并存储；（3）通过 Hamming 距离快速检索 Top-K 相关行为；（4）对 Top-K 行为使用精确注意力建模。整个过程端到端可导，避免了 SIM 的两阶段割裂。</p>
+
+<h2 class="section-title">18.9 SDIM：采样式长序列建模</h2>
+
+<p>SDIM（Sampling-based Interest Deep Model）由阿里巴巴于 KDD 2022 提出，是 ETA 的改进版本。SDIM 使用多轮哈希（Multi-round Hashing）进一步加速检索，同时保持检索精度。</p>
+
+<h3 class="subsection-title">18.9.1 多轮哈希</h3>
+
+<p>SDIM 的核心创新是使用 $M$ 个独立的哈希函数，每个哈希函数将 Embedding 映射为 $L$ 位二进制串。两个行为被判定为"相似"当且仅当它们在所有 $M$ 轮哈希中都有相同的二进制串。多轮哈希的假阳性率随 $M$ 增加而指数下降：</p>
+
+<div class="formula-box">$$ P(\text{false positive}) = \left(\frac{1}{2^L}\right)^M $$</div>
+
+<p>通过调整 $M$ 和 $L$，SDIM 可以在检索精度和计算效率之间灵活权衡。工业实践中通常取 $M = 4, L = 16$，能够在毫秒内完成万级序列的检索。</p>
+
+<h3 class="subsection-title">18.9.2 采样策略</h3>
+
+<p>SDIM 不像 ETA 那样检索 Top-K 行为，而是从每个哈希桶中采样固定数量的行为。这种采样策略避免了热门行为被过度采样的问题，保证了行为序列的多样性。</p>
+
+<h2 class="section-title">18.10 TWIN：两阶段超长序列建模</h2>
+
+<p>TWIN（TWo-stage INterest Network）由快手于 2023 年提出，是工业界处理超长用户行为序列（十万级）的标志性工作。TWIN 在快手信息流推荐中全量上线，显著提升了短视频推荐效果。</p>
+
+<h3 class="subsection-title">18.10.1 序列长度挑战</h3>
+
+<p>快手用户的平均行为序列长度超过 10,000 条，高活跃用户甚至超过 100,000 条。SIM 和 ETA 虽然能处理千级序列，但在十万级序列上仍面临计算瓶颈。TWIN 的核心思路是通过更高效的两阶段策略处理超长序列。</p>
+
+<h3 class="subsection-title">18.10.2 粗粒度检索（Coarse Retrieval）</h3>
+
+<p>TWIN 的第一阶段使用聚类进行粗粒度检索：将用户所有行为通过 K-Means 聚类为 $K$ 个簇，在线时只检索与候选物品最相关的 top-$k$ 簇。聚类可以离线预计算，在线只需查表，复杂度为 $O(1)$。</p>
+
+<h3 class="subsection-title">18.10.3 精细排序（Fine Ranking）</h3>
+
+<p>第二阶段对检索到的 top-$k$ 簇中的行为使用精确注意力建模。由于每个簇的行为数量可控（通常为 100-200），精确注意力的计算开销可接受。</p>
+
+<h2 class="section-title">18.11 TWIN V2：超长序列 Scaling Up</h2>
+
+<p>TWIN V2 由快手于 2024 年提出，是 TWIN 的升级版本，专门解决超长序列的 Scaling Up 问题。TWIN V2 在十万级到百万级序列上实现了工业级部署，是当前长序列建模的最前沿工作之一。</p>
+
+<h3 class="subsection-title">18.11.1 分层聚类</h3>
+
+<p>TWIN V2 的核心创新是使用分层聚类（Hierarchical Clustering）处理百万级序列：</p>
+
 <ul>
-<li><strong>从静态到动态</strong>：DIN 引入注意力实现因物而异的兴趣表达，DIEN 通过 GRU 建模兴趣演化轨迹</li>
-<li><strong>从单一到多兴趣</strong>：MIND 通过动态路由实现多兴趣表示，ComiRec 引入注意力选择</li>
-<li><strong>从短序列到长序列</strong>：SIM 通过两阶段策略处理数千条行为，ETA 使用 LSH 实现端到端加速</li>
-<li><strong>从 GRU 到 Transformer</strong>：BST 使用自注意力机制建模任意位置依赖关系</li>
+  <li><strong>第一层</strong>：将百万级行为通过 K-Means 聚类为 ~10,000 个粗粒度簇</li>
+  <li><strong>第二层</strong>：每个粗粒度簇内再聚类为 ~100 个细粒度子簇</li>
+  <li><strong>在线检索</strong>：先检索 Top-K 粗粒度簇，再在簇内检索 Top-K 细粒度子簇</li>
 </ul>
 
-<p>这些技术共同构成了现代推荐系统用户兴趣建模的完整技术栈。在实际工业系统中，通常会组合使用多种技术：例如用 MIND 进行多兴趣召回，用 BST/DIEN 进行精排序列建模，用 SIM 处理长序列。</p>
+<p>分层聚类将在线检索复杂度从 $O(N)$ 降低到 $O(\log N)$，使得百万级序列的在线推理延迟控制在 10ms 以内。</p>
+
+<h3 class="subsection-title">18.11.2 行为压缩表示</h3>
+
+<p>TWIN V2 引入了行为压缩表示（Compressed Behavior Representation）：每个子簇用簇心 Embedding + 行为数量 + 时间分布统计来表示，而非保留所有原始行为。这种压缩表示将百万级序列压缩为 ~1,000 个压缩表示，大幅降低存储和计算开销。</p>
+
+<h3 class="subsection-title">18.11.3 Scaling Law 验证</h3>
+
+<p>TWIN V2 论文中的重要发现是推荐系统长序列建模也存在 Scaling Law：序列长度从 1,000 → 10,000 → 100,000 → 1,000,000，推荐效果持续提升。但提升幅度递减——从 1K 到 10K 提升约 3-5%，从 100K 到 1M 提升约 0.5-1%。这为工业界选择合适的序列长度提供了量化依据。</p>
+
+<h2 class="section-title">18.12 UxSID：语义感知超长序列建模</h2>
+
+<p>UxSID（Semantic-Aware User Interests Modeling for Ultra-Long Sequences）由 2025 年提出，是长序列建模的最新进展。UxSID 的核心创新是引入语义理解——不仅基于行为 Embedding 相似度检索，还基于行为的语义类别进行检索。</p>
+
+<h3 class="subsection-title">18.12.1 语义索引</h3>
+
+<p>UxSID 为每个行为构建语义索引：使用 LLM 对行为物品生成语义标签（如类目、风格、场景），构建语义倒排索引。在线检索时，先通过语义索引快速定位相关行为，再通过 Embedding 精确排序。</p>
+
+<h3 class="subsection-title">18.12.2 语义 + 协同融合</h3>
+
+<p>UxSID 融合语义检索和协同检索：语义检索保证新物品也能被检索到（解决冷启动），协同检索保证推荐精度。两者通过加权融合，权重通过在线学习自动调整。</p>
+
+<h2 class="section-title">18.13 DMGIN：多模态 LLM 增强长序列</h2>
+
+<p>DMGIN 由 2026 年提出，是长序列建模与多模态 LLM 结合的最新探索。DMGIN 使用多模态 LLM（如 GPT-4V/Qwen-VL）对行为物品进行深度语义理解，生成多模态行为表示，然后用这些表示进行长序列检索和建模。</p>
+
+<h3 class="subsection-title">18.13.1 多模态行为表示</h3>
+
+<p>传统方法使用 ID Embedding 或简单内容 Embedding 表示行为。DMGIN 使用多模态 LLM 生成更丰富的行为表示——包含视觉理解（封面图/视频帧）、文本理解（标题/描述/评论）、语义推理（物品风格/场景/情感）。这些多模态表示通过 LLM 的推理能力生成，比传统 Embedding 包含更丰富的语义信息。</p>
+
+<h3 class="subsection-title">18.13.2 LLM 增强的检索</h3>
+
+<p>DMGIN 在检索阶段使用 LLM 生成的语义表示进行检索。例如，当候选物品是"运动鞋"时，DMGIN 不仅检索行为 Embedding 相似的物品，还通过 LLM 推理出"运动鞋"与"篮球""跑步""健身"等场景的关联，检索这些场景下的行为。这种语义推理检索突破了传统 Embedding 相似度检索的局限。</p>
+
+<h2 class="section-title">18.14 长序列建模技术总结与对比</h2>
+
+<p>下表对比了各长序列建模方法的关键特性：</p>
+
+<div class="formula-box" style="text-align: left; font-size: 0.95rem; background: var(--formula-bg); border: 1px solid var(--border); padding: 16px; border-radius: 8px; overflow-x: auto;">
+<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+<tr style="border-bottom: 2px solid var(--gold);">
+  <th style="padding: 8px; text-align: left;">方法</th>
+  <th style="padding: 8px;">年份</th>
+  <th style="padding: 8px;">最大序列长度</th>
+  <th style="padding: 8px;">检索方式</th>
+  <th style="padding: 8px;">端到端</th>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px;">DIN/BST</td>
+  <td style="padding: 8px;">2018-19</td>
+  <td style="padding: 8px;">~100</td>
+  <td style="padding: 8px;">精确注意力</td>
+  <td style="padding: 8px;">✅</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px;">SIM</td>
+  <td style="padding: 8px;">2020</td>
+  <td style="padding: 8px;">~10,000</td>
+  <td style="padding: 8px;">规则/Embedding 检索</td>
+  <td style="padding: 8px;">❌ (两阶段)</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px;">ETA</td>
+  <td style="padding: 8px;">2022</td>
+  <td style="padding: 8px;">~10,000</td>
+  <td style="padding: 8px;">SimHash + Hamming</td>
+  <td style="padding: 8px;">✅</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px;">SDIM</td>
+  <td style="padding: 8px;">2022</td>
+  <td style="padding: 8px;">~10,000</td>
+  <td style="padding: 8px;">多轮哈希采样</td>
+  <td style="padding: 8px;">✅</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px;">TWIN</td>
+  <td style="padding: 8px;">2023</td>
+  <td style="padding: 8px;">~100,000</td>
+  <td style="padding: 8px;">聚类检索</td>
+  <td style="padding: 8px;">❌ (两阶段)</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px;">TWIN V2</td>
+  <td style="padding: 8px;">2024</td>
+  <td style="padding: 8px;">~1,000,000</td>
+  <td style="padding: 8px;">分层聚类 + 压缩</td>
+  <td style="padding: 8px;">❌ (两阶段)</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px;">UxSID</td>
+  <td style="padding: 8px;">2025</td>
+  <td style="padding: 8px;">~1,000,000+</td>
+  <td style="padding: 8px;">语义索引 + Embedding</td>
+  <td style="padding: 8px;">❌ (两阶段)</td>
+</tr>
+<tr>
+  <td style="padding: 8px;">DMGIN</td>
+  <td style="padding: 8px;">2026</td>
+  <td style="padding: 8px;">~1,000,000+</td>
+  <td style="padding: 8px;">多模态 LLM 语义检索</td>
+  <td style="padding: 8px;">❌ (两阶段)</td>
+</tr>
+</table>
+</div>
+
+<h3 class="subsection-title">18.14.1 技术演进趋势</h3>
+
+<p>长序列建模的演进呈现以下趋势：</p>
+
+<p><strong>（1）序列长度指数增长。</strong>从 DIN 的百级到 TWIN V2 的百万级，序列长度增长了 10,000 倍。每次序列长度突破都带来了推荐效果的显著提升，验证了"更多行为数据 = 更好推荐"的基本直觉。</p>
+
+<p><strong>（2）检索方式从规则到语义。</strong>SIM 使用类目规则检索，ETA 使用 SimHash 检索，TWIN 使用聚类检索，UxSID 使用语义索引检索，DMGIN 使用多模态 LLM 检索。检索方式越来越"智能"，从简单的规则匹配到深层的语义理解。</p>
+
+<p><strong>（3）从两阶段到端到端再回到两阶段。</strong>SIM 是两阶段，ETA/SDIM 实现了端到端，但 TWIN/TWIN V2 又回到了两阶段。原因是序列长度超过十万级后，端到端的计算开销难以承受，两阶段策略成为必要。未来的方向可能是通过更高效的注意力机制（如线性注意力）重新实现端到端。</p>
+
+<p><strong>（4）Scaling Law 验证。</strong>TWIN V2 的实验表明，长序列建模存在 Scaling Law——序列越长效果越好，但提升幅度递减。这为工业界选择序列长度提供了量化依据：在效果和成本之间找到最优平衡点。</p>
+
+<p><strong>（5）多模态 + LLM 融合。</strong>DMGIN 代表了长序列建模的最新方向——将多模态 LLM 的语义理解能力引入长序列检索。随着多模态 LLM 技术的成熟，这种融合将更加深入，可能催生下一代长序列建模范式。</p>
+
+<h2 class="section-title">18.15 技术演进总结</h2>
+
+<p>用户兴趣建模经历了以下演进过程：</p>
+
+<ul>
+  <li><strong>从静态到动态</strong>：DIN 引入注意力实现因物而异的兴趣表达，DIEN 通过 GRU 建模兴趣演化轨迹</li>
+  <li><strong>从单一到多兴趣</strong>：MIND 通过动态路由实现多兴趣表示，ComiRec 引入注意力选择</li>
+  <li><strong>从短序列到长序列</strong>：SIM 处理千级，ETA/SDIM 处理万级，TWIN 处理十万级，TWIN V2 处理百万级</li>
+  <li><strong>从 GRU 到 Transformer</strong>：BST 使用自注意力机制建模任意位置依赖关系</li>
+  <li><strong>从协同到语义</strong>：UxSID 引入语义索引，DMGIN 引入多模态 LLM 语义理解</li>
+</ul>
+
+<p>这些技术共同构成了现代推荐系统用户兴趣建模的完整技术栈。在实际工业系统中，通常会组合使用多种技术：例如用 MIND 进行多兴趣召回，用 BST/DIEN 进行精排序列建模，用 TWIN V2 处理超长序列，用 DMGIN 进行多模态增强。</p>
 
 <h2 class="section-title">参考文献</h2>
+
 <p>[1] Zhou, G. et al. "Deep Interest Network for Click-Through Rate Prediction". KDD 2018.</p>
 <p>[2] Zhou, G. et al. "Deep Interest Evolution Network for Click-Through Rate Prediction". KDD 2019.</p>
 <p>[3] Chen, X. et al. "Behavior Sequence Transformer for E-commerce Recommendation". 2019.</p>
@@ -172,6 +357,11 @@
 <p>[5] Cen, B. et al. "Controllable Multi-Interest Framework for Recommendation". RecSys 2020.</p>
 <p>[6] Pi, Q. et al. "Search-based User Interest Modeling with Lifelong Sequential Behavior Data". SIGIR 2020.</p>
 <p>[7] Chen, M. et al. "ETA: End-to-end Target Attention for Long Sequence Modeling". KDD 2022.</p>
+<p>[8] "SDIM: Sampling-based Interest Deep Model for Long Sequential Behavior". KDD 2022.</p>
+<p>[9] 快手. "TWIN: TWo-stage Interest Network for Lifelong Sequential Behavior". 2023.</p>
+<p>[10] 快手. "TWIN V2: Scaling Ultra-Long User Behavior Sequence Modeling for Enhanced CTR". 2024.</p>
+<p>[11] "UxSID: Semantic-Aware User Interests Modeling for Ultra-Long Sequences". 2025.</p>
+<p>[12] Wei, Z. et al. "DMGIN: How Multimodal LLMs Enhance Large-scale User Behavior Modeling". 2026.</p>
 
 
 <div class="nav-bar">
