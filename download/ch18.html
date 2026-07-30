@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第18章 用户兴趣建模 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
 </head>
 <body>
 <div class="book-header">
@@ -41,11 +45,11 @@
 
 <p>DIN 通过注意力网络计算用户历史行为与当前候选物品的相关性：</p>
 
-<div class="formula-box">v_U = Σᵢ a(i) · eᵢ</div>
+<div class="formula-box">$$ v_{U} = \sumᵢ a(i) \cdot eᵢ $$</div>
 
 <p>其中 eᵢ 为用户第 i 次行为物品的 Embedding，a(i) 为注意力权重。注意力权重的计算方式为：</p>
 
-<div class="formula-box">a(i) = MLP([eᵢ, e_a, eᵢ ⊙ e_a])</div>
+<div class="formula-box">$$ a(i) = MLP([eᵢ, e_{a}, eᵢ ⊙ e_{a}]) $$</div>
 
 <p>其中 e_a 为候选物品 Embedding，⊙ 为 Hadamard 积（逐元素乘积）。MLP 接收三个输入的拼接：用户行为 Embedding、候选物品 Embedding、以及它们的逐元素积。逐元素积 eᵢ ⊙ e_a 能够捕捉用户行为与候选物品之间的交互信息，是注意力权重的关键特征。</p>
 
@@ -108,7 +112,7 @@
 
 <p>动态路由的迭代过程为：对于每个用户行为 eᵢ 和每个兴趣胶囊 cⱼ，计算路由权重 bᵢⱼ，然后更新胶囊表示：</p>
 
-<div class="formula-box">cⱼ = Σᵢ wᵢⱼ · eᵢ, &nbsp; wᵢⱼ = softmax(bᵢⱼ)</div>
+<div class="formula-box">$$ cⱼ = \sumᵢ wᵢⱼ \cdot eᵢ,   wᵢⱼ = softmax(bᵢⱼ) $$</div>
 
 <p>路由权重 bᵢⱼ 通过"一致性度量"（Agreement Measure）迭代更新：如果行为 eᵢ 与胶囊 cⱼ 的相似度高，则增加路由权重 bᵢⱼ，使得 eᵢ 更多地贡献给胶囊 cⱼ。经过 T 次迭代后，每个胶囊收敛到一个稳定的兴趣表示。</p>
 

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第9章 生成式推荐模块 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第 9 章</div>
+<h1 class="chapter-title">生成式推荐模块</h1>
+
+<p>第 8 章详细介绍了级联式推荐系统架构中的混排模块。混排模块作为多业务推荐结果融合的核心组件，负责将来自不同业务的推荐结果统一组织到同一推荐流中。至此，我们已经完整介绍了级联式推荐系统架构中的所有核心模块：召回与过滤 → 粗排 → 精排 → 重排 → 混排。这一经典架构在工业界已经广泛应用并持续演进多年。</p>
+
+<p>然而，近年来随着大语言模型（LLM）技术的快速发展，推荐系统领域正经历着一场深刻的范式变革。以 Next-Token Prediction（NTP）为代表的生成式建模思想开始深刻影响推荐系统的架构设计，逐渐形成了一种全新的推荐范式——生成式推荐（Generative Recommendation）。本章将系统介绍生成式推荐模块的核心思想、架构设计、关键算法以及工程落地挑战。</p>
+
+<h2 class="section-title">9.1 生成式推荐的基本思想</h2>
+
+<p>传统级联式推荐系统采用"多阶段级联"的架构思想：召回模块从海量物品库中快速获取候选，粗排模块进行初步筛选，精排模块进行精细排序，重排模块优化序列级体验，混排模块完成多业务融合。这种架构的核心优势在于：每个模块各司其职，可以通过差异化算力分配实现效果与效率的平衡。</p>
+
+<p>然而，级联式架构也存在一些固有局限：</p>
+<ul>
+  <li><strong>信息逐级损失</strong>：每个模块只能处理上游传递下来的候选集，无法感知全局信息</li>
+  <li><strong>目标不一致</strong>：各模块独立训练，优化目标可能存在冲突</li>
+  <li><strong>人工特征工程依赖</strong>：需要大量人工设计特征和规则</li>
+  <li><strong>链路冗长</strong>：多阶段串联导致系统复杂度高、维护成本大</li>
+</ul>
+
+<p>生成式推荐的核心思想是：借鉴大语言模型的建模范式，将推荐问题转化为序列生成问题。具体而言，不再通过多阶段级联的方式逐步筛选候选物品，而是利用统一的生成式模型，根据用户历史行为序列，直接生成（预测）用户接下来最可能交互的物品。</p>
+
+<div class="definition-box">
+  <div class="def-label">核心范式</div>
+  <p>生成式推荐 = 用户行为序列建模 + Next-Token Prediction + 语义ID生成</p>
+</div>
+
+<h2 class="section-title">9.2 生成式推荐的系统架构</h2>
+
+<p>在工业界，生成式推荐模块的部署方式主要有两种：</p>
+
+<h3 class="subsection-title">9.2.1 与传统链路并行的候选生成架构</h3>
+
+<p>生成式推荐模块作为一路新的召回源，与传统召回模型（如双塔模型、图神经网络等）并行运行。生成式推荐模型输出的候选物品会与其它召回源的候选结果合并，统一进入后续的粗排、精排、重排和混排阶段。这种部署方式的优势在于：生成式推荐模块可以利用大模型强大的序列建模能力，挖掘传统召回模型难以捕捉的长程依赖和复杂兴趣模式，同时保持传统级联架构的稳定性和可控性。</p>
+
+<h3 class="subsection-title">9.2.2 独立流量推荐架构</h3>
+
+<p>生成式推荐模块直接承担部分流量的推荐决策任务，绕过传统的召回→粗排→精排链路，直接输出最终推荐结果。这种方式通常通过流量隔离实现：一部分流量走传统级联链路，另一部分流量走生成式推荐链路。这种部署方式的优势在于可以充分发挥生成式推荐的端到端优化能力，但对模型的稳定性和可靠性提出了更高要求。</p>
+
+<h2 class="section-title">9.3 语义ID生成</h2>
+
+<p>生成式推荐的核心挑战之一是：如何将推荐系统中的物品（视频、商品、文章等）转化为语言模型可以处理的离散Token序列。大语言模型的词表由自然语言Token组成，而推荐系统中的物品ID通常是数字编号或哈希值，无法直接作为Token使用。因此，需要设计一种方法将物品映射为有意义的离散Token序列，这就是语义ID（Semantic ID）。</p>
+
+<h3 class="subsection-title">9.3.1 RQ-VAE：残差量化变分自编码器</h3>
+
+<p>RQ-VAE（Residual-Quantized Variational Autoencoder）是生成式推荐中最常用的语义ID生成方法。其核心思想是：通过残差量化（Residual Quantization）将连续的物品Embedding逐层压缩为离散的Token序列。</p>
+
+<p>具体而言，给定物品的连续Embedding <strong>r</strong>，RQ-VAE通过多层码本（Codebook）进行残差量化：</p>
+<ol>
+  <li>第1层：在码本 <strong>C</strong><sub>1</sub> 中找到与 <strong>r</strong> 最近的码字 <strong>e</strong><sub>1</sub>，残差 <strong>r</strong><sub>1</sub> = <strong>r</strong> - <strong>e</strong><sub>1</sub></li>
+  <li>第2层：在码本 <strong>C</strong><sub>2</sub> 中找到与 <strong>r</strong><sub>1</sub> 最近的码字 <strong>e</strong><sub>2</sub>，残差 <strong>r</strong><sub>2</sub> = <strong>r</strong><sub>1</sub> - <strong>e</strong><sub>2</sub></li>
+  <li>以此类推，直到第M层</li>
+</ol>
+
+<p>最终得到语义ID：s = (s<sub>1</sub>, s<sub>2</sub>, ..., s<sub>M</sub>)，其中 s<sub>j</sub> 是第j层码本中最近码字的索引。</p>
+
+<div class="formula-box">$$ r \approx e_{1} + e_{2} + ... + e_{M} $$</div>
+  <div class="formula-num">(9.1)</div>
+</div>
+
+<p>RQ-VAE的训练目标包括重建损失和码本承诺损失：</p>
+
+<div class="formula-box">$$ L = ||r - D(s)||^{2} + \beta||r - sg[D(s)]||^{2} $$</div>
+  <div class="formula-num">(9.2)</div>
+</div>
+
+<p>其中 D(·) 是解码器，sg[·] 表示停止梯度，β 是承诺损失权重。</p>
+
+<h3 class="subsection-title">9.3.2 RQ-KMeans</h3>
+
+<p>RQ-KMeans 是 RQ-VAE 的简化版本，用 KMeans 聚类替代码本学习。在每一层量化中，对残差向量进行 KMeans 聚类，聚类中心的索引即为该层的语义Token。RQ-KMeans 的优势在于实现简单、训练稳定，适合大规模物品库的语义ID生成。</p>
+
+<h3 class="subsection-title">9.3.3 其他离散Tokenizer方法</h3>
+
+<p>除了 RQ-VAE 和 RQ-KMeans，近年来还出现了多种离散Tokenizer方法：</p>
+<ul>
+  <li><strong>PQ（Product Quantization）</strong>：将向量分段量化，每段独立聚类</li>
+  <li><strong>FSQ（Finite Scalar Quantization）</strong>：将每个维度量化为有限个离散值</li>
+  <li><strong>LFQ（Lookup-Free Quantization）</strong>：无码本量化，直接对向量取符号</li>
+</ul>
+
+<h3 class="subsection-title">9.3.4 常见训练问题</h3>
+
+<p>在实际训练过程中，语义ID生成常遇到以下问题：</p>
+<ul>
+  <li><strong>梯度不可回传</strong>：argmin 操作不可微，需要使用 Straight-Through Estimator（STE）</li>
+  <li><strong>码本坍塌（Codebook Collapse）</strong>：只有少数码字被激活，大量码字长期闲置</li>
+  <li><strong>训练不稳定</strong>：码本更新与模型训练耦合，容易振荡</li>
+</ul>
+
+<h2 class="section-title">9.4 生成式推荐模型</h2>
+
+<p>生成式推荐模型通常采用 Transformer 架构，以用户历史行为序列（由语义ID组成）作为输入，通过 Next-Token Prediction（NTP）范式训练，预测用户下一个可能交互的物品的语义ID。</p>
+
+<h3 class="subsection-title">9.4.1 模型架构</h3>
+
+<p>生成式推荐模型的核心架构包括：</p>
+<ul>
+  <li><strong>Input Layer</strong>：用户历史行为序列 (s<sub>1</sub>, s<sub>2</sub>, ..., s<sub>T</sub>)，每个 s<sub>t</sub> 是一个语义ID</li>
+  <li><strong>Embedding Layer</strong>：将语义ID映射为连续向量</li>
+  <li><strong>Transformer Decoder</strong>：通过自注意力机制建模序列依赖</li>
+  <li><strong>Output Layer</strong>：预测下一个语义Token的概率分布</li>
+</ul>
+
+<h3 class="subsection-title">9.4.2 训练目标</h3>
+
+<p>生成式推荐模型的训练目标为 Next-Token Prediction：</p>
+
+<div class="formula-box">$$ L = -(1/T) \sum_{t=1}^{T} log P(s_{t} | s_{&lt;t}, u) $$</div>
+  <div class="formula-num">(9.3)</div>
+</div>
+
+<p>其中 u 表示用户特征，s<sub>&lt;t</sub> 表示历史序列。</p>
+
+<h2 class="section-title">9.5 物品ID检索</h2>
+
+<p>生成式推荐模型输出的是语义ID序列，需要将其映射回真实物品ID。这一过程通常通过 Beam Search + 索引查找完成：</p>
+
+<ol>
+  <li><strong>Beam Search 生成</strong>：从模型输出的概率分布中，通过 Beam Search 生成 Top-K 个语义ID序列</li>
+  <li><strong>索引查找</strong>：通过 Hash Table、Trie 树或 ANN 索引，将语义ID映射回真实物品ID</li>
+  <li><strong>去重与异常处理</strong>：处理多对一映射和无效语义ID</li>
+</ol>
+
+<p>Beam Search 的路径评分公式为：</p>
+
+<div class="formula-box">$$ Score(s) = \sum_{i=1}^{T} log P(s_{i} | s_{&lt;i}, u) $$</div>
+  <div class="formula-num">(9.4)</div>
+</div>
+
+<h2 class="section-title">9.6 一阶段生成式推荐</h2>
+
+<p>前面介绍的方法大多采用"语义ID生成 + 生成式推荐模型"的两阶段框架。语义ID一旦生成后保持固定，不再随下游推荐目标更新。这种范式存在优化目标不匹配的问题：语义ID的学习目标关注内容重建质量，而重建质量的提升并不一定能带来推荐性能的提升。</p>
+
+<h3 class="subsection-title">9.6.1 DIGER 算法</h3>
+
+<p>DIGER（Differentiable Semantic ID for Generative Recommendation）提出了 DRIL（Differentiable Semantic ID with Exploratory Learning）框架，通过引入 Gumbel 噪声实现可微离散化，使推荐损失能够直接参与语义ID的优化过程。</p>
+
+<p>核心机制：在前向传播阶段采用硬选择（Hard Assignment），保持语义ID的离散性；在反向传播阶段利用 Gumbel-Softmax 得到的连续概率进行软更新（Soft Update），实现梯度传播。</p>
+
+<div class="formula-box">$$ ~y_{v,j,i} = exp((ℓ_{v,j,i} + g_{v,j,i})/τ) / \sum_{k=1}^{K} exp((ℓ_{v,j,k} + g_{v,j,k})/τ) $$</div>
+  <div class="formula-num">(9.5)</div>
+</div>
+
+<p>其中 g ~ Gumbel(0,1) 为 Gumbel 噪声，τ 为温度系数。随着训练进行，通过噪声衰减策略逐渐从探索转向利用。</p>
+
+<h3 class="subsection-title">9.6.2 UniSID 算法</h3>
+
+<p>UniSID（End-to-End Semantic ID Generation）利用统一的多模态大模型（MLLM）同时生成 Item Embedding 和 Semantic ID，完全摆脱传统"Embedding → RQ-VAE → Semantic ID"的级联压缩过程，实现一阶段端到端映射。</p>
+
+<p>UniSID 引入了多粒度对比学习和摘要重建机制，使不同层级的 SID 分别学习对应粒度的语义信息，形成从粗粒度到细粒度的层次化语义结构。</p>
+
+<h2 class="section-title">9.7 生成式推荐落地问题</h2>
+
+<h3 class="subsection-title">9.7.1 曝光偏差与数据循环</h3>
+
+<p>生成式推荐模型容易受到曝光偏差（Exposure Bias）所带来的数据循环（Data Feedback Loop）问题的影响。模型倾向于生成历史上表现较好的内容，这些内容获得更多曝光后，其行为反馈又会进一步强化模型偏好，形成正反馈循环，导致信息茧房和探索能力下降。</p>
+
+<h3 class="subsection-title">9.7.2 候选集聚集度过高</h3>
+
+<p>生成式推荐模型采用端到端方式直接生成候选集，缺少显式的多样性控制机制，容易出现生成结果集中于少数类别或相似内容的问题。解决方案包括在 Beam Search 过程中引入多样性约束、类别覆盖率约束等。</p>
+
+<h3 class="subsection-title">9.7.3 自回归推理效率</h3>
+
+<p>生成式推荐模型采用自回归方式逐Token生成，推理延迟与生成长度线性相关。在工业级推荐系统对延迟要求极高（通常几十毫秒）的场景下，自回归生成存在天然劣势。加速方法包括：</p>
+<ul>
+  <li><strong>Diffusion Language Model（DLM）</strong>：将生成建模为去噪过程，支持并行生成</li>
+  <li><strong>Multi-Token Prediction（MTP）</strong>：一次前向传播同时预测多个Token</li>
+  <li><strong>Speculative Decoding</strong>：推测解码，小模型生成+大模型验证</li>
+</ul>
+
+<h2 class="section-title">9.8 生成式推荐讨论</h2>
+
+<p>一个值得深入思考的问题是：对于推荐系统这样一个复杂的AI驱动系统工程而言，One-Model 范式真的能够完全替代传统级联式推荐架构吗？</p>
+
+<p>从优化视角来看，当一个模型需要同时最小化多个目标函数时，不同任务之间往往会产生梯度冲突。推荐系统是典型的复杂多目标优化系统，需要同时兼顾用户体验、内容生态、商业价值等多个维度，这些目标之间并非完全一致，甚至在许多情况下存在天然冲突。</p>
+
+<p>更重要的是，这些复杂的系统目标往往难以被统一表达为单一的损失函数。因此，从工程实践角度来看，推荐系统不仅仅是一个模型优化问题，更是一个涉及业务目标管理、流量治理、生态调控以及风险控制的复杂系统工程问题。</p>
+
+<p>从当前工业实践来看，生成式推荐更有可能成为传统推荐架构的重要补充，而非完全替代者。生成式推荐所代表的端到端建模思想无疑是推荐系统未来的重要发展方向，但其更可能以"生成式能力融入级联架构"的形式逐步落地。传统级联架构能够在工业界长期存在并持续演进，其背后不仅是历史积累的结果，更体现了对多目标优化、系统稳定性以及业务可控性等问题的深刻权衡。</p>
+
+<h2 class="section-title">9.9 本章小结</h2>
+
+<p>本章系统介绍了生成式推荐模块的核心思想、架构设计与关键算法。首先介绍了生成式推荐的基本思想，将其定位为借鉴大语言模型建模范式的推荐系统新方向。随后讨论了生成式推荐模块在工业界的两种典型部署方式。在此基础上，围绕语义ID生成、生成式推荐模型和物品ID检索三个核心组成部分进行了详细介绍。接着介绍了一阶段生成式推荐的研究进展，包括 DIGER 和 UniSID 算法。最后讨论了生成式推荐在实际落地过程中面临的曝光偏差、候选聚集和推理效率等挑战，并对生成式推荐与传统级联式推荐的关系进行了深入讨论。</p>
+
+<h2 class="section-title">9.10 参考文献</h2>
+
+<p>[1] Zachary Ankner et al. "Hydra: Sequentially-dependent draft heads for medusa decoding". In: arXiv preprint arXiv:2402.05109 (2024).</p>
+<p>[2] Anthony Brohan et al. "Rt-2: Vision-language-action models transfer web knowledge to robotic control". 2023.</p>
+<p>[3] Tianle Cai et al. "Medusa: Simple llm inference acceleration framework with multiple decoding heads". In: arXiv preprint arXiv:2401.10774 (2024).</p>
+<p>[4] Charlie Chen et al. "Accelerating large language model decoding with speculative sampling". In: arXiv preprint arXiv:2302.01318 (2023).</p>
+<p>[5] Zhao Chen et al. "Gradnorm: Gradient normalization for adaptive loss balancing in deep multitask networks". In: ICML. 2018, pp. 794–803.</p>
+<p>[6] Jiaxin Deng et al. "OneRec: Unifying Retrieve and Rank with Generative Recommender and Iterative Preference Alignment". In: 2025.</p>
+<p>[7] Junchen Fu et al. "Differentiable Semantic ID for Generative Recommendation". In: arXiv preprint arXiv:2601.19711 (2026).</p>
+<p>[8] Fabian Gloeckle et al. "Better & faster large language models via multi-token prediction". In: arXiv preprint arXiv:2404.19737 (2024).</p>
+<p>[9] Herve Jegou, Matthijs Douze, and Cordelia Schmid. "Product quantization for nearest neighbor search". In: IEEE TPAMI 33.1 (2010), pp. 117–128.</p>
+<p>[10] Jian Jia et al. "From principles to applications: A comprehensive survey of discrete tokenizers in generation, comprehension, recommendation, and information retrieval". In: arXiv preprint arXiv:2502.12448 (2025).</p>
+<p>[11] Jie Jiang et al. "End-to-End Semantic ID Generation for Generative Advertisement Recommendation". In: arXiv preprint arXiv:2602.10445 (2026).</p>
+<p>[12] Moo Jin Kim et al. "Openvla: An open-source vision-language-action model". In: arXiv preprint arXiv:2406.09246 (2024).</p>
+<p>[13] Doyup Lee et al. "Autoregressive image generation using residual quantization". In: CVPR. 2022, pp. 11523–11532.</p>
+<p>[14] Yuhui Li et al. "Eagle: Speculative sampling requires rethinking feature uncertainty". In: arXiv preprint arXiv:2401.15077 (2024).</p>
+<p>[15] Aixin Liu et al. "Deepseek-v3 technical report". In: arXiv preprint arXiv:2412.19437 (2024).</p>
+<p>[16] Fabian Mentzer et al. "Finite Scalar Quantization: VQ-VAE Made Simple". In: ICLR. 2023.</p>
+<p>[17] Shen Nie et al. "Large language diffusion models". In: NeurIPS 38 (2026), pp. 50608–50646.</p>
+<p>[18] Aaron Van Den Oord, Oriol Vinyals, et al. "Neural discrete representation learning". In: NeurIPS 30 (2017).</p>
+<p>[19] Lijun Yu et al. "Language model beats diffusion-tokenizer is key to visual generation". In: ICLR. 2024, pp. 765–783.</p>
+<p>[20] Tianhe Yu et al. "Gradient surgery for multi-task learning". In: NeurIPS 33 (2020), pp. 5824–5836.</p>
+
+<div class="chapter-end">* * *</div>
+
+<div class="nav-bar">
+  <a href="ch08.html">← 上一章：第8章 混排模块</a>
+  <a href="ch10.html">下一章：第10章 召回模型 →</a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第10章 召回模型 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第三部分 推荐系统核心算法 · 第 10 章</div>
+<h1 class="chapter-title">召回模型</h1>
+
+<p>在前面的章节中我们介绍了推荐系统的级联式架构以及该架构下的召回、粗排、精排、重排、混排还有生成式推荐这些具体模块。从本章开始，我们将视角从模块的维度进一步下探到每一个模块中核心的模型算法维度。本章我们将重点讨论推荐系统中的召回模型。召回模型是推荐系统中至关重要的一环，其主要任务是从海量候选物品中快速筛选出与用户兴趣相关的子集，为后续的排序和精排阶段提供高质量的候选集合。</p>
+
+<div class="toc-box">
+  <h3>本章目录</h3>
+  <ul>
+    <li><a href="#sec-10-1">10.1 协同过滤召回</a> — ItemCF / UserCF / Online CF / Swing / 矩阵分解 / Neural CF / 异构协同过滤</li>
+    <li><a href="#sec-10-2">10.2 图召回</a> — DeepWalk / Node2Vec / EGES / GCN / GAT / GraphSAGE / LightGCN / PinSage / HybridGNN</li>
+    <li><a href="#sec-10-3">10.3 向量召回</a> — YoutubeDNN / 双塔召回 / FastText / BERT / Sentence-BERT / SimCSE / E5</li>
+    <li><a href="#sec-10-4">10.4 序列召回</a> — List2Vec / GRU4Rec / Transformer序列召回 / SDM / 对比学习序列召回</li>
+    <li><a href="#sec-10-5">10.5 多兴趣召回</a> — MIND / ComiRec</li>
+    <li><a href="#sec-10-6">10.6 其他召回模型</a> — PDN / TDM</li>
+    <li><a href="#sec-10-7">10.7 召回模型实践讨论</a></li>
+    <li><a href="#sec-10-8">10.8 本章小结</a></li>
+  </ul>
+</div>
+
+<h2 class="section-title" id="sec-10-1">10.1 协同过滤召回</h2>
+
+<p>协同过滤利用用户行为相似性进行推荐，包括基于用户和基于物品方法。适合历史行为丰富的场景，但冷启动能力有限。协同过滤方法是推荐系统中最基石性的方法，其核心思想为：</p>
+
+<div class="definition-box">
+  <div class="def-label">定义 10.1（协同过滤）</div>
+  <p>协同过滤是一种基于用户行为相似性的推荐方法，通过分析用户或物品之间的相似性来进行推荐。</p>
+</div>
+
+<p>直观地理解协同过滤方法：如果用户 A 和 B 同时与 Item I 交互过，那么可以认为用户 A 和 B 在某种程度上具有相似的兴趣偏好；如果用户 A 与 Item I1 以及 Item I2 都有交互记录，那么可以认为 Item I1 和 Item I2 在某种程度上具有相似的兴趣偏好。基于这种假设，协同过滤方法通过计算用户之间的相似性或者物品之间的相似性来进行推荐。</p>
+
+<p>协同过滤的思想不仅深刻影响着推荐系统的召回算法，同时也对粗排、精排、重排等模块的算法设计产生了深远的影响。本质上说，粗排、精排、重排等模块的算法设计都是在协同过滤思想的基础上进行扩展和优化的。</p>
+
+<p>协同过滤方法主要分为两类：基于用户的协同过滤（User-based Collaborative Filtering, User CF）和基于物品的协同过滤（Item-based Collaborative Filtering, Item CF）。前者通过计算用户之间的相似性来推荐物品，而后者则通过计算物品之间的相似性来进行推荐。</p>
+
+<h3 class="subsection-title" id="sec-10-1-1">10.1.1 ItemCF 召回</h3>
+
+<p>ItemCF（Item-based Collaborative Filtering，基于物品的协同过滤）是工业界应用最广泛的传统召回算法之一。该模型并不是寻找与当前用户相似的用户，而是寻找与用户历史喜欢物品相似的其他物品。因此，ItemCF 更加关注"物品之间的关联关系"。</p>
+
+<p>假设某位用户曾经观看过《复仇者联盟》《钢铁侠》和《蜘蛛侠》三部电影。由于大量用户都会连续观看这些电影，因此系统可以统计得到《钢铁侠》和《美国队长》具有较高的相似度，《蜘蛛侠》和《毒液》具有较高的相似度。当该用户再次访问推荐系统时，即使他从未观看过《美国队长》或《毒液》，系统仍然可以根据历史观看物品之间的相似关系，将这些电影推荐给用户。</p>
+
+<div class="definition-box">
+  <div class="def-label">定义 10.2</div>
+  <p>ItemCF 推荐的依据并不是用户之间是否相似，而是用户历史交互过的物品能够"投票"推荐与自己相似的其他物品。因此，ItemCF 算法的关键就在于如何计算物品之间的相似度。</p>
+</div>
+
+<p>ItemCF 通常基于用户-物品交互矩阵进行建模。假设存在用户-物品交互矩阵 R，其中 R<sub>ui</sub> 表示用户 u 对物品 i 的交互行为。ItemCF 首先计算任意两个物品之间的相似度，从而构建整个物品相似度矩阵 S。最常见的相似度计算方式是余弦相似度：</p>
+
+<div class="formula-box">$$ S_{ij} = \frac{\mathbf{R}_i \cdot \mathbf{R}_j}{\|\mathbf{R}_i\| \cdot \|\mathbf{R}_j\|} = \frac{\sum_u R_{ui} \cdot R_{uj}}{\sqrt{\sum_u R^2_{ui}} \cdot \sqrt{\sum_u R^2_{uj}}} $$ &nbsp;&nbsp;</div>
+
+<p>在工业级推荐场景中，大部分 ItemCF 都基于隐式反馈进行学习，因此 R<sub>ui</sub> 通常定义为：R<sub>ui</sub> = 1 如果用户 u 与物品 i 有交互行为，否则为 0。基于此定义，R²<sub>ui</sub> = R<sub>ui</sub>，因此有：</p>
+
+<div class="formula-box">$$ \sum_u R^2_{ui} = \sum_u R_{ui} = |N(i)| $$ &nbsp;&nbsp;</div>
+
+<p>其中 |N(i)| 表示与物品 i 有交互行为的用户数量。因此相似度公式可以简化为：</p>
+
+<div class="formula-box">$$ S_{ij} = \frac{|N(i) \cap N(j)|}{\sqrt{|N(i)| \cdot |N(j)|}} $$ &nbsp;&nbsp;</div>
+
+<p>这表示物品 i 和物品 j 的相似度等于同时喜欢两个物品的用户数，除以两个物品各自用户数的几何平均。这种形式被称为 Jaccard 相似度的变体。</p>
+
+<p><strong>ItemCF 召回计算流程：</strong></p>
+<ol>
+  <li>构建用户-物品倒排表</li>
+  <li>计算物品共现矩阵 C[i][j]，表示同时喜欢物品 i 和 j 的用户数</li>
+  <li>计算物品相似度矩阵 S[i][j] = C[i][j] / √(N(i) · N(j))</li>
+  <li>对每个用户，根据其历史交互物品，累加相似物品的相似度分数</li>
+  <li>过滤掉用户已经交互过的物品，取 Top-K 作为推荐结果</li>
+</ol>
+
+<p><strong>ItemCF 工程优化：</strong></p>
+<ul>
+  <li>活跃用户惩罚：对活跃用户进行降权，避免活跃用户对物品相似度计算造成偏差</li>
+  <li>活跃物品惩罚：对热门物品进行降权，避免热门物品与所有物品都有较高相似度</li>
+  <li>时间衰减：用户行为随时间衰减，近期行为权重更高</li>
+  <li>相似度归一化：对相似度矩阵进行行归一化，消除物品热度差异</li>
+</ul>
+
+<h3 class="subsection-title" id="sec-10-1-2">10.1.2 UserCF 召回</h3>
+
+<p>UserCF（User-based Collaborative Filtering，基于用户的协同过滤）是最早被提出的协同过滤方法。其核心思想是：找到与当前用户兴趣相似的其他用户，将这些用户喜欢但当前用户尚未接触的物品推荐给当前用户。</p>
+
+<p>UserCF 的相似度计算公式为：</p>
+
+<div class="formula-box">$$ W_{uv} = \frac{|N(u) \cap N(v)|}{\sqrt{|N(u)| \cdot |N(v)|}} $$ &nbsp;&nbsp;</div>
+
+<p>其中 N(u) 表示用户 u 交互过的物品集合，N(v) 表示用户 v 交互过的物品集合。分子表示两个用户共同交互过的物品数量，分母用于惩罚活跃用户。</p>
+
+<p><strong>UserCF vs ItemCF 对比：</strong></p>
+
+<table>
+  <caption>表 10.1：UserCF 与 ItemCF 对比</caption>
+  <thead>
+    <tr><th>维度</th><th>UserCF</th><th>ItemCF</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>推荐依据</td><td>相似用户喜欢什么</td><td>历史物品的相似物品</td></tr>
+    <tr><td>相似度计算</td><td>用户相似度</td><td>物品相似度</td></tr>
+    <tr><td>更新频率</td><td>高频（用户行为变化快）</td><td>低频（物品关系相对稳定）</td></tr>
+    <tr><td>适用场景</td><td>新闻、资讯（兴趣时效性强）</td><td>电商、视频（物品关系稳定）</td></tr>
+    <tr><td>冷启动</td><td>新物品容易推荐</td><td>新用户容易推荐</td></tr>
+    <tr><td>推荐理由</td><td>"相似用户也在看"</td><td>"看了 A 的人也看了 B"</td></tr>
+  </tbody>
+</table>
+
+<h3 class="subsection-title" id="sec-10-1-3">10.1.3 Online CF 召回</h3>
+
+<p>传统 ItemCF 和 UserCF 通常基于离线计算的相似度矩阵进行推荐。然而在工业场景中，用户兴趣变化迅速，尤其是短视频、新闻等时效性强的场景。Online CF（在线协同过滤）通过实时更新用户-物品交互矩阵，实现对新行为的即时响应。</p>
+
+<p>Online CF 的核心是在线增量更新物品共现矩阵和相似度矩阵。当用户产生新的交互行为时，系统实时更新相关物品对之间的共现计数，并重新计算相似度。这种方式能够在秒级捕捉用户最新兴趣变化。</p>
+
+<h3 class="subsection-title" id="sec-10-1-4">10.1.4 Swing 召回</h3>
+
+<p>Swing 是阿里巴巴提出的一种改进型 ItemCF 算法。传统 ItemCF 的一个问题是：当少量活跃用户同时与大量物品交互时，这些用户会使得许多不相关的物品之间产生虚假的相似度。Swing 算法通过<strong>用户对维度</strong>来计算物品相似度，有效缓解了这一问题。</p>
+
+<p>Swing 的核心思想是：如果两个物品被同一批用户对（user pair）共同交互过，那么这两个物品更可能真正相似。Swing 相似度公式为：</p>
+
+<div class="formula-box">$$ S_{ij} = \sum_{u \in U(i) \cap U(j)} \sum_{\substack{v \in U(i) \cap U(j) \\ v \neq u}} \frac{1}{\alpha + |N(u) \cap N(v)|} $$ &nbsp;&nbsp;</div>
+
+<p>其中 U(i) 和 U(j) 分别表示交互过物品 i 和 j 的用户集合，α 是平滑系数。该公式的核心思想是：对于每一对共同交互过物品 i 和 j 的用户 (u, v)，如果这两个用户之间的共同兴趣越少（|N(u) ∩ N(v)| 越小），说明物品 i 和 j 的相似性越不可能是由于用户本身的广泛兴趣导致的，因此应该给予更高的权重。</p>
+
+<h3 class="subsection-title" id="sec-10-1-5">10.1.5 矩阵分解召回</h3>
+
+<p>矩阵分解（Matrix Factorization, MF）是将用户-物品交互矩阵分解为低维用户隐向量和物品隐向量的方法。假设用户-物品交互矩阵 R ∈ R<sup>m×n</sup>，矩阵分解将其近似分解为：</p>
+
+<div class="formula-box">$$ \mathbf{R} \approx \mathbf{P} \cdot \mathbf{Q}^T $$ &nbsp;&nbsp;</div>
+
+<p>其中 P ∈ R<sup>m×k</sup> 为用户隐向量矩阵，Q ∈ R<sup>n×k</sup> 为物品隐向量矩阵，k 为隐向量维度（通常为 32~256）。用户 u 对物品 i 的偏好预测为：</p>
+
+<div class="formula-box">$$ \hat{r}_{ui} = \mathbf{p}_u^T \cdot \mathbf{q}_i $$ &nbsp;&nbsp;</div>
+
+<p>训练目标函数通常采用平方损失或交叉熵损失，并加入 L2 正则化项防止过拟合：</p>
+
+<div class="formula-box">$$ \mathcal{L} = \sum_{(u,i) \in \mathcal{R}} \left( r_{ui} - \mathbf{p}_u^T \mathbf{q}_i \right)^2 + \lambda \left( \|\mathbf{p}_u\|^2 + \|\mathbf{q}_i\|^2 \right) $$ &nbsp;&nbsp;</div>
+
+<p>经典的矩阵分解方法包括 SVD、ALS（Alternating Least Squares）和 BPR（Bayesian Personalized Ranking）。其中 BPR 是一种 pairwise 排序损失函数，专门用于隐式反馈场景：</p>
+
+<div class="formula-box">$$ \mathcal{L}_{BPR} = -\sum_{(u,i,j)} \ln \sigma(\hat{p}_{ui} - \hat{p}_{uj}) + \lambda \|\Theta\|^2 $$ &nbsp;&nbsp;</div>
+
+<p>其中 (u, i, j) 表示用户 u 交互过物品 i 但未交互过物品 j，σ 为 sigmoid 函数。</p>
+
+<h3 class="subsection-title" id="sec-10-1-6">10.1.6 Neural CF 召回</h3>
+
+<p>NeuralCF（NCF）是何向南等人在 2017 年提出的一种基于神经网络的协同过滤方法。传统矩阵分解使用内积（p<sub>u</sub><sup>T</sup>q<sub>i</sub>）来建模用户-物品交互，NCF 使用多层感知机（MLP）来替代内积，从而学习更复杂的非线性交互关系。</p>
+
+<p>NCF 的核心结构包括两个部分：</p>
+<ul>
+  <li><strong>GMF（Generalized Matrix Factorization）层</strong>：对用户向量和物品向量进行逐元素乘积，然后通过线性映射输出</li>
+  <li><strong>MLP 层</strong>：将用户向量和物品向量拼接后通过多层全连接网络学习非线性交互</li>
+</ul>
+
+<p>最终将 GMF 和 MLP 的输出拼接后通过 sigmoid 输出预测分数。NeuMF 模型结合了 GMF 的线性建模能力和 MLP 的非线性建模能力，在传统矩阵分解基础上取得了显著提升。</p>
+
+<h3 class="subsection-title" id="sec-10-1-7">10.1.7 异构协同过滤召回</h3>
+
+<p>传统协同过滤仅利用用户-物品交互矩阵，而忽略了用户和物品的属性信息（如用户年龄、性别、物品类别、标签等）。异构协同过滤（Heterogeneous CF）通过构建异构信息网络（Heterogeneous Information Network, HIN），将多种类型的节点和边统一建模，从而利用更丰富的信息进行推荐。</p>
+
+<p>在异构信息网络中，节点类型包括用户、物品、标签、类别、作者等，边类型包括"用户-物品"交互、"物品-标签"标注、"物品-类别"归属等。通过元路径（Meta Path）可以计算不同类型节点之间的语义相似度，从而辅助推荐。</p>
+
+<h2 class="section-title" id="sec-10-2">10.2 图召回</h2>
+
+<p>图召回方法将用户-物品交互数据建模为图结构，通过图上的随机游走或消息传递机制学习节点表示，进而用于召回。图召回方法主要分为两类：基于随机游走的图表示学习（如 DeepWalk、Node2Vec）和基于图神经网络的消息传递（如 GCN、GAT、GraphSAGE）。</p>
+
+<h3 class="subsection-title" id="sec-10-2-1">10.2.1 基于随机游走的图召回</h3>
+
+<h4>10.2.1.1 DeepWalk 召回</h4>
+
+<p>DeepWalk 是最早将自然语言处理中的词向量思想引入图表示学习的方法。其核心思想是：在图上进行随机游走生成节点序列，然后将这些序列视为"句子"，使用 SkipGram 模型学习节点表示。</p>
+
+<p>DeepWalk 算法流程：</p>
+<ol>
+  <li>从每个节点出发，执行 γ 次长度为 t 的随机游走</li>
+  <li>将游走序列视为句子，节点视为词</li>
+  <li>使用 SkipGram + Hierarchical Softmax 学习节点 Embedding</li>
+  <li>利用学到的节点 Embedding 计算相似度进行召回</li>
+</ol>
+
+<p>DeepWalk 的目标函数为：</p>
+
+<div class="formula-box">$$ \min_\Phi -\sum_{(v,w) \in \mathcal{D}} \log P(w | \Phi(v)) $$ &nbsp;&nbsp;</div>
+
+<p>其中 Φ 是节点到向量的映射函数，D 是随机游走生成的节点对集合。</p>
+
+<h4>10.2.1.2 Node2Vec 召回</h4>
+
+<p>Node2Vec 在 DeepWalk 基础上引入了有偏随机游走（Biased Random Walk），通过两个参数 p 和 q 控制游走策略：</p>
+
+<ul>
+  <li><strong>p（return parameter）</strong>：控制回到上一个节点的概率</li>
+  <li><strong>q（in-out parameter）</strong>：控制游走向远处探索还是向近邻探索</li>
+</ul>
+
+<p>当 q < 1 时，游走倾向于向远处探索（类似 DFS），能够捕捉宏观结构信息；当 q > 1 时，游走倾向于在近邻范围内活动（类似 BFS），能够捕捉局部微观结构。Node2Vec 通过调整 p 和 q 的取值，在 DFS 和 BFS 之间取得平衡，从而同时捕捉同质性和结构等价性。</p>
+
+<h4>10.2.1.3 EGES 召回</h4>
+
+<p>EGES（Enhanced Graph Embedding with Side Information）是阿里巴巴提出的图召回方法，在 DeepWalk 基础上引入了物品的边信息（Side Information），如物品类别、品牌、价格等，以缓解冷启动问题。</p>
+
+<p>EGES 的核心改进是：对于每个物品，不仅学习其基于图结构的 Embedding，还融合其属性特征的 Embedding。通过注意力机制自动学习不同属性特征的权重，生成融合表示：</p>
+
+<div class="formula-box">$$ \mathbf{h}_v = \frac{\sum_{s \in \mathcal{S}} \alpha_{vs} \cdot \mathbf{h}_{vs}}{\sum_{s \in \mathcal{S}} \alpha_{vs}} $$ &nbsp;&nbsp;</div>
+
+<p>其中 H<sub>v</sub><sup>s</sup> 是物品 v 的第 s 个属性特征的 Embedding，a<sub>v</sub><sup>s</sup> 是对应的注意力权重。</p>
+
+<h3 class="subsection-title" id="sec-10-2-2">10.2.2 图神经网络召回</h3>
+
+<h4>10.2.2.1 GCN 召回</h4>
+
+<p>图卷积网络（Graph Convolutional Network, GCN）通过图上的谱卷积操作学习节点表示。GCN 的核心传播规则为：</p>
+
+<div class="formula-box">$$ \mathbf{H}^{(l+1)} = \sigma\left( \hat{\mathbf{D}}^{-1/2} \hat{\mathbf{A}} \hat{\mathbf{D}}^{-1/2} \mathbf{H}^{(l)} \mathbf{W}^{(l)} \right) $$ &nbsp;&nbsp;</div>
+
+<p>其中 Â = A + I 是加了自环的邻接矩阵，D̂ 是 Â 的度矩阵，W<sup>(l)</sup> 是第 l 层的可训练参数，σ 是激活函数。GCN 通过逐层聚合邻居节点信息来更新节点表示。</p>
+
+<h4>10.2.2.2 GAT 召回</h4>
+
+<p>图注意力网络（Graph Attention Network, GAT）在 GCN 基础上引入了注意力机制，为不同邻居节点分配不同权重：</p>
+
+<div class="formula-box">$$ \alpha_{ij} = \text{softmax}_j \left( \text{LeakyReLU} \left( \mathbf{a}^T [\mathbf{W}\mathbf{h}_i \| \mathbf{W}\mathbf{h}_j] \right) \right) $$ &nbsp;&nbsp;</div>
+
+<p>GAT 通过多头注意力机制进一步提升表示能力，在推荐场景中能够更精准地捕捉用户-物品之间的重要交互关系。</p>
+
+<h4>10.2.2.3 GraphSAGE 召回</h4>
+
+<p>GraphSAGE（Inductive Representation Learning on Large Graphs）是一种归纳式图学习方法，能够为未见过的新节点生成 Embedding。与 GCN 不同，GraphSAGE 不是利用全图邻接矩阵进行传播，而是通过采样邻居并聚合其特征来生成节点表示：</p>
+
+<div class="formula-box">$$ \mathbf{h}_v^{(k)} = \sigma\left( \mathbf{W}^{(k)} \cdot \text{AGGREGATE}\left( \{\mathbf{h}_v^{(k-1)}\} \cup \{\mathbf{h}_u^{(k-1)}, \forall u \in \mathcal{N}(v)\} \right) \right) $$ &nbsp;&nbsp;</div>
+
+<p>GraphSAGE 支持多种聚合函数：Mean Aggregator、LSTM Aggregator、Pooling Aggregator。在工业推荐场景中，GraphSAGE 的归纳式学习能力使其能够处理动态变化的图结构，适用于新用户、新物品不断加入的场景。</p>
+
+<h4>10.2.2.4 LightGCN 召回</h4>
+
+<p>LightGCN 是 GCN 在推荐场景中的轻量化版本。作者发现传统 GCN 中的特征变换和非线性激活在推荐任务中不仅没有帮助，反而可能损害性能。LightGCN 简化了 GCN 的传播规则，仅保留邻接矩阵归一化和加权求和：</p>
+
+<div class="formula-box">$$ \mathbf{e}_u^{(k+1)} = \frac{1}{|\mathcal{N}(u)|} \sum_{i \in \mathcal{N}(u)} \mathbf{e}_i^{(k)} $$ &nbsp;&nbsp;</div>
+
+<p>最终节点表示为各层表示的加权平均：e<sub>u</sub> = (1/(K+1)) Σ<sub>k=0</sub><sup>K</sup> α<sub>k</sub> e<sub>u</sub><sup>(k)</sup>。LightGCN 参数量极少，训练速度快，在多个推荐数据集上取得了优于 NGCF 等复杂模型的效果。</p>
+
+<h4>10.2.2.5 PinSage 召回</h4>
+
+<p>PinSage 是 Pinterest 提出的基于随机游走-邻居采样的图卷积网络，是首个在十亿级图上成功落地的 GNN 推荐系统。PinSage 的核心创新包括：</p>
+<ul>
+  <li><strong>基于随机游走的邻居采样</strong>：通过 Personalized PageRank 采样重要邻居，而非全邻居聚合</li>
+  <li><strong>邻居聚合</strong>：通过卷积操作聚合采样邻居的特征</li>
+  <li><strong>多层级训练</strong>：支持大规模分布式训练</li>
+  <li><strong>负采样优化</strong>：使用 hard negative mining 提升训练效果</li>
+</ul>
+
+<h4>10.2.2.6 HybridGNN 召回</h4>
+
+<p>HybridGNN 是一种混合图神经网络模型，结合了图卷积和图注意力机制的优势。在推荐场景中，HybridGNN 通常同时建模用户-物品二分图以及物品-物品同质图，通过多视图融合提升表示能力。</p>
+
+<h2 class="section-title" id="sec-10-3">10.3 向量召回</h2>
+
+<p>向量召回是工业界推荐系统中最主流的召回范式。其核心思想是：将用户和物品分别映射到同一向量空间中，通过计算向量相似度（通常为内积或余弦相似度）来检索用户可能感兴趣的物品。向量召回的核心优势在于可以利用近似最近邻（ANN）检索技术实现毫秒级检索。</p>
+
+<h3 class="subsection-title" id="sec-10-3-1">10.3.1 YoutubeDNN 召回</h3>
+
+<p>YoutubeDNN 是 Google 在 2016 年提出的深度学习推荐召回架构，是工业界最早的深度召回模型之一。其核心架构为：</p>
+<ul>
+  <li><strong>用户侧</strong>：将用户历史观看视频 Embedding 的均值池化、搜索词 Embedding 的均值池化、用户属性特征（年龄、性别等）拼接后输入多层 DNN</li>
+  <li><strong>物品侧</strong>：视频 Embedding 作为输出层的参数</li>
+  <li><strong>训练</strong>：多分类问题，softmax 输出层 + 交叉熵损失</li>
+  <li><strong>在线服务</strong>：离线训练完成后，用户向量通过 DNN 前向计算得到，物品向量为输出层权重，在线通过最近邻检索召回</li>
+</ul>
+
+<p>YoutubeDNN 的关键工程经验包括：</p>
+<ul>
+  <li>使用 example age 特征捕捉视频新鲜度</li>
+  <li>训练时使用 softmax，但服务时使用向量检索</li>
+  <li>负采样替代全量 softmax</li>
+  <li>将搜索历史和观看历史分别处理</li>
+</ul>
+
+<h3 class="subsection-title" id="sec-10-3-2">10.3.2 双塔召回</h3>
+
+<p>双塔模型（Two-Tower Model）是工业界向量召回的事实标准。其核心架构为：用户特征和物品特征分别通过各自的 DNN 网络编码为向量，然后通过内积或余弦相似度计算匹配分数。</p>
+
+<div class="formula-box">$$ \text{score}(u, i) = \text{sim}\left( f_{\text{user}}(\mathbf{x}_u), f_{\text{item}}(\mathbf{x}_i) \right) = \cos(\mathbf{e}_u, \mathbf{e}_i) $$ &nbsp;&nbsp;</div>
+
+<p>双塔模型的核心优势在于<strong>解耦性</strong>：用户塔和物品塔可以独立计算，物品向量可以离线预计算并建立 ANN 索引，在线只需计算用户向量后进行检索，满足低延迟要求。</p>
+
+<p><strong>双塔召回负采样偏差处理</strong>：双塔模型训练时的一个核心问题是负采样偏差。如果随机采样负样本，热门物品被采为负样本的概率更高，导致模型对热门物品产生不公平的低分。工业界常用方法包括：</p>
+<ul>
+  <li><strong>Batch内负采样</strong>：一个 batch 内其他物品的正样本作为当前物品的负样本</li>
+  <li><strong>负采样修正</strong>：根据物品热度调整负样本权重</li>
+  <li><strong>混合负采样</strong>：结合随机负采样和 batch 内负采样</li>
+  <li><strong>困难负样本挖掘</strong>：加入与正样本相似但未被点击的物品作为负样本</li>
+</ul>
+
+<p><strong>双塔召回模型的发展趋势</strong>：包括特征交互增强（在用户塔内部引入特征交叉）、长序列建模（引入用户长期行为序列）、多模态融合（融合文本、图像、视频特征）、动态特征（实时特征更新）等方向。</p>
+
+<h3 class="subsection-title" id="sec-10-3-3">10.3.3 基于预训练语义模型的向量召回</h3>
+
+<p>随着预训练语言模型的发展，基于预训练语义模型的向量召回逐渐成为推荐系统中的重要召回通道。这类方法利用预训练模型（如 FastText、BERT、Sentence-BERT、SimCSE、E5 等）学习文本的语义表示，用于召回阶段的语义匹配。</p>
+
+<h4>10.3.3.1 FastText 模型</h4>
+<p>FastText 是 Facebook 提出的轻量级文本表示学习方法，通过子词（subword）级别的 n-gram 特征学习词向量，能够处理未登录词和多语言场景。在推荐场景中，FastText 常用于学习物品标题、描述等文本的 Embedding。</p>
+
+<h4>10.3.3.2 BERT 模型</h4>
+<p>BERT（Bidirectional Encoder Representations from Transformers）通过双向 Transformer 编码器学习文本的上下文表示。在推荐场景中，BERT 可以用于学习物品内容的深层语义表示，支持更精准的语义召回。</p>
+
+<h4>10.3.3.3 Sentence-BERT 模型</h4>
+<p>Sentence-BERT 通过对比学习目标微调 BERT，使其生成的句子级表示更适合语义相似度计算。在推荐场景中，Sentence-BERT 常用于学习物品标题或描述的语义向量，支持基于语义的相似物品召回。</p>
+
+<h4>10.3.3.4 SimCSE 模型</h4>
+<p>SimCSE（Simple Contrastive Sentence Embedding）通过 dropout 数据增强实现对比学习，无需额外数据即可学习高质量的句子表示。SimCSE 分为无监督和有监督两种版本，在多个语义相似度基准上取得了 SOTA 效果。</p>
+
+<h4>10.3.3.5 E5 模型</h4>
+<p>E5（EmbEddings from bidirectional Encoder）是微软提出的通用文本 Embedding 模型，通过大规模弱监督数据预训练 + 对比学习微调，在多种下游任务上表现出色。</p>
+
+<h4>10.3.3.6 Sentence Transformers 库</h4>
+<p>Sentence Transformers 是一个开源 Python 库，封装了多种预训练语义模型，支持快速加载和使用。在推荐工程中，可以通过该库快速实现基于预训练模型的文本向量化。</p>
+
+<h2 class="section-title" id="sec-10-4">10.4 序列召回</h2>
+
+<p>序列召回（Sequential Recall）是一类基于用户历史行为序列进行推荐的召回方法。其核心假设是：用户的兴趣是动态变化的，通过建模用户行为序列的时序信息，可以更准确地预测用户下一步可能感兴趣的内容。</p>
+
+<h3 class="subsection-title" id="sec-10-4-1">10.4.1 List2Vec 召回</h3>
+
+<p>List2Vec 是一种基于物品序列学习的召回方法，其核心思想借鉴了 Word2Vec：将用户的行为序列视为"句子"，物品视为"词"，通过 SkipGram 或 CBOW 目标学习物品 Embedding。</p>
+
+<h4>10.4.1.1 Item2Vec 模型</h4>
+<p>Item2Vec 直接将 Word2Vec 应用于物品序列，通过 SkipGram 目标函数学习物品表示：</p>
+<div class="formula-box">$$ \mathcal{L} = -\sum_{t=1}^{T} \sum_{-c \leq j \leq c, j \neq 0} \log P(w_{t+j} | w_t) $$ &nbsp;&nbsp;</div>
+
+<h4>10.4.1.2 List2Vec 召回算法原理</h4>
+<p>List2Vec 在 Item2Vec 基础上引入了更多上下文信息，如时间间隔、行为类型等，通过更丰富的序列建模提升表示质量。</p>
+
+<h4>10.4.1.3 List2Vec 召回算法工程实现</h4>
+<p>工业落地的 List2Vec 通常需要处理亿级物品序列，工程上需要优化包括序列采样、负采样、分布式训练等环节。</p>
+
+<h3 class="subsection-title" id="sec-10-4-2">10.4.2 RNN 序列召回</h3>
+
+<h4>10.4.2.1 GRU4Rec 模型</h4>
+<p>GRU4Rec 是首个使用 RNN（GRU）进行会话推荐的模型。将用户的行为序列输入 GRU，利用 GRU 的门控机制捕捉序列中的时序依赖关系，最后输出下一个物品的概率分布。</p>
+
+<h4>10.4.2.2 RNN 序列召回工程实现</h4>
+<p>工业场景中 RNN 序列召回需要解决长序列处理、并行训练加速、在线推理优化等问题。</p>
+
+<h3 class="subsection-title" id="sec-10-4-3">10.4.3 Transformer 序列召回</h3>
+
+<p>Transformer 序列召回利用自注意力机制建模用户行为序列，相比 RNN 具有更强的长距离依赖建模能力和并行计算优势。</p>
+
+<p><strong>SASRec（Self-Attentive Sequential Recommendation）</strong> 是 Transformer 序列召回的代表模型，通过因果自注意力机制（Causal Self-Attention）捕捉用户行为序列中的模式：</p>
+
+<div class="formula-box">$$ \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\left( \frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}} \right) \mathbf{V} $$ &nbsp;&nbsp;</div>
+
+<p>SASRec 通过堆叠多层自注意力层，能够自适应地关注序列中不同位置的历史行为，在多个序列推荐基准上取得了优于 GRU4Rec 的效果。</p>
+
+<h3 class="subsection-title" id="sec-10-4-4">10.4.4 SDM 召回</h3>
+
+<p>SDM（Sequential Deep Matching）是阿里巴巴提出的序列召回模型，融合了用户长期和短期兴趣。SDM 的核心架构包括：</p>
+<ul>
+  <li><strong>长期兴趣模块</strong>：通过用户较长时间窗口的行为序列建模</li>
+  <li><strong>短期兴趣模块</strong>：通过用户近期行为序列建模</li>
+  <li><strong>注意力融合</strong>：通过注意力机制动态融合长期和短期兴趣</li>
+</ul>
+
+<h3 class="subsection-title" id="sec-10-4-5">10.4.5 对比学习序列召回</h3>
+
+<p>对比学习序列召回通过数据增强和对比学习目标，提升序列表示的鲁棒性和泛化能力。</p>
+
+<h4>10.4.5.1 CL4SRec 召回</h4>
+<p>CL4SRec（Contrastive Learning for Sequential Recommendation）通过序列数据增强（如裁剪、重排、删除）生成正样本对，使用 InfoNCE 损失训练序列编码器。</p>
+
+<h4>10.4.5.2 ICSRec 召回</h4>
+<p>ICSRec（Intent Contrastive Learning for Sequential Recommendation）在 CL4SRec 基础上引入用户意图建模，通过对比学习捕捉用户潜在意图的序列表示。</p>
+
+<h4>10.4.5.3 对比学习序列召回落地讨论</h4>
+<p>对比学习序列召回在工业落地中需要关注数据增强策略的选择、负样本采样策略、与监督学习的融合等问题。</p>
+
+<h2 class="section-title" id="sec-10-5">10.5 多兴趣召回</h2>
+
+<p>多兴趣召回（Multi-Interest Recall）的核心思想是：用户的兴趣是多元的，单一向量难以充分表达用户的所有兴趣。多兴趣召回模型为每个用户生成多个兴趣向量，每个向量代表用户的一个兴趣方面，从而提升召回的覆盖率和精准度。</p>
+
+<h3 class="subsection-title" id="sec-10-5-1">10.5.1 MIND 召回</h3>
+
+<p>MIND（Multi-Interest Network with Dynamic Routing）是阿里巴巴提出的多兴趣召回模型。其核心是利用<strong>动态路由机制</strong>（Dynamic Routing）将用户的历史行为聚类为多个兴趣胶囊（Interest Capsule），每个胶囊代表用户的一个兴趣方面。</p>
+
+<h4>10.5.1.1 动态路由机制</h4>
+<p>动态路由借鉴了胶囊网络（Capsule Network）的思想，通过迭代路由过程将底层行为特征分配到不同的兴趣胶囊中：</p>
+
+<div class="formula-box">$$ c_{ij} = \text{softmax}_j(b_{ij}) $$ &nbsp;&nbsp; $$ \mathbf{e}_u = \sum_i c_{ij} \mathbf{e}_i $$ &nbsp;&nbsp;</div>
+
+<p>其中 b<sub>ij</sub> 是行为 i 对兴趣胶囊 j 的路由 logits，通过动态路由迭代更新。</p>
+
+<h4>10.5.1.2 Label-aware Attention 机制</h4>
+<p>在训练阶段，MIND 使用 Label-aware Attention 将多个兴趣胶囊与目标物品进行注意力计算，选择与目标物品最相关的兴趣胶囊进行训练：</p>
+
+<div class="formula-box">$$ a_{ji} = \frac{\exp(\mathbf{e}_{uj}^T \cdot \mathbf{e}_i)}{\sum_{k=1}^{K} \exp(\mathbf{e}_{uk}^T \cdot \mathbf{e}_i)} $$ &nbsp;&nbsp;</div>
+
+<h4>10.5.1.3 MIND 召回工程落地</h4>
+<p>在线服务时，MIND 为每个用户生成 K 个兴趣向量，分别进行 ANN 检索后合并去重，取 Top-K 作为召回结果。</p>
+
+<h3 class="subsection-title" id="sec-10-5-2">10.5.2 ComiRec 召回</h3>
+
+<p>ComiRec（Controllable Multi-Interest Framework）在 MIND 基础上引入了可控性，通过注意力机制或自注意力机制生成多兴趣表示，并支持通过参数控制兴趣数量。</p>
+
+<h2 class="section-title" id="sec-10-6">10.6 其他召回模型</h2>
+
+<h3 class="subsection-title" id="sec-10-6-1">10.6.1 PDN 召回</h3>
+
+<p>PDN（Path-based Deep Network）是一种基于路径的召回模型，通过显式建模用户-物品之间的多跳路径关系进行推荐。PDN 将用户与物品之间的连接关系建模为图上的路径，通过深度网络学习路径特征，从而捕捉用户与物品之间的间接关联。</p>
+
+<h3 class="subsection-title" id="sec-10-6-2">10.6.2 TDM 召回</h3>
+
+<p>TDM（Tree-based Deep Model）是阿里巴巴提出的基于树结构的深度召回方法。TDM 将物品组织成一棵树，通过树上的层次化检索实现高效召回。</p>
+
+<p><strong>Hierarchical Softmax 存在的问题</strong>：传统 Hierarchical Softmax 基于树结构进行概率计算，但存在计算量大、难以并行化等问题。</p>
+
+<p><strong>TDM 召回的树模型</strong>：TDM 通过学习一棵二叉树（或更多分支的树），每个非叶子节点代表一个兴趣类别，叶子节点代表物品。检索时从根节点出发，逐层选择 Top-K 子节点，最终到达叶子节点获得召回结果。</p>
+
+<p><strong>TDM 召回的深度网络</strong>：TDM 在每个非叶子节点使用深度网络计算用户对该节点的兴趣分数，通过层次化检索实现高效召回。</p>
+
+<p><strong>TDM 召回的树构建与学习</strong>：TDM 的树结构对召回效果至关重要。通常通过层次化聚类（如 K-Means）构建树结构，使得相似物品在树中距离接近。树结构可以定期更新以适应新的物品。</p>
+
+<p><strong>TDM 召回工程落地</strong>：TDM 在阿里巴巴多个业务线成功落地，支持亿级物品的高效召回。工程上需要解决树构建、模型训练、在线检索等环节的效率问题。</p>
+
+<h2 class="section-title" id="sec-10-7">10.7 召回模型实践讨论</h2>
+
+<p>在实际工业推荐系统中，通常会同时部署多种召回通道，包括但不限于：ItemCF、UserCF、Swing、双塔、YoutubeDNN、序列召回、多兴趣召回、图召回、TDM 等。多通道召回的核心优势在于：</p>
+<ul>
+  <li><strong>覆盖率高</strong>：不同召回通道覆盖不同类型的用户-物品匹配关系</li>
+  <li><strong>鲁棒性强</strong>：单一通道失效时，其他通道仍能提供候选</li>
+  <li><strong>互补性强</strong>：不同通道捕捉不同维度的兴趣信号</li>
+</ul>
+
+<p>多通道召回的候选结果在进入粗排之前，通常需要进行去重、截断和配额控制，以保证各通道的候选数量合理分布。</p>
+
+<h2 class="section-title" id="sec-10-8">10.8 本章小结</h2>
+
+<p>本章系统介绍了推荐系统中的召回模型，按照技术路线分为六大类进行展开。首先介绍了协同过滤召回方法，包括 ItemCF、UserCF、Online CF、Swing、矩阵分解、Neural CF 和异构协同过滤，这些方法构成了推荐系统召回的基础。随后介绍了图召回方法，包括基于随机游走的 DeepWalk、Node2Vec、EGES，以及基于图神经网络的 GCN、GAT、GraphSAGE、LightGCN、PinSage 和 HybridGNN。接着介绍了向量召回方法，包括 YoutubeDNN、双塔召回以及基于预训练语义模型（FastText、BERT、Sentence-BERT、SimCSE、E5）的向量召回。之后介绍了序列召回方法，包括 List2Vec、GRU4Rec、Transformer 序列召回（SASRec）、SDM 和对比学习序列召回。然后介绍了多兴趣召回方法，包括 MIND 和 ComiRec。最后介绍了其他召回模型，包括 PDN 和 TDM。</p>
+
+<p>通过本章的学习，读者应该能够理解不同召回模型的核心思想、适用场景以及工程落地要点，为后续章节中粗排、精排等模块的学习打下坚实基础。</p>
+
+<h2 class="section-title">10.9 参考文献</h2>
+
+<p>[1] Ting-Rui Chiang et al. "DualAug: Contrastive Learning with Dual Augmentations for Sequential Recommendation". In: arXiv preprint arXiv:2205.05928 (2022).</p>
+<p>[2] Paul Covington, Jay Adams, and Emre Sargin. "Deep neural networks for youtube recommendations". In: Proceedings of the 10th ACM conference on recommender systems. 2016, pp. 191–198.</p>
+<p>[3] Tianwen Chen et al. "Journey Towards Multi-Interest Recommendation: A Survey of Methods, Applications, and Future Directions". In: arXiv preprint arXiv:2311.14785 (2023).</p>
+<p>[4] Yifan Chen et al. "CL4SRec: Contrastive Learning for Sequential Recommendation". In: arXiv preprint arXiv:2110.08445 (2021).</p>
+<p>[5] Zhong Chen et al. "E5: An Easy, Efficient and Effective Text Embedder". In: arXiv preprint arXiv:2212.03533 (2022).</p>
+<p>[6] Jacob Devlin et al. "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding". In: NAACL-HLT. 2019.</p>
+<p>[7] Tian Gao et al. "ICSRec: Intent Contrastive Learning for Sequential Recommendation". In: arXiv preprint arXiv:2306.12174 (2023).</p>
+<p>[8] Xiangnan He et al. "Neural collaborative filtering". In: Proceedings of the 26th international conference on world wide web. 2017, pp. 173–182.</p>
+<p>[9] Balázs Hidasi et al. "Session-based recommendations with recurrent neural networks". In: arXiv preprint arXiv:1511.06939 (2015).</p>
+<p>[10] Thomas N. Kipf and Max Welling. "Semi-Supervised Classification with Graph Convolutional Networks". In: ICLR. 2017.</p>
+<p>[11] Wang-Cheng Kang and Julian McAuley. "Self-attentive sequential recommendation". In: 2018 IEEE international conference on data mining (ICDM). IEEE. 2018, pp. 197–206.</p>
+<p>[12] Yehuda Koren, Robert Bell, and Chris Volinsky. "Matrix factorization techniques for recommender systems". In: Computer 42.8 (2009), pp. 30–37.</p>
+<p>[13] Jianxin Li et al. "SDM: Sequential Deep Matching Model for Online Large-Scale Recommender System". In: Proceedings of the 28th ACM international conference on information and knowledge management. 2019, pp. 2635–2643.</p>
+<p>[14] Defu Lian et al. "Personalized ranking with multi-interest network". In: arXiv preprint arXiv:2104.06086 (2021).</p>
+<p>[15] Julian McAuley et al. "Image-based recommendations on styles and substitutes". In: Proceedings of the 38th international ACM SIGIR conference on research and development in information retrieval. 2015, pp. 43–52.</p>
+<p>[16] Tomas Mikolov et al. "Efficient estimation of word representations in vector space". In: arXiv preprint arXiv:1301.3781 (2013).</p>
+<p>[17] Bryan Perozzi, Rami Al-Rfou, and Steven Skiena. "DeepWalk: Online Learning of Social Representations". In: Proceedings of the 20th ACM SIGKDD international conference on Knowledge discovery and data mining. 2014, pp. 701–710.</p>
+<p>[18] Steffen Rendle et al. "BPR: Bayesian personalized ranking from implicit feedback". In: UAI. 2009.</p>
+<p>[19] Petar Veličković et al. "Graph attention networks". In: arXiv preprint arXiv:1710.10903 (2017).</p>
+<p>[20] Hamilton, William L., Rex Ying, and Jure Leskovec. "Inductive representation learning on large graphs". In: NeurIPS. 2017.</p>
+<p>[21] Xiang Wang et al. "LightGCN: Simplifying and powering graph convolution network for recommendation". In: Proceedings of the 43rd international ACM SIGIR conference on research and development in information retrieval. 2020, pp. 639–648.</p>
+<p>[22] Rex Ying et al. "Graph Convolutional Neural Networks for Web-Scale Recommender Systems". In: Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining. 2018, pp. 974–983.</p>
+<p>[23] Fajie Yuan et al. "Swing: A Robust Collaborative Filtering Model for Item Recommendation". In: arXiv preprint arXiv:1909.00974 (2019).</p>
+<p>[24] H. Pei et al. "EGES: Enhanced Graph Embedding with Side Information". In: Alibaba Tech Blog. 2018.</p>
+<p>[25] J. Tang and W. Wang. "Personalized Top-N Sequential Recommendation with Convolutional Sequence Embedding". In: WSDM. 2018.</p>
+
+<div class="chapter-end">* * *</div>
+
+<div class="nav-bar">
+  <a href="ch09.html">← 上一章：第9章 生成式推荐模块</a>
+  <span style="color: var(--text-light);">第三部分未完待续...</span>
+</div>
+
+</body>
+</html>

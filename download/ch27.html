@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第27章 因果推荐 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
 </head>
 <body>
 <div class="book-header">
@@ -32,7 +36,7 @@
 
 <p>逆倾向加权（IPW）是因果推断中最经典的纠偏方法。其核心思想是：如果样本 i 被曝光（被处理）的概率为 p_i（倾向分数），那么对该样本进行 1/p_i 的加权，可以消除曝光偏差，获得无偏的效果估计。</p>
 
-<div class="formula-box">L_IPS = (1/N) * Sum_i [ y_i / p_i * L(f(x_i), y_i) ]</div>
+<div class="formula-box">$$ L_IPS = (1/N) * Sum_{i} [ y_{i} / p_{i} * L(f(x_{i}), y_{i}) ] $$</div>
 
 <p>其中 p_i 为样本 i 被曝光的倾向分数，y_i 为真实标签，f(x_i) 为模型预测。被低估的样本（低曝光概率）获得更高权重，从而纠正曝光偏差。</p>
 
@@ -47,7 +51,7 @@
 
 <p>Doubly Robust（双重稳健）估计结合了 IPW 和直接模型两种纠偏方式：</p>
 
-<div class="formula-box">L_DR = (1/N) * Sum_i [ f_hat(x_i) + (y_i - f_hat(x_i)) / p_i ]</div>
+<div class="formula-box">$$ L_DR = (1/N) * Sum_{i} [ f_hat(x_{i}) + (y_{i} - f_hat(x_{i})) / p_{i} ] $$</div>
 
 <p>其中 f_hat(x_i) 是直接模型的预测值。DR 的核心优势是"双重保险"——只要倾向分数模型或直接模型其中之一正确，DR 就能实现无偏估计。</p>
 

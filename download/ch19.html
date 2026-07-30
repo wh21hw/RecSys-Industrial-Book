@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第19章 多目标与多场景 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
 </head>
 <body>
 <div class="book-header">
@@ -75,11 +79,11 @@
 
 <p>对于任务 t，其输入表示为所有专家的加权求和：</p>
 
-<div class="formula-box">y_t = Tower_t( Σᵢ g_t(i) · fᵢ(x) )</div>
+<div class="formula-box">$$ y_{t} = Tower_{t}( \sumᵢ g_{t}(i) \cdot fᵢ(x) ) $$</div>
 
 <p>其中门控权重为：</p>
 
-<div class="formula-box">g_t = softmax( W_t · x )</div>
+<div class="formula-box">$$ g_{t} = softmax( W_{t} \cdot x ) $$</div>
 
 <p>W_t 是任务 t 的门控参数矩阵。通过 softmax 归一化，确保各专家权重之和为 1。</p>
 
@@ -111,7 +115,7 @@
 
 <p>对于任务 t，其输入表示为该任务的专属专家和共享专家的加权组合：</p>
 
-<div class="formula-box">y_t = Tower_t( Σᵢ g_t^s(i) · fᵢ^s(x) + Σⱼ g_t^t(j) · fⱼ^t(x) )</div>
+<div class="formula-box">$$ y_{t} = Tower_{t}( \sumᵢ g_{t}^{s}(i) \cdot fᵢ^{s}(x) + \sumⱼ g_{t}^{t}(j) \cdot fⱼ^{t}(x) ) $$</div>
 
 <p>其中 fⁱˢ 为共享专家，fʲᵗ 为任务 t 的专属专家，g_tˢ 和 g_tᵗ 分别为共享和专属的门控权重。</p>
 
@@ -137,13 +141,13 @@
 
 <p>ESMM 的核心创新是将 CTR 和 CVR 联合建模，利用它们之间的漏斗关系：</p>
 
-<div class="formula-box">pCTCVR = pCTR × pCVR</div>
+<div class="formula-box">$$ pCTCVR = pCTR \times pCVR $$</div>
 
 <p>其中 pCTR 为点击率预估，pCVR 为转化率预估，pCTCVR 为点击后转化率。ESMM 在<strong>全部曝光样本</strong>上训练，通过 pCTCVR = pCTR × pCVR 的关系，利用 CTR 任务的监督信号间接学习 CVR。</p>
 
 <p>具体来说，ESMM 共享 Embedding 层，上面有两个 Tower：CTR Tower 和 CVR Tower。模型的损失函数为：</p>
 
-<div class="formula-box">L = L_CTR + L_CTCVR = L_CTR + L(pCTR × pCVR, y_CTCVR)</div>
+<div class="formula-box">$$ L = L_CTR + L_CTCVR = L_CTR + L(pCTR \times pCVR, y_CTCVR) $$</div>
 
 <p>其中 y_CTCVR 为点击后转化的真实标签。由于 pCTCVR = pCTR × pCVR，梯度可以通过 pCTR 反向传播到 CVR Tower，使得 CVR 模型在全部曝光样本上学习，消除了样本选择偏差。</p>
 
@@ -159,7 +163,7 @@
 
 <p>STAR（Star Topology Aware Recommender）[5] 由阿里巴巴于 2021 年提出，采用星形拓扑结构：所有场景共享主干网络（Central Network），每个场景有独立的子网络（Domain-specific Network），通过元素级乘法融合：</p>
 
-<div class="formula-box">W* = W_central ⊙ W_domain</div>
+<div class="formula-box">$$ W* = W_central ⊙ W_domain $$</div>
 
 <p>其中 W_central 为共享主干权重，W_domain 为场景专属权重，⊙ 为 Hadamard 积。这种设计使得共享权重学习通用模式，场景权重学习差异化特征，两者通过乘法融合实现"共性+个性"的表达。</p>
 

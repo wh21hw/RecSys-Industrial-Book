@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第30章 RL多目标融合 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
 </head>
 <body>
 
@@ -90,9 +94,7 @@
 
 <p>最简单的多目标融合方法——将各目标分数加权求和：</p>
 
-<div class="formula-box">
-  score = w₁·CTR + w₂·CVR + w₃·DwellTime + w₄·Diversity &nbsp;&nbsp;(30.1)
-</div>
+<div class="formula-box">$$ score = w₁\cdotCTR + w₂\cdotCVR + w₃\cdotDwellTime + w₄\cdotDiversity \tag{30.1} $$</div>
 
 <p>权重 wᵢ 通过人工调参或离线搜索确定。</p>
 
@@ -128,15 +130,11 @@
 
 <p>RL 将多目标融合转化为奖励设计问题：</p>
 
-<div class="formula-box">
-  rₜ = w₁·r_click + w₂·r_buy + w₃·r_dwell + w₄·r_diversity &nbsp;&nbsp;(30.2)
-</div>
+<div class="formula-box">$$ rₜ = w₁\cdotr_click + w₂\cdotr_buy + w₃\cdotr_dwell + w₄\cdotr_diversity \tag{30.2} $$</div>
 
 <p>与传统加权求和不同，RL 的奖励是序列累积的：</p>
 
-<div class="formula-box">
-  R = Σₜ γᵗ · rₜ &nbsp;&nbsp;(30.3)
-</div>
+<div class="formula-box">$$ R = \sumₜ \gammaᵗ \cdot rₜ \tag{30.3} $$</div>
 
 <p>这使得 RL 可以优化长期累积奖励，而非单次奖励。长期累积奖励自然包含了留存、LTV 等长期目标。</p>
 
@@ -168,9 +166,7 @@
 
 <p>RL 的核心优势是优化长期累积奖励。折扣因子 γ 控制长期视野：</p>
 
-<div class="formula-box">
-  R = Σₜ₌₀^∞ γᵗ · rₜ = r₀ + γ·r₁ + γ²·r₂ + ... &nbsp;&nbsp;(30.4)
-</div>
+<div class="formula-box">$$ R = \sumₜ₌₀^\infty \gammaᵗ \cdot rₜ = r₀ + \gamma\cdotr₁ + \gamma^{2}\cdotr₂ + ... \tag{30.4} $$</div>
 
 <p>γ 越大越重视长期，γ 越小越重视短期。推荐系统通常设 γ = 0.9-0.99，表示重视未来 10-100 步的奖励。</p>
 

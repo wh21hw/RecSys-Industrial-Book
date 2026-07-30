@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第31章 Session推荐与层次决策 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
 </head>
 <body>
 
@@ -142,9 +146,7 @@
 
 <p>REINFORCE 是最简单的策略梯度方法：</p>
 
-<div class="formula-box">
-  ∇J(θ) = E[Σₜ ∇log π(aₜ|sₜ; θ) · (Gₜ - bₜ)] &nbsp;&nbsp;(31.1)
-</div>
+<div class="formula-box">$$ ∇J(\theta) = E[\sumₜ ∇log π(aₜ|sₜ; \theta) \cdot (Gₜ - bₜ)] \tag{31.1} $$</div>
 
 <p>其中 Gₜ 是从 t 时刻开始的累积折扣奖励，bₜ 是基线。</p>
 
@@ -158,10 +160,8 @@
 
 <p>Actor-Critic 同时学习策略（Actor）和值函数（Critic）：</p>
 
-<div class="formula-box">
-  Actor: ∇J = E[∇log π(aₜ|sₜ) · (rₜ + γV(sₜ₊₁) - V(sₜ))]<br>
-  Critic: L = (rₜ + γV(sₜ₊₁) - V(sₜ))² &nbsp;&nbsp;(31.2)
-</div>
+<div class="formula-box">$$ Actor: ∇J = E[∇log π(aₜ|sₜ) \cdot (rₜ + \gammaV(sₜ₊₁) - V(sₜ))]
+  Critic: L = (rₜ + \gammaV(sₜ₊₁) - V(sₜ))^{2} \tag{31.2} $$</div>
 
 <p>Critic 提供时序差分（TD）误差作为 Actor 的梯度信号，比 REINFORCE 的蒙特卡洛回报方差更小。</p>
 

@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第20章 链路一致性 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
 </head>
 <body>
 <div class="book-header">
@@ -63,7 +67,7 @@
 
 <p>使用精排输出的软标签（Soft Label）作为粗排的训练目标。软标签是精排模型输出的连续概率值，而非硬标签（0 或 1）：</p>
 
-<div class="formula-box">L = α · CE(y, ŷ_student) + (1-α) · KL(q_teacher || q_student)</div>
+<div class="formula-box">$$ L = \alpha \cdot CE(y, \hat{y}_student) + (1-\alpha) \cdot KL(q_teacher || q_student) $$</div>
 
 <p>其中 CE 为交叉熵损失，KL 为 KL 散度，q_teacher 和 q_student 分别为 Teacher 和 Student 的输出分布，α 为损失权重。软标签的核心优势在于：它包含了物品之间的相对排序关系。例如，精排对物品 A 的预测分数为 0.8，对物品 B 为 0.3，软标签不仅告诉 Student "A 比 B 好"，还告诉它"A 比 B 好多少"。这种丰富的监督信号比硬标签（"A 是正样本，B 是负样本"）提供了更多信息。</p>
 
@@ -71,7 +75,7 @@
 
 <p>排序关系蒸馏（Ranking Distillation）[2] 不关注 Teacher 的具体预估值，而是让 Student 学习 Teacher 的排序关系。对于候选集合中的物品对 (i, j)，如果 Teacher 认为 i 应排在 j 前面（s_teacher(i) > s_teacher(j)），则鼓励 Student 也保持这一顺序：</p>
 
-<div class="formula-box">L_rank = -Σ_{i<j} I(rank_T(i) < rank_T(j)) · log σ(s_S(i) - s_S(j))</div>
+<div class="formula-box">$$ L_rank = -\sum_{i<j} I(rank_{T}(i) < rank_{T}(j)) \cdot log \sigma(s_{S}(i) - s_{S}(j)) $$</div>
 
 <p>其中 I(·) 为指示函数，σ 为 sigmoid 函数，s_S(i) 为 Student 对物品 i 的预测分数。这种方法不依赖 Teacher 的具体预估值，只关注排序关系，因此对 Teacher 和 Student 之间的分数尺度差异更加鲁棒。Ranking Distillation 在工业实践中通常比软标签蒸馏效果更好，因为推荐系统最终关注的是排序质量而非预估精度。</p>
 

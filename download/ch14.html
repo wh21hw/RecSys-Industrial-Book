@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第14章 特征工程 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
 </head>
 <body>
 
@@ -139,17 +143,13 @@
 
 <p><strong>平滑估计（Bayesian Smoothing）：</strong>使用 Beta 先验分布对 CTR 进行贝叶斯平滑：</p>
 
-<div class="formula-box">
-  CTR_smooth = (clicks + α) / (impressions + α + β) &nbsp;&nbsp;(14.1)
-</div>
+<div class="formula-box">$$ CTR_smooth = (clicks + \alpha) / (impressions + \alpha + \beta) \tag{14.1} $$</div>
 
 <p>其中 α 和 β 是 Beta 分布的超参数，可以通过矩估计或 MLE 从全局数据估计。平滑后的 CTR 对新物品不会为 0，对低曝光物品也不会极端偏移。</p>
 
 <p><strong>时间衰减统计：</strong>使用指数衰减加权 CTR：</p>
 
-<div class="formula-box">
-  CTR_decay = Σ w_t · ctr_t / Σ w_t, &nbsp;&nbsp;w_t = e^(-λ·(T-t)) &nbsp;&nbsp;(14.2)
-</div>
+<div class="formula-box">$$ CTR_decay = \sum w_{t} \cdot ctr_{t} / \sum w_{t},   w_{t} = e^(-\lambda\cdot(T-t)) \tag{14.2} $$</div>
 
 <p>其中 w_t 是时间 t 的权重，λ 是衰减系数。近期数据权重更高，使 CTR 反映最新趋势。</p>
 

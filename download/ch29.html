@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第29章 RL流量调控 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
 </head>
 <body>
 
@@ -64,9 +68,7 @@
 
 <p>多臂老虎机（Multi-Armed Bandit, MAB）是强化学习的最简形式。有 K 个臂（物品），每个臂有一个未知期望奖励 μᵢ。每轮选择一个臂，获得随机奖励。目标是最小化累积遗憾（Regret）：</p>
 
-<div class="formula-box">
-  R(T) = T·μ* − Σₜ₌₁ᵀ μₐₜ &nbsp;&nbsp;(29.1)
-</div>
+<div class="formula-box">$$ R(T) = T\cdot\mu* - \sumₜ₌₁ᵀ \muₐₜ \tag{29.1} $$</div>
 
 <p>其中 μ* 是最优臂的期望奖励，aₜ 是第 t 轮选择的臂。遗憾越小，策略越接近最优。</p>
 
@@ -84,9 +86,7 @@
 
 <p>UCB 基于"面对不确定，选择乐观"的原则。每个臂的 UCB 值为：</p>
 
-<div class="formula-box">
-  UCBᵢ = x̄ᵢ + √(2·ln(t) / nᵢ) &nbsp;&nbsp;(29.2)
-</div>
+<div class="formula-box">$$ UCBᵢ = x̄ᵢ + \sqrt(2\cdotln(t) / nᵢ) \tag{29.2} $$</div>
 
 <p>其中 x̄ᵢ 是臂 i 的平均奖励，nᵢ 是臂 i 被选择的次数。第一项是利用项（平均奖励），第二项是探索项（不确定性）。nᵢ 越小，探索项越大，鼓励探索选择次数少的臂。</p>
 
@@ -98,15 +98,11 @@
 
 <p>LinUCB 是上下文老虎机的经典算法，将臂的期望奖励建模为上下文特征的线性函数：</p>
 
-<div class="formula-box">
-  E[r | x, a] = xₐᵀ · θ &nbsp;&nbsp;(29.3)
-</div>
+<div class="formula-box">$$ E[r | x, a] = xₐᵀ \cdot \theta \tag{29.3} $$</div>
 
 <p>其中 xₐ 是臂 a 的上下文特征，θ 是待学习的参数。LinUCB 使用岭回归估计 θ，并基于置信上界选择臂：</p>
 
-<div class="formula-box">
-  aₜ = argmaxₐ (xₐᵀ · θ̂ + α · √(xₐᵀ · A⁻¹ · xₐ)) &nbsp;&nbsp;(29.4)
-</div>
+<div class="formula-box">$$ aₜ = argmaxₐ (xₐᵀ \cdot \thetâ + \alpha \cdot \sqrt(xₐᵀ \cdot A⁻¹ \cdot xₐ)) \tag{29.4} $$</div>
 
 <p>其中 A 是岭回归的协方差矩阵，α 是探索系数。第一项是利用项（预测奖励），第二项是探索项（特征不确定性）。</p>
 
@@ -118,9 +114,7 @@
 
 <p>Thompson Sampling（TS）是基于贝叶斯的 E&E 策略。维护每个臂奖励分布的后验，每轮从后验采样，选择采样值最大的臂：</p>
 
-<div class="formula-box">
-  aₜ = argmaxₐ θ̃ₐ, &nbsp; θ̃ₐ ~ posterior(θₐ | history) &nbsp;&nbsp;(29.5)
-</div>
+<div class="formula-box">$$ aₜ = argmaxₐ \thetãₐ,   \thetãₐ ~ posterior(\thetaₐ | history) \tag{29.5} $$</div>
 
 <p><strong>优势：</strong>理论性能优秀（O(log T) 遗憾）、实现简单、对超参数不敏感。实践效果通常优于 UCB。</p>
 

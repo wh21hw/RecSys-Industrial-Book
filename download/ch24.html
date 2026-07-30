@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第24章 多任务融合 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
 </head>
 <body>
 <div class="book-header">
@@ -48,7 +52,7 @@
 
 <p>乘法融合（Multiplicative Fusion）将多个预估值进行乘法组合：</p>
 
-<div class="formula-box">score = Product_i (bi + ai*pi)^gi</div>
+<div class="formula-box">$$ score = Product_{i} (bi + ai*pi)^gi $$</div>
 
 <p>其中 ai、bi、gi 为可调超参数。乘法融合的核心特性是<strong>短板约束</strong>（Bottleneck-Constrained）：任何一个目标过低都会显著拉低最终得分。例如，如果 pCTR 接近 0，则整体得分接近 0，无论其他目标多高。</p>
 
@@ -60,7 +64,7 @@
 
 <p>广义乘法公式 Score = Product_i (bi + ai*pi) 可通过 Taylor 展开揭示其与加法公式的关系：</p>
 
-<div class="formula-box">Score = Const * [1 + Sum_i (ai*pi/bi) + Sum_{i<j} (ai*aj*pi*pj/(bi*bj)) + ...]</div>
+<div class="formula-box">$$ Score = Const * [1 + Sum_{i} (ai*pi/bi) + Sum_{i<j} (ai*aj*pi*pj/(bi*bj)) + ...] $$</div>
 
 <p>展开后可以看到：</p>
 <ul>
@@ -104,7 +108,7 @@
 
 <p>值序融合（Hybrid Fusion）同时保留数值信息和序信息：</p>
 
-<div class="formula-box">score = f(pxtr) * g(Rank_pxtr)</div>
+<div class="formula-box">$$ score = f(pxtr) * g(Rank_pxtr) $$</div>
 
 <p>其中 f() 负责建模 Value 信息，g() 负责建模 Rank 信息。例如 f(pxtr) = log(1 + pxtr)，g(Rank) = 1/Rank^lambda。值序融合既保留了模型输出的细粒度数值差异，又获得了 Rank 融合的鲁棒性，目前大量工业级推荐系统都采用了某种形式的值序混合融合策略。</p>
 

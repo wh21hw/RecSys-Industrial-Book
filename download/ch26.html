@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第26章 探索与利用 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
 </head>
 <body>
 <div class="book-header">
@@ -37,7 +41,7 @@
 
 <p>UCB 基于"面对不确定性时的乐观主义"（Optimism in Face of Uncertainty）原则，为每个物品维护历史均值和置信区间：</p>
 
-<div class="formula-box">score = mu + alpha * sqrt(2 * ln(N) / n_i)</div>
+<div class="formula-box">$$ score = mu + alpha * sqrt(2 * ln(N) / n_{i}) $$</div>
 
 <p>其中 mu 为物品的历史平均奖励，n_i 为物品 i 被探索的次数，N 为总尝试次数，alpha 为探索强度超参数。UCB 的核心思想是：</p>
 <ul>
@@ -52,7 +56,7 @@
 
 <p>Thompson Sampling 基于贝叶斯思想，为每个物品维护后验分布，从后验分布中采样作为预估值：</p>
 
-<div class="formula-box">score ~ Beta(alpha + clicks, beta + non_clicks)</div>
+<div class="formula-box">$$ score ~ Beta(alpha + clicks, beta + non_clicks) $$</div>
 
 <p>其中 alpha 和 beta 为 Beta 分布的先验参数，clicks 和 non_clicks 为观测到的正负反馈数。Thompson Sampling 的核心优势：</p>
 <ul>
@@ -71,7 +75,7 @@
 
 <p>LinUCB [1] 由 Li 等人于 WWW 2010 提出，被引用 4532 次，是 Contextual Bandit 领域最经典的工作。LinUCB 通过线性模型建模上下文与奖励的关系：</p>
 
-<div class="formula-box">score = theta^T * x + alpha * sqrt(x^T * A^{-1} * x)</div>
+<div class="formula-box">$$ score = theta^{T} * x + alpha * sqrt(x^{T} * A^{-1} * x) $$</div>
 
 <p>其中 x 为上下文特征（用户特征+物品特征），theta 为线性模型参数，A 为特征协方差矩阵。第一项 theta^T * x 是利用项（基于历史数据的预测），第二项 alpha * sqrt(x^T * A^{-1} * x) 是探索项（基于特征的不确定性）。</p>
 

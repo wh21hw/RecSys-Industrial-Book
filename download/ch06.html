@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第6章 精排模块 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第 6 章</div>
+<h1 class="chapter-title">精排模块</h1>
+
+<p>第 5 章详细介绍了级联式推荐系统架构中的粗排模块。粗排模块作为召回与精排之间的"缓冲层"，用轻量级模型快速筛选出数百个高质量候选物品。本章将继续沿着推荐链路，介绍级联式推荐系统架构中最核心的排序模块——精排模块（Ranking）。</p>
+
+<h2 class="section-title">6.1 为什么需要精排</h2>
+
+<p>在级联式推荐系统架构中，粗排模块已经从召回阶段的数千个候选物品中筛选出了数百个高质量候选。然而，粗排模型由于计算资源限制，通常采用较为简单的模型结构和特征集合，因此其排序精度有限。精排模块的核心职责是：在粗排提供的候选集合基础上，利用更复杂的模型和更丰富的特征，更加准确地评估用户对每个候选物品的真实兴趣与潜在价值，从而输出高质量的排序结果。</p>
+
+<p>精排模块是整个推荐系统中最重要的排序决策模块。与粗排阶段主要关注候选集合的构建不同，精排阶段更加关注单个物品价值的精确评估与排序。工业界大量先进的用户兴趣建模、多任务学习、多目标优化以及流量调控技术，都围绕精排阶段展开迭代与演进。</p>
+
+<h2 class="section-title">6.2 精排模块整体架构</h2>
+
+<p>一个完整的工业级精排模块通常包含以下核心组成部分：</p>
+<ul>
+  <li><strong>精排主模型</strong>：预测用户对候选物品的各种行为反馈，包括点击、观看时长、点赞、评论、转发、关注以及转化等</li>
+  <li><strong>Learning to Rank（LTR）模型</strong>：针对特定业务目标构建的专门排序模型</li>
+  <li><strong>多目标融合</strong>：将多个 pxtr 统一映射到同一排序空间</li>
+  <li><strong>流量调控</strong>：处理模型难以直接学习的业务规则</li>
+</ul>
+
+<h2 class="section-title">6.3 精排模型常见的预估任务</h2>
+
+<p>精排模型的预估目标已经从早期单一的 CTR 预测，演进为覆盖点击、互动、观看、转化、消费以及长期价值等多个维度的多任务学习体系。常见的预估任务包括：</p>
+
+<ul>
+  <li><strong>点击率预估（pCTR）</strong>：预测用户是否点击</li>
+  <li><strong>点赞率预估（pLTR）</strong>：预测用户是否点赞</li>
+  <li><strong>评论率预估（pCMTR）</strong>：预测用户是否评论</li>
+  <li><strong>收藏率预估（pFTR）</strong>：预测用户是否收藏</li>
+  <li><strong>转化率预估（pCVR）</strong>：预测用户是否转化</li>
+</ul>
+
+<p>这些预估值分别对应不同目标，公式 6.1 给出了这些指标：</p>
+
+<div class="formula-box">
+  pctr, pltr, pcmtr, pftr, pcvr &nbsp;&nbsp;&nbsp; (6.1)
+</div>
+
+<p>除了显式互动行为外，隐式反馈如有效播放率（Effective View Rate）、完整播放率（Finish Rate）、长时观看率（Long View Rate）等也常采用分类方式建模。例如：</p>
+
+<div class="formula-box">$$ label = { 1, if watch_time > 5s; 0, otherwise } \tag{6.2} $$</div>
+
+<p>另一类常见任务是回归任务，直接预测连续数值，适用于观看时长、停留时长、消费金额、GMV 等连续型指标：</p>
+
+<div class="formula-box">$$ \hat{y} = f(x) \tag{6.3} $$</div>
+
+<h3 class="subsection-title">6.3.1 时长预估</h3>
+
+<p>时长预估（Watch Time Prediction）是精排模型中最重要的预估任务之一。在短视频、直播以及长视频推荐场景中，用户观看时长往往比点击行为更加能够反映用户的真实满意度。</p>
+
+<p>直接对播放时长进行回归建模面临以下问题：时长分布呈现严重长尾特征；用户行为噪声较大；MSE 等回归损失容易受到异常样本影响；回归任务通常比分类任务更难收敛。因此工业界通常采用特殊建模技巧，将连续时长目标转换为分类或半分类问题。</p>
+
+<h3 class="subsection-title">6.3.2 稀疏互动信号建模</h3>
+
+<p>互动类信号（点击、点赞、评论、收藏、关注、转发、分享、打赏、购买）通常对应用户更强的兴趣表达，但其数据分布非常稀疏：</p>
+
+<ul>
+  <li>CTR：通常在 3%~10% 左右</li>
+  <li>LTR：通常低于 1%</li>
+  <li>CMTR：往往低于千分级</li>
+  <li>FTR：通常低于万分级</li>
+  <li>CVR：在电商与广告场景中通常更加稀疏</li>
+</ul>
+
+<h3 class="subsection-title">6.3.3 样本加权</h3>
+
+<p>针对稀疏目标，最常见的方法是样本加权（Sample Weighting）。例如在直播推荐场景中，打赏金额可作为正样本权重：</p>
+
+<div class="formula-box">$$ w_{i} = gift_amount_{i} \tag{6.4} $$</div>
+
+<p>对应的加权交叉熵损失为：</p>
+
+<div class="formula-box">$$ L = - \sum_{i} w_{i} (y_{i} log p_{i} + (1 - y_{i}) log(1 - p_{i})) \tag{6.5} $$</div>
+
+<h3 class="subsection-title">6.3.4 稠密目标辅助稀疏目标学习</h3>
+
+<p>利用稠密目标辅助稀疏目标学习（Dense-to-Sparse Learning），其基本思想来源于用户行为漏斗关系：</p>
+
+<div class="formula-box">$$ Exposure \to Click \to Purchase \tag{6.6} $$</div>
+
+<p>代表性工作包括 CTCVR、ESMM（Entire Space Multi-Task Model）和 ESCM²。</p>
+
+<h3 class="subsection-title">6.3.5 行为关联建模</h3>
+
+<p>不同互动行为之间存在相关性，例如：</p>
+
+<div class="formula-box">$$ Like \to Comment \to Follow     (6.7)
+  Like \to Favorite \to Follow \tag{6.8} $$</div>
+
+<p>美团提出的 AITM（Adaptive Information Transfer Multi-task framework）通过信息传递机制显式建模任务间依赖关系。PLE、MMoE、SNR 等多任务学习框架也在挖掘不同目标间的共享信息和差异化信息。</p>
+
+<h2 class="section-title">6.4 精排多目标融合</h2>
+
+<p>精排多目标融合阶段的核心任务是将多个模型输出的不同目标预估值（pxtr）进行统一融合，并依据融合分完成最终排序。参与融合的排序因子数量往往达到数十个甚至上百个，工业界通常采用统一的多目标融合框架。</p>
+
+<h3 class="subsection-title">6.4.1 乘法公式及形状分析</h3>
+
+<p>乘法公式（Multiplicative Formula）的基本形式：</p>
+
+<div class="formula-box">$$ s_{i} = (\beta_{i} + \alpha_{i} p_{i})^{\gamma_{i}} \tag{6.9} $$</div>
+
+<p>其中 p<sub>i</sub> 为第 i 个排序因子的原始预估值，α<sub>i</sub> 为乘法系数（Scaling Factor），β<sub>i</sub> 为偏置项（Bias Term），γ<sub>i</sub> 为指数项（Exponent Term）。</p>
+
+<p>三个参数分别对应：</p>
+<ul>
+  <li><strong>α<sub>i</sub> 决定区分度</strong>：调节原始 pxtr 的放大倍数</li>
+  <li><strong>β<sub>i</sub> 决定基础贡献</strong>：稳定数值分布，调节基础影响力</li>
+  <li><strong>γ<sub>i</sub> 决定流量分配形状</strong>：γ > 1 强化头部，0 < γ < 1 提升中腰部，γ = 1 退化为线性变换</li>
+</ul>
+
+<p>当 γ = 1 时：</p>
+
+<div class="formula-box">$$ (\beta_{i} + \alpha_{i} p_{i})^{\gamma_{i}} = \beta_{i} + \alpha_{i} p_{i} \tag{6.10} $$</div>
+
+<h3 class="subsection-title">6.4.2 序变换及形状分析</h3>
+
+<p>基于排序位置（Rank）的融合方法不直接利用 pxtr 数值，而是利用排序位置进行融合。五种代表性变换：</p>
+
+<p><strong>(1) 倒数变换</strong></p>
+<div class="formula-box">$$ S_{i} = 1 / Rank_{i} \tag{6.11} $$</div>
+
+<p><strong>(2) 平滑倒数变换</strong></p>
+<div class="formula-box">$$ S_{i} = w_{i} / (Rank_{i}^{\lambda} + b) \tag{6.12} $$</div>
+
+<p><strong>(3) 归一化幂次变换</strong></p>
+<div class="formula-box">$$ S_{i} = w_{i} \times (1 - (Rank_{i} / N)^{\lambda}) \tag{6.13} $$</div>
+
+<p><strong>(4) 指数双曲变换</strong></p>
+<div class="formula-box">$$ S_{i} = w_{i} \times (e^{k(2\cdotRank_{i}/N - 1)} - e^{-k(2\cdotRank_{i}/N - 1)}) \tag{6.14} $$</div>
+
+<p><strong>(5) 带偏置归一化变换</strong></p>
+<div class="formula-box">$$ S_{i} = w_{i} \times (1 - ((Rank_{i} / N + b)^{\lambda})) \tag{6.15} $$</div>
+
+<p>其中 Rank<sub>i</sub> 表示候选物品在某个排序因子中的位置，N 表示候选集长度，w<sub>i</sub> 表示权重，λ、b 和 k 为控制曲线形状的超参数。</p>
+
+<p>不同序变换函数本质上对应着不同的流量分配哲学：</p>
+<ul>
+  <li>倒数变换：头部优先策略</li>
+  <li>平滑倒数变换：可控的头部强化</li>
+  <li>幂次变换：头中尾资源重新分配</li>
+  <li>双曲变换：局部区域差异化建模</li>
+</ul>
+
+<p>指数双曲变换对应双曲正弦函数：</p>
+
+<div class="formula-box">$$ S_{i} = 2 w_{i} sinh(k(2\cdotRank_{i}/N - 1)) \tag{6.17} $$</div>
+
+<h3 class="subsection-title">6.4.3 排序公式超参数寻优</h3>
+
+<p>随着排序因子数量不断增加，一个实际的排序公式往往包含几十甚至上百个待优化参数。工业界引入自动化搜参技术，最经典的方法之一是 Cross-Entropy Method（CEM）算法。</p>
+
+<p>假设排序公式包含 N 个待优化参数：</p>
+
+<div class="formula-box">$$ \theta = (\theta_{1}, \theta_{2}, \cdot\cdot\cdot, \theta_{N}) \tag{6.18} $$</div>
+
+<p>目标是寻找最优参数：</p>
+
+<div class="formula-box">$$ \theta* = arg max_{\theta} R(\theta) \tag{6.19} $$</div>
+
+<p>由于线上指标无法直接求导，CEM 不直接搜索最优参数，而是搜索最优参数所在的概率分布。假设参数服从多维高斯分布：</p>
+
+<div class="formula-box">$$ \theta ~ N(\mu, \sum) \tag{6.21} $$</div>
+
+<p><strong>采样阶段</strong>：从当前分布中采样 K 组参数，每组对应一套排序公式配置。</p>
+
+<p><strong>线上评估阶段</strong>：对每组参数分配线上流量进行实验，按收益排序，保留前 ρ 比例的优秀样本（Elite Samples），通常 ρ ∈ [0.05, 0.2]。</p>
+
+<p><strong>分布更新阶段</strong>：</p>
+
+<div class="formula-box">$$ \mu^{(t+1)} = (1/M) \sum_{i=1}^{M} \theta^{(i)} \tag{6.31} $$</div>
+
+<div class="formula-box">$$ \sum^{(t+1)} = (1/M) \sum_{i=1}^{M} (\theta^{(i)} - \mu^{(t+1)})(\theta^{(i)} - \mu^{(t+1)})^{T} \tag{6.32} $$</div>
+
+<p>随着迭代进行，采样空间不断收缩，最终收敛到局部最优解附近。CEM 的理论基础是最小化 KL Divergence：</p>
+
+<div class="formula-box">$$ D_{KL}(g* ∥ f_{\theta}) \tag{6.34} $$</div>
+
+<p><strong>工业界 CEM 应用存在的问题</strong>：</p>
+<ul>
+  <li>在线反馈数据天然具有较大噪声：R̂(θ) = R(θ) + ε &nbsp;&nbsp;&nbsp; (6.38)</li>
+  <li>用户反馈存在延迟反馈问题（次日留存、七日留存、LTV 等需数天至数周积累）</li>
+  <li>参数维度灾难：50 个排序因子 × 3 参数 = 150 维搜索空间</li>
+</ul>
+
+<p>近年来工业界开始探索更智能化的方案：强化学习方法直接学习排序策略；Bayesian Optimization 利用代理模型预测高收益区域；LLM Agent 利用推理能力自动设计实验。</p>
+
+<div class="note-box">
+  <div class="note-label">📝 核心思考</div>
+  <p>究竟什么指标才应该作为自动寻优的目标函数？小时级观看时长增长 ≠ 长期收益增长；次日留存增长 ≠ 长期满意度提升；互动率提升可能损害用户体验；GMV 提升可能降低内容生态健康度。</p>
+  <p>如何定义一个合理的优化目标，远比选择哪一种优化算法更加重要。</p>
+</div>
+
+<h2 class="section-title">6.5 精排流量调控</h2>
+
+<p>精排流量调控（Traffic Control）是精排模块中的最后一个核心环节。仅仅按照融合分从高到低直接选取 Top-K 物品往往不能满足业务需求，因此需要经过流量调控模块对候选集合进行进一步约束与优化。</p>
+
+<h3 class="subsection-title">6.5.1 级联式多目标融合与流量调控</h3>
+
+<p>工业界主流实现思路是将多目标融合与流量调控解耦为两个串行独立阶段：</p>
+<ol>
+  <li>利用精排模型与 LTR 模型输出的各类 PXTR 指标完成多目标融合</li>
+  <li>对 PXTR 进行非线性变换，通过加法/乘法公式得到统一排序分数</li>
+  <li>按融合分完成初始排序，送入流量调控模块</li>
+  <li>流量调控模块处理业务规则（新内容扶持、新作者成长保护、电商活动流量倾斜、商业化保量等）</li>
+</ol>
+
+<p>典型伪代码示例：</p>
+
+<pre><code>class RankItem:
+    def __init__(self, pctr, pwatch_time, plike, is_new_video=False, author_fans=0, in_campaign=False):
+        self.pctr = pctr
+        self.pwatch_time = pwatch_time
+        self.plike = plike
+        self.is_new_video = is_new_video
+        self.author_fans = author_fans
+        self.in_campaign = in_campaign
+        self.score = 0.0
+
+class TrafficController:
+    def __init__(self, ctr_weight, wt_weight, like_weight):
+        self.ctr_weight = ctr_weight
+        self.wt_weight = wt_weight
+        self.like_weight = like_weight
+
+    def multi_objective_fusion(self, item):
+        return (self.ctr_weight * item.pctr + self.wt_weight * item.pwatch_time
+                + self.like_weight * item.plike)
+
+    def traffic_control(self, item):
+        score = item.score
+        if item.is_new_video:
+            score *= 1.10
+        if item.author_fans < 1000:
+            score *= 1.05
+        if item.in_campaign:
+            score *= 1.15
+        return score
+
+    def rank(self, candidates, topk=100):
+        # Step1 多目标融合
+        for item in candidates:
+            item.score = self.multi_objective_fusion(item)
+        # Step2 初始排序
+        rank_list = sorted(candidates, key=lambda x: x.score, reverse=True)
+        # Step3 流量调控
+        for item in rank_list:
+            item.score = self.traffic_control(item)
+        # Step4 再排序
+        rank_list = sorted(rank_list, key=lambda x: x.score, reverse=True)
+        # Step5 输出TopK
+        return rank_list[:topk]</code></pre>
+
+<h3 class="subsection-title">6.5.2 多通道式流量调控</h3>
+
+<p>另一种方案借鉴粗排阶段的多通道（Multi-Channel）架构，根据不同业务目标构建多个独立候选池（新内容池、电商内容池、创作者扶持池、普通内容池），各通道内部拥有独立排序逻辑，再按预设 Quota 合并结果。</p>
+
+<h3 class="subsection-title">6.5.3 流量调控的业务价值</h3>
+
+<p>精排流量调控核心价值在于调和模型最优与业务最优之间的天然矛盾。工业推荐系统常见的业务约束包括：新内容冷启动扶持、低粉丝创作者流量保护、新晋主播成长资源倾斜、电商大促货品保量投放、商业化广告曝光保底、优质稀缺内容探索导流、长尾内容基础曝光兜底、各垂类内容分发均衡管控、用户推荐结果多样性约束等。</p>
+
+<p>流量调控承担着平台生态治理（Ecosystem Governance）的关键职能。</p>
+
+<h3 class="subsection-title">6.5.4 流量调控的优化视角</h3>
+
+<p>精排流量调控可建模为带约束条件的排序优化问题：</p>
+
+<div class="formula-box">$$ max \sum_{i=1}^{N} Score_{i} \tag{6.43} $$</div>
+
+<p>同时满足：</p>
+
+<div class="formula-box">$$ \sum_{i} x_{i}^{new} \geq Q_{new}     (6.44)
+  \sum_{i} x_{i}^{creator} \geq Q_{creator}     (6.45)
+  \sum_{i} x_{i}^{commerce} \geq Q_{commerce} \tag{6.46} $$</div>
+
+<p>其中 x<sub>i</sub> ∈ {0, 1} 表示候选物品是否被最终选中，Q 表示对应业务目标要求的最小流量配额。</p>
+
+<p>近年来，一些先进推荐系统开始将流量调控建模为动态决策问题：</p>
+
+<div class="formula-box">$$ Q_{t} = f(S_{t}^{user}, S_{t}^{Content}, S_{t}^{Platform}) \tag{6.47} $$</div>
+
+<h3 class="subsection-title">6.5.5 精排保量与强插策略</h3>
+
+<p>保量（Guarantee Delivery）机制关注某一类特定候选集合是否能获得最低限度的曝光机会。保量约束可表示为：</p>
+
+<div class="formula-box">$$ Exposure_{target} \geq Q_{target} \tag{6.48} $$</div>
+
+<p>实现方式包括：排序完成后强插（Force Insert）、预留固定坑位、将保量约束融入多目标融合框架等。</p>
+
+<h2 class="section-title">6.6 本章小结</h2>
+
+<p>本章详细介绍了级联式推荐系统架构中的精排模块及其核心设计思想。精排模块是整个推荐系统中最核心的排序决策模块，承担着用户兴趣建模与最终排序决策的职责。</p>
+
+<p>首先介绍了精排模块的整体架构，包括精排主模型与 LTR 模型、多目标融合以及流量调控等核心组成部分。随后讨论了精排阶段的多目标融合问题，从排序公式设计的角度对乘法融合公式进行了深入分析，并介绍了基于序关系的多目标融合方法。在排序公式超参数自动寻优方面，重点讲解了 CEM 算法。最后介绍了精排阶段的流量调控模块，包括级联式和多通道式两种设计方案，以及保量策略和强插策略。</p>
+
+<p>下一章将介绍重排模块。与粗排和精排主要关注单个物品排序不同，重排模块从列表（List）或序列（Slate）的角度进行整体优化，更加关注推荐结果之间的相互关系、多样性以及长期收益等问题。</p>
+
+<h2 class="section-title">6.7 参考文献</h2>
+
+<p>[1] Jiaqi Ma et al. "Modeling task relationships in multi-task learning with multi-gate mixture-of-experts". In: Proceedings of the 24th ACM SIGKDD international conference on knowledge discovery & data mining. 2018, pp. 1930–1939.</p>
+
+<p>[2] Jiaqi Ma et al. "SNR: Sub-network routing for flexible parameter sharing in multi-task learning". In: Proceedings of the AAAI conference on artificial intelligence. Vol. 33. 01. 2019, pp. 216–223.</p>
+
+<p>[3] Xiao Ma et al. "Entire space multi-task model: An effective approach for estimating post-click conversion rate". In: The 41st International ACM SIGIR Conference on Research & Development in Information Retrieval. 2018, pp. 1137–1140.</p>
+
+<p>[4] Hongyan Tang et al. "Progressive layered extraction (PLE): A novel multi-task learning (MTL) model for personalized recommendations". In: Proceedings of the 14th ACM conference on recommender systems. 2020, pp. 269–278.</p>
+
+<p>[5] Hao Wang et al. "ESCM2: Entire space counterfactual multi-task model for post-click conversion rate estimation". In: Proceedings of the 45th International ACM SIGIR Conference on Research and Development in Information Retrieval. 2022, pp. 363–372.</p>
+
+<p>[6] Dongbo Xi et al. "Modeling the sequential dependence among audience multi-step conversions with multi-task learning in targeted display advertising". In: Proceedings of the 27th ACM SIGKDD Conference on Knowledge Discovery & Data Mining. 2021, pp. 3745–3755.</p>
+
+<div class="chapter-end">* * *</div>
+
+<div class="nav-bar">
+  <a href="ch05.html">← 上一章：第5章 粗排模块</a>
+  <a href="ch07.html">下一章：第7章 重排模块 →</a>
+</div>
+
+</body>
+</html>

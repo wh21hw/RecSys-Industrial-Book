@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第7章 重排模块 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第 7 章</div>
+<h1 class="chapter-title">重排模块</h1>
+
+<p>第 6 章详细介绍了级联式推荐系统架构中的精排模块。精排模块通过复杂的模型结构和丰富的特征体系，对候选物品进行准确的行为预测与多目标排序。然而，精排模型本质上是对每个物品独立进行打分（pointwise），难以建模物品之间的相互关系以及序列级别的用户体验优化目标。本章将介绍级联式推荐系统架构中紧接精排之后的重排模块（Reranking），它从序列整体优化的视角进一步提升推荐结果的质量。</p>
+
+<h2 class="section-title">7.1 为什么需要重排</h2>
+
+<p>精排模型的核心局限在于其<strong>单点打分范式</strong>（pointwise ranking）：每个物品独立预测其被点击/互动的概率，然后按分数排序。这种方式虽然高效，但无法捕捉以下信息：</p>
+<ul>
+  <li><strong>物品间相互影响</strong>：相邻物品之间可能存在相似性冗余或互补效应</li>
+  <li><strong>序列级用户体验</strong>：用户对整个推荐列表的满意度不等于单个物品满意度的简单叠加</li>
+  <li><strong>上下文依赖</strong>：同一物品在不同位置、不同相邻物品组合下的效果不同</li>
+  <li><strong>多样性需求</strong>：缺乏多样性约束的排序容易导致用户疲劳</li>
+</ul>
+
+<p>重排模块的核心目标正是在精排结果的基础上，从<strong>序列整体视角</strong>（list-wise / slate-wise）进行二次优化，使得最终推荐序列在相关性、多样性、业务约束等多个维度上取得更优平衡。</p>
+
+<h2 class="section-title">7.2 重排模块整体架构</h2>
+
+<p>工业界常见的重排框架主要分为两类：</p>
+<ul>
+  <li><strong>两阶段重排框架</strong>：序列生成（Generator）+ 序列评估（Evaluator）</li>
+  <li><strong>生成式重排</strong>：基于序列生成模型（如 Transformer Decoder）直接输出推荐序列</li>
+</ul>
+
+<p>尽管生成式重排近年来发展迅速，但在大规模工业系统中，两阶段框架仍然占据主流地位。</p>
+
+<h3 class="subsection-title">7.2.1 两阶段重排框架</h3>
+
+<p>两阶段重排框架的核心思想是：首先通过某种策略生成多个候选序列，然后通过序列评估模型对每个候选序列进行整体打分，最终选择得分最高的序列作为输出。这一框架可以用强化学习的语言进行统一描述：</p>
+<ul>
+  <li><strong>序列生成</strong> ≈ 策略网络（Actor / Policy）：负责产生候选序列</li>
+  <li><strong>序列评估</strong> ≈ 价值函数（Critic / Value）：对不同序列进行质量评估与选择</li>
+</ul>
+
+<h2 class="section-title">7.3 序列生成</h2>
+
+<p>序列生成阶段的目标是：从精排输出的 Top-N 候选物品中，生成若干个长度为 M（M < N）的候选序列。常见的生成方法包括：</p>
+
+<h3 class="subsection-title">7.3.1 基于多目标融合排序的贪心生成</h3>
+
+<p>最简单的序列生成方法是直接按精排融合分降序排列，取前 M 个物品。然而这种方法完全忽略了序列级优化。更实用的做法是采用贪心策略：每次选择一个物品加入序列时，不仅考虑其相关性分数，还考虑其与已选物品的多样性惩罚。</p>
+
+<h3 class="subsection-title">7.3.2 基于 Beam Search 的序列搜索</h3>
+
+<p>Beam Search 是一种启发式搜索策略，通过维护一个固定大小的候选序列集合（beam），在每一步扩展时保留得分最高的 B 个候选序列。其核心流程为：</p>
+<ol>
+  <li>初始化：beam 中包含一个空序列</li>
+  <li>扩展：对 beam 中的每个候选序列，尝试将所有未选物品追加到序列末尾</li>
+  <li>剪枝：从所有扩展结果中选择得分最高的 B 个作为新的 beam</li>
+  <li>终止：当序列长度达到 M 时停止</li>
+</ol>
+
+<p>Beam Search 的优势在于能够在有限计算开销下探索更大的序列空间，但其搜索宽度 B 的选择需要在计算效率与搜索质量之间权衡。</p>
+
+<h2 class="section-title">7.4 序列评估</h2>
+
+<p>序列评估阶段的目标是：对序列生成阶段产生的多个候选序列进行整体打分，选择最优序列。常见的评估方法包括：</p>
+<ul>
+  <li><strong>基于规则的评价</strong>：设计启发式规则评估序列质量</li>
+  <li><strong>基于模型的评价</strong>：训练序列评估模型（如 Transformer 编码器），输入完整序列，输出序列质量分数</li>
+  <li><strong>基于强化学习的评价</strong>：将序列评估建模为价值函数估计问题</li>
+</ul>
+
+<h2 class="section-title">7.5 多样性打散</h2>
+
+<p>多样性打散是重排模块中最核心的后处理技术之一。其目标是在不过度牺牲相关性的前提下，增加推荐序列中内容的多样性，避免用户产生内容疲劳。工业界常用的多样性打散算法包括 MMR、DPP 和 SSD。</p>
+
+<h3 class="subsection-title">7.5.1 MMR 算法</h3>
+
+<p>MMR（Maximal Marginal Relevance）由 Carbonell 和 Goldstein 于 1998 年提出。其核心思想是在每次选择物品时，同时考虑物品与用户需求的相关性以及物品与已选物品的不相似性：</p>
+
+<div class="formula-box">$$ MMR(D_{i}, Q) = \lambda \cdot Sim_{1}(D_{i}, Q) - (1 - \lambda) \cdot max_{D_{j} \in S} Sim_{2}(D_{i}, D_{j}) $$</div>
+
+<p>其中 Sim_1 表示物品与用户查询的相关性，Sim_2 表示物品间相似度，S 为已选集合，λ ∈ [0, 1] 为权衡参数。MMR 采用贪心策略，每次选择使 MMR 分数最大的物品加入序列。</p>
+
+<h3 class="subsection-title">7.5.2 DPP 算法</h3>
+
+<p>DPP（Determinantal Point Process，行列式点过程）是一种优雅的概率模型，能够自然地表达元素间的"排斥性"。其核心思想是：一个子集 Y 的 DPP 概率与该子集中所有物品向量张成的高维超平行体的体积平方成正比。当物品向量之间的相似度越高（夹角越小），张成的体积越小，DPP 概率越低。</p>
+
+<p>给定核矩阵 L = B^T B，子集 Y 的 DPP 概率为：</p>
+
+<div class="formula-box">$$ P(Y) ∝ det(L_{Y}) = Vol^{2}({B_i}_{i\inY}) $$</div>
+
+<p>在推荐场景中，可以将 B_i = r_i · f_i，其中 r_i 是物品的分数，f_i 是物品的归一化 Embedding 向量。核矩阵可写为：</p>
+
+<div class="formula-box">$$ L = Diag(r) \cdot S \cdot Diag(r) $$</div>
+
+<p>其中 S 是相似度矩阵，S_{ij} = ⟨f_i, f_j⟩。通过引入超参数 λ 平衡相关性与多样性：</p>
+
+<div class="formula-box">$$ log det L' = \lambda \cdot \sum log(r^{2}_{i}) + (1 - \lambda) \cdot log det(S) $$</div>
+
+<p>DPP 的 MAP 推断是 NP-难问题，Chen 等人（NeurIPS 2018）提出了一种基于 Cholesky 分解的高效贪心算法，将复杂度从 O(N⁴) 降低到 O(K²N)，其中 K 为选取的物品数量。该算法利用行列式的递推性质，在每次迭代中仅需计算 O(K) 维向量的增量更新，显著提升了计算效率。</p>
+
+<h3 class="subsection-title">7.5.3 SSD 算法</h3>
+
+<p>SSD（Sliding Spectrum Decomposition，滑动频谱分解）由小红书团队在 KDD 2021 提出。该算法源于对信息流推荐场景的观察：用户持续下滑浏览内容时，对多样性的感知具有时序连贯性，当前内容的多样性体验受历史已浏览内容的累积影响。</p>
+
+<p>SSD 将用户完整的长度为 T 的浏览序列划分为 L = T − W + 1 个连续滑动窗口（W 为窗口长度），将所有窗口的物品 Embedding 矩阵堆叠为三维张量 X ∈ R^{L×W×d}，采用高阶奇异值分解（HOSVD）进行分解：</p>
+
+<div class="formula-box">$$ X = \sum \sigma_{ijk} u^(1)_{i} \otimes u^(2)_{j} \otimes u^(3)_{k} $$</div>
+
+<p>SSD 将张量 X 的"序列体积"定义为所有非零奇异值的乘积，以此度量整个滑动窗口序列中物品间的全局多样性。在求解优化问题时，SSD 引入了一种计算高效的<strong>一步改进型 Gram-Schmidt 正交化</strong>（one-step MGS）策略：每次选择新物品时，仅对候选向量执行一次投影扣除操作，而非完整的正交化：</p>
+
+<div class="formula-box">$$ v_{j} \leftarrow v_{j} - (⟨v_{j}, v_{i_{t-1}}⟩ / \|v_{i_{t-1}}\|^{2}) \cdot v_{i_{t-1}} $$</div>
+
+<p>这种增量式近似虽未实现全局正交，但能有效削弱与最近内容的相似性，契合用户对局部时序多样性的感知。SSD 贪心推理的整体时间复杂度为 O(NTd)，远低于传统 DPP 贪心算法的 O(N²d)，能够满足工业级实时推荐系统对低延迟与高吞吐的严苛要求。</p>
+
+<h2 class="section-title">7.6 重排后处理</h2>
+
+<p>在重排模块中，完成序列生成与序列评估之后，系统通常还会引入一个独立的后处理（post-processing）阶段，对最终输出的推荐列表进行策略性调整。该阶段的核心目标是在尽可能不破坏重排模型排序结果的前提下，对推荐序列进行约束性修正与工程化增强。</p>
+
+<p>主要功能包括：</p>
+<ul>
+  <li><strong>多样性打散</strong>：避免同一作者、同一内容类型或高度相似内容的连续出现</li>
+  <li><strong>保量策略</strong>（Quota Control）：在特定流量刷次或时间窗口内强制插入一定比例的商业内容、活动内容</li>
+  <li><strong>强插策略</strong>（Forced Injection）：满足平台商业化或运营目标</li>
+  <li><strong>数据持久化</strong>：将重排中间信息写入 Redis 等在线缓存系统</li>
+  <li><strong>异步日志投递</strong>：通过 Kafka 等消息队列发送关键日志数据，用于离线分析与模型训练样本构建</li>
+  <li><strong>监控与埋点</strong>：对曝光占比、强插比例、多样性指标等进行细粒度监控</li>
+</ul>
+
+<h2 class="section-title">7.7 本章小结</h2>
+
+<p>本章围绕级联式推荐系统架构中的重排模块展开系统性介绍。首先从精排阶段单点打分的局限性出发，阐述了重排模块的必要性，并概述了两类重排范式：两阶段重排框架（序列生成 + 序列评估）和生成式重排方法。</p>
+
+<p>随后详细介绍了两阶段重排框架的核心组成：序列生成阶段重点讨论了基于多目标融合排序的贪心生成方法和基于 Beam Search 的序列搜索策略；序列评估阶段讨论了对候选序列进行整体打分的方法，并从强化学习视角进行了统一解释——序列生成类比策略网络（Actor），序列评估类比价值函数（Critic）。</p>
+
+<p>接着介绍了重排后处理模块的关键作用，重点包括多样性打散与业务策略强插两类操作，并分别介绍了 MMR、DPP 以及 SSD 等多样性优化算法的数学原理与 Python 实现。最后对后处理中的工程化环节进行了说明，包括保量策略、强插策略、Redis 持久化、Kafka 异步日志投递以及监控指标体系建设等。</p>
+
+<p>下一章将介绍多业务混合推荐系统中的混排模块，该模块主要解决不同业务流量之间的全局协调与分配问题。</p>
+
+<h2 class="section-title">7.8 参考文献</h2>
+
+<p>[1] Jaime Carbonell and Jade Goldstein. "The use of MMR, diversity-based reranking for reordering documents and producing summaries". In: Proceedings of the 21st annual international ACM SIGIR conference on Research and development in information retrieval. 1998, pp. 335–336.</p>
+
+<p>[2] Laming Chen, Guoxin Zhang, and Eric Zhou. "Fast greedy map inference for determinantal point process to improve recommendation diversity". In: Advances in neural information processing systems 31 (2018).</p>
+
+<p>[3] Markus Freitag and Yaser Al-Onaizan. "Beam search strategies for neural machine translation". In: arXiv preprint arXiv:1702.01806 (2017).</p>
+
+<p>[4] Jennifer Gillenwater, Alex Kulesza, and Ben Taskar. "Near-optimal map inference for determinantal point processes". In: Advances in Neural Information Processing Systems 25 (2012).</p>
+
+<p>[5] Yanhua Huang et al. "Sliding spectrum decomposition for diversified recommendation". In: Proceedings of the 27th ACM SIGKDD conference on knowledge discovery & data mining. 2021, pp. 3041–3049.</p>
+
+<p>[6] Michael Janner, Qiyang Li, and Sergey Levine. "Offline reinforcement learning as one big sequence modeling problem". In: Advances in neural information processing systems 34 (2021), pp. 1273–1286.</p>
+
+<p>[7] Alex Kulesza, Ben Taskar, et al. "Determinantal point processes for machine learning". In: Foundations and Trends® in Machine Learning 5.2–3 (2012), pp. 123–286.</p>
+
+<p>[8] Alex Kulesza and Ben Taskar. "Learning determinantal point processes". In: Learning 7 (2011), pp. 1–2011.</p>
+
+<p>[9] Bruce P Lowerre and B Raj Reddy. "Harpy, a connected speech recognition system". In: The Journal of the Acoustical Society of America 59.S1 (1976), S97–S97.</p>
+
+<p>[10] Odile Macchi. "The coincidence approach to stochastic point processes". In: Advances in Applied Probability 7.1 (1975), pp. 83–122.</p>
+
+<p>[11] Clara Meister, Tim Vieira, and Ryan Cotterell. "If beam search is the answer, what was the question?" In: arXiv preprint arXiv:2010.02650 (2020).</p>
+
+<p>[12] Steven M Rubin and Raj Reddy. "The LOCUS Model of Search and its Use in Image Interpretation." In: IJCAI. Vol. 2. 1977, pp. 590–595.</p>
+
+<p>[13] Sam Wiseman and Alexander M Rush. "Sequence-to-sequence learning as beam-search optimization". In: arXiv preprint arXiv:1606.02960 (2016).</p>
+
+<div class="chapter-end">* * *</div>
+
+<div class="nav-bar">
+  <a href="ch06.html">← 上一章：第6章 精排模块</a>
+  <a href="ch08.html">下一章：第8章 混排模块 →</a>
+</div>
+
+</body>
+</html>

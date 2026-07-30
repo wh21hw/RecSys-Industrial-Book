@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第16章 在线服务 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
 </head>
 <body>
 
@@ -65,9 +69,7 @@
 
 <p>推荐系统的级联架构是在线服务的核心设计：</p>
 
-<div class="formula-box">
-  召回(万→千) → 粗排(千→百) → 精排(百→十) → 重排(十→最终) &nbsp;&nbsp;(16.1)
-</div>
+<div class="formula-box">$$ 召回(万\to千) \to 粗排(千\to百) \to 精排(百\to十) \to 重排(十\to最终) \tag{16.1} $$</div>
 
 <p>每一级的候选集逐级缩小，模型复杂度逐级增加。这种漏斗式架构平衡了效果和效率：</p>
 

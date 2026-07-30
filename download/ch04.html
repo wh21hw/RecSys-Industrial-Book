@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第4章 召回与过滤模块 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第二部分 推荐系统模块</div>
+<h1 class="chapter-title">第4章 召回与过滤模块</h1>
+
+<p>在前面几章中，我们从宏观视角对推荐系统进行了系统性介绍。首先回顾了推荐系统的发展历程、核心目标以及所面临的主要挑战，帮助读者建立对推荐系统整体框架的初步认知；随后进一步介绍了工业界推荐系统的典型架构，包括多业务混合推荐系统架构、单业务级联式推荐系统架构、降级推荐系统以及作者侧推荐系统等内容；最后，我们还讨论了推荐系统中的数据体系、日志体系以及评价体系，帮助读者理解推荐系统背后的数据流与业务闭环。</p>
+
+<p>然而，一个工业级推荐系统往往由多个复杂模块协同组成，仅从整体架构层面理解推荐系统仍然是不够的。从本章开始，我们将采用"庖丁解牛"的方式，按照推荐链路中的执行顺序，对级联式推荐系统的各个核心模块进行逐层拆解，从宏观架构逐步深入到具体算法与工程实现细节，帮助读者理解每一个模块在推荐链路中的职责、原理与设计思想。</p>
+
+<p>本章首先介绍推荐系统链路最上游的两个核心模块：召回模块（Retrieve）与过滤模块（Filtering）。其中，召回模块主要负责从海量物品库中获取候选内容，而过滤模块则负责对候选结果进行规则约束与质量控制。二者共同构成了推荐链路的起点，并为后续粗排、精排以及重排等模块提供输入数据。</p>
+
+<h2 class="section-title">4.1 为什么需要召回</h2>
+
+<p>在初次接触推荐系统时，很多读者都会产生一个直观的想法：</p>
+
+<div class="note-box">
+  <div class="note-label">📝 思考</div>
+  <p>既然排序模型能够预测用户对物品的兴趣程度，那么为什么不直接利用排序模型对所有物品进行打分，然后选择得分最高的 Top K 个物品推荐给用户呢？</p>
+</div>
+
+<p>从理论上来看，这种方式确实能够得到全局最优的排序结果；但在工业级推荐系统中，这种做法几乎无法落地。原因在于，推荐系统不仅要追求推荐效果，还必须满足严格的实时性要求。前面章节已经介绍过，工业级推荐系统通常直接承载用户请求，整个推荐链路的响应时间往往只有数百毫秒。当用户不断刷新首页、滑动短视频或者浏览商品列表时，系统需要在极短时间内完成一次完整的推荐流程。如果推荐服务耗时过长，比如推荐系统整体耗时超过 1 秒，不仅会增加用户等待时间，在高峰时段甚至可能导致页面卡顿、内容加载缓慢等问题，从而直接影响用户体验。</p>
+
+<p>与此同时，现代互联网平台所拥有的内容规模往往极其庞大。短视频平台可能拥有数亿条视频内容，电商平台可能拥有数千万乃至上亿个商品，新闻资讯平台也可能积累了海量历史文章。如果每次用户请求都对全部候选物品执行复杂排序模型推理，即使单个物品的计算耗时极低，整体计算开销仍然会达到难以接受的程度。</p>
+
+<p>换句话说，推荐系统实际上面临着一个典型的矛盾：</p>
+
+<ul>
+  <li>一方面，需要从海量候选物品中找到用户真正感兴趣的内容；</li>
+  <li>另一方面，又必须在极短时间内完成整个推荐过程。</li>
+</ul>
+
+<p>这本质上是一个在效果与效率之间进行平衡的问题。而召回模块的出现，正是为了解决这一问题。召回模块位于整个推荐链路的最上游，其核心职责是利用高效率的检索策略快速缩小候选物品池的范围，将候选规模从千万级、亿级压缩至万级甚至千级，从而为后续排序阶段创造计算空间。</p>
+
+<div class="definition-box">
+  <div class="def-label">定义 4.1</div>
+  <p>召回模块需要利用相对简单且高效的策略，从海量候选池中快速筛选出一批用户可能感兴趣的候选物品，将候选规模从千万级、亿级缩减至万级甚至千级，从而为后续排序阶段创造计算空间。</p>
+</div>
+
+<p>需要注意的是，召回模块承担的是"大范围筛选"的职责，因此其设计目标并不是获得最精准的排序结果，而是在尽可能短的时间内保证候选集的覆盖率与召回率。这也决定了召回阶段所采用的模型和策略通常不能过于复杂，否则其本身就会成为推荐链路的性能瓶颈。正因如此，工业界发展出了协同过滤召回、Embedding 召回、双塔召回、图网络召回等一系列高效率召回技术，并以并行执行的方式作用于多路召回架构中。</p>
+
+<h2 class="section-title">4.2 多路召回架构</h2>
+
+<p>工业界几乎所有推荐系统都会在推荐链路的最上游部署召回模块，通过较低的计算成本完成候选集的第一次大规模筛选。然而，召回模块的核心目标并不是获得最精准的推荐结果，而是在保证极低延迟的前提下，尽可能提高候选集的覆盖率与召回率。因此，工业界很少依赖单一召回策略，而是普遍采用<strong>多路召回（Multi-channel Retrieval）</strong>架构：通过并行执行多种不同的召回策略，从不同角度挖掘用户潜在兴趣，再将各路结果进行汇总，从而兼顾个性化、多样性以及业务目标。</p>
+
+<p>从工程实现角度来看，多路召回架构通常可以划分为三个阶段：<strong>召回前处理（Pre-retrieval Processing）</strong>、<strong>多路召回执行（Multi-channel Retrieval Execution）</strong>以及<strong>召回后处理（Post-retrieval Processing）</strong>。</p>
+
+<h3 class="subsection-title">4.2.1 召回前处理</h3>
+
+<p>在正式发起召回请求之前，推荐系统首先需要完成一系列前置准备工作：</p>
+
+<ul>
+  <li><strong>构建召回触发信号（Trigger）</strong>：从用户近期行为中提取能够代表当前兴趣的触发信号，例如用户最近点击、浏览、点赞、收藏或购买过的物品，以及用户近期关注的话题标签、关键词等。</li>
+  <li><strong>获取辅助特征</strong>：读取用户画像、上下文环境以及设备信息等辅助特征，例如年龄、性别、兴趣标签、地理位置、访问时间、设备机型等。</li>
+  <li><strong>访问外部存储服务</strong>：访问 Redis、索引服务以及用户画像服务等外部系统，读取用户最近交互的物品列表、查询用户长期兴趣标签，或者根据特定触发项获取对应的候选物品集合。</li>
+</ul>
+
+<p>在工业级推荐系统中，召回所依赖的索引体系通常分为两类：</p>
+
+<div class="definition-box">
+  <div class="def-label">正排索引（Forward Index）</div>
+  <p>以 Item ID 为 Key 存储物品完整特征（标题、标签、统计特征以及 Embedding 向量等）。解决：<em>已知 Item ID，如何快速获取其完整特征？</em></p>
+</div>
+
+<div class="definition-box">
+  <div class="def-label">倒排索引（Inverted Index）</div>
+  <p>以用户、物品、标签、关键词、类目等触发项作为 Key，映射到一组关联物品列表。解决：<em>已知某个兴趣触发项，如何快速找到相关物品？</em></p>
+</div>
+
+<p>在工程实践中，每个触发项对应的物品集合通常被称为<strong>倒排拉链（Inverted List）</strong>。例如某个视频对应的相似视频集合、某个兴趣标签对应的内容集合，均属于典型的倒排拉链结构。</p>
+
+<h3 class="subsection-title">4.2.2 多路召回执行</h3>
+
+<p>完成前处理后，系统便进入多路召回执行阶段。该阶段是整个召回模块的核心部分，多种召回策略并行执行，每一路召回从不同角度刻画用户兴趣，各路召回结果最终汇总形成统一候选池。工业界常见的召回方式包括：</p>
+
+<ul>
+  <li><strong>热门召回（Hot Retrieval）</strong>：根据全站或垂类热度统计结果进行召回，用于保障基础流量覆盖以及新用户冷启动。</li>
+  <li><strong>I2I 召回（Item-to-Item Retrieval）</strong>：基于物品协同过滤（Item CF）或物品 Embedding 相似度，根据用户历史交互物品寻找相似内容。</li>
+  <li><strong>U2I 召回（User-to-Item Retrieval）</strong>：通过用户向量与物品向量进行近邻搜索实现召回，通常由双塔模型生成 Embedding，再结合 ANN 检索系统完成召回。</li>
+  <li><strong>垂类召回（Tag Retrieval）</strong>：基于用户兴趣标签、内容标签或类目进行匹配召回。</li>
+  <li><strong>U2U2I 召回（User-to-User-to-Item Retrieval）</strong>：先寻找相似用户，再聚合相似用户喜欢的物品进行推荐，本质上属于 User CF 思想。</li>
+  <li><strong>U2I2I 召回（User-to-Item-to-Item Retrieval）</strong>：在用户历史行为基础上进行两跳扩展，通过相似物品链路增强候选集多样性。</li>
+  <li><strong>实时行为召回（Real-time Retrieval）</strong>：基于用户当前会话中的即时行为动态触发召回。</li>
+  <li><strong>图网络召回（Graph Retrieval）</strong>：利用用户-物品交互图学习高阶关系，通过图神经网络生成 Embedding 后进行向量检索。</li>
+</ul>
+
+<p>由于各路召回需要同时面对大规模候选库，因此现代推荐系统通常采用异步 RPC、多线程调度或微服务并发调用等方式实现并行执行，从而将整体召回耗时控制在几十毫秒以内。</p>
+
+<h3 class="subsection-title">4.2.3 召回后处理</h3>
+
+<p>当所有召回源返回结果后，系统会进入召回后处理阶段，对候选集合进行统一整理：</p>
+
+<ul>
+  <li><strong>去重（Deduplication）</strong>：由于同一物品可能同时出现在多个召回源中，因此需要根据 Item ID 进行统一去重。</li>
+  <li><strong>轻量级过滤（Lightweight Filtering）</strong>：过滤掉已经下架、违规、失效或用户明确屏蔽的物品。</li>
+  <li><strong>Quota 控制与截断（Quota & Truncation）</strong>：为保证后续排序模块的计算开销可控，系统通常会对候选规模进行限制。例如为每个召回源设置独立配额，再对整体候选集进行截断，将候选规模控制在数百至数千个物品范围内。</li>
+</ul>
+
+<p>需要注意的是，此处的过滤主要是为了保证召回结果的有效性和可用性，因此通常只包含一些简单且计算成本较低的规则。而涉及复杂业务逻辑、多样性控制、公平性约束、生态调控以及风险治理等操作，则通常会在后续独立的过滤模块（Filtering）中统一处理。</p>
+
+<h2 class="section-title">4.3 召回技术分类</h2>
+
+<p>多路召回本质上是一种工程组织方式，它解决的是"如何将多种召回策略高效协同起来"的问题；而不同召回策略背后所采用的算法与技术路线，则属于召回技术范畴。从推荐系统的发展历程来看，召回技术经历了明显的演进过程：</p>
+
+<p style="text-align: center; font-weight: 600; color: var(--highlight);">规则驱动 → 协同过滤驱动 → 表征学习驱动 → 图关系建模驱动</p>
+
+<p>当前工业界主流的召回技术大致可以分为以下四类：</p>
+
+<table>
+  <caption>表 4.1：主流召回技术分类对比</caption>
+  <thead>
+    <tr>
+      <th>召回类型</th><th>核心技术</th><th>典型路径</th><th>优点</th><th>缺点</th><th>适用场景</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>协同过滤召回</td><td>User-CF、Item-CF、Swing</td><td>I2I、U2U2I</td><td>简单高效、可解释性强</td><td>冷启动能力较弱</td><td>行为数据丰富的平台</td></tr>
+    <tr><td>内容与规则召回</td><td>Tag 匹配、热门推荐、运营规则</td><td>Tag、Hot、Category</td><td>实现简单、可控性强</td><td>个性化能力有限</td><td>冷启动与运营场景</td></tr>
+    <tr><td>向量召回</td><td>双塔、MIND、多兴趣模型</td><td>U2I</td><td>泛化能力强、效果优秀</td><td>依赖模型训练</td><td>主流个性化推荐系统</td></tr>
+    <tr><td>图召回</td><td>GNN、随机游走、图 Embedding</td><td>U2I2I、U2U2I</td><td>能够建模高阶关系</td><td>工程复杂度较高</td><td>复杂关系网络场景</td></tr>
+  </tbody>
+</table>
+
+<h3 class="subsection-title">4.3.1 协同过滤召回</h3>
+
+<p>协同过滤（Collaborative Filtering，CF）是推荐系统历史上最经典的一类召回技术。其核心思想是：</p>
+
+<div class="definition-box">
+  <div class="def-label">定义 4.2</div>
+  <p>喜欢相似内容的用户，其未来兴趣往往也相似；与某个物品经常一起被消费的物品，未来也可能被共同消费。</p>
+</div>
+
+<p>与基于内容理解的方法不同，协同过滤并不关心物品本身的语义信息，而是完全依赖用户行为数据所形成的共现关系进行推荐。根据建模对象的不同，协同过滤通常又可进一步分为：User-CF、Item-CF、Swing 召回等。其中，User-CF 属于典型的 U2U2I 路径，Item-CF 属于典型的 I2I 路径，Swing 则是在 Item-CF 基础上的工业级改进方案。</p>
+
+<h3 class="subsection-title">4.3.2 内容与规则召回</h3>
+
+<p>内容与规则召回（Content & Rule-based Retrieval）是工业界应用最广泛的基础召回策略之一。与协同过滤依赖用户行为不同，这类召回方法更多利用物品属性、用户画像以及业务规则来完成候选集构建。典型策略包括：热门召回、Tag 召回、类目召回、地域召回、运营召回、新内容召回等。</p>
+
+<p>以 Tag 召回为例，在离线阶段，系统以用户偏好的兴趣标签作为触发信号，通过离线计算任务预先产生每个兴趣 Tag 对应的候选物品列表。这些物品的选择可以基于物品的后验表现（如曝光量 Top K、点赞数 Top K 等），同时也可以引入一定比例的随机采样物品，以避免候选集过度集中于热门内容。完成离线计算后，系统将每个兴趣 Tag 及其对应的物品列表以键值对（K-V）的形式存储在 Redis 缓存中。在线上阶段，系统根据用户当前的多个兴趣偏好 Tag，直接从 Redis 中查询对应的物品列表，并将多个 Tag 的召回结果进行合并，即可高效完成整个在线召回过程。</p>
+
+<h3 class="subsection-title">4.3.3 向量召回</h3>
+
+<p>随着深度学习技术的发展，向量召回（Embedding-based Retrieval）逐渐成为当前工业界最主流的召回范式。</p>
+
+<div class="definition-box">
+  <div class="def-label">定义 4.3</div>
+  <p>将用户与物品映射到同一个向量空间中，通过向量相似度衡量用户与物品之间的匹配程度。</p>
+</div>
+
+<p>在离线阶段，系统利用海量用户行为数据训练 Embedding 模型，学习用户向量与物品向量；在线阶段，则通过近似最近邻搜索（Approximate Nearest Neighbor, ANN）快速检索与用户向量最接近的物品集合。目前工业界常见的向量召回模型包括：DSSM、YouTube DNN、双塔模型（Two-Tower）、MIND、ComiRec、SDM、PDN 等。</p>
+
+<h3 class="subsection-title">4.3.4 图召回</h3>
+
+<p>从本质上来看，推荐系统天然可以表示为一个大规模用户-物品二分图。用户与物品之间的点击、浏览、购买、点赞等行为构成图中的边，而用户和物品则构成图中的节点。图召回（Graph-based Retrieval）正是利用这种图结构信息进行推荐。</p>
+
+<p>与传统协同过滤主要利用用户与物品之间的一阶共现关系不同，图召回能够进一步挖掘用户与物品之间的二阶、三阶乃至更高阶关联关系。例如，用户 A 喜欢物品 X；物品 X 又被用户 B 喜欢；而用户 B 进一步喜欢物品 Y。那么即使用户 A 从未与物品 Y 产生过直接交互，系统仍然可以通过这条关联链路推断出用户 A 可能对物品 Y 感兴趣，并将其纳入候选集合。</p>
+
+<p>这种基于图结构的高阶兴趣传播能力，使得图召回能够发现大量隐含的用户兴趣关联关系，从而突破传统协同过滤仅依赖局部共现信息的限制。当前工业界常见图召回技术包括：DeepWalk、Node2Vec、GraphSAGE、PinSage、LightGCN、HGT 等。</p>
+
+<h2 class="section-title">4.4 召回结果融合</h2>
+
+<p>在工业级推荐系统中，多路召回模块通常会并行执行数十甚至上百种不同的召回策略。然而，多路召回执行完成后得到的结果并不能直接进入后续排序模块。不同召回源之间往往存在大量重叠物品，同时各路召回返回的候选规模也存在较大差异。因此，在召回阶段结束之后，通常会引入一个专门的<strong>召回结果融合模块（Retrieve Fusion Module）</strong>，负责对所有召回源的结果进行统一处理。</p>
+
+<p>其核心目标包括：保证候选集规模满足后续排序模块要求；保证不同召回源之间的合理流量分配；提升候选集的覆盖率与多样性；提高系统整体稳定性与鲁棒性。</p>
+
+<h3 class="subsection-title">4.4.1 召回结果去重</h3>
+
+<p>由于不同召回源往往基于不同的策略寻找候选物品，因此同一个物品可能同时出现在多个召回源中。如果不进行去重处理，则会导致候选集中出现大量重复物品，不仅浪费后续排序模型的计算资源，还会降低召回覆盖率。因此，工业界通常会基于物品 ID 对所有召回结果进行统一去重。</p>
+
+<p>在召回结果去重之后，系统通常会为每个物品保留一个<strong>召回来源标识（retrieval reason）</strong>。该标识在后续粗排、精排以及线上监控、问题回溯等环节都具有重要作用，也可以作为排序模型的重要输入特征。对于同一个物品被多路召回同时命中的情况，召回 reason 字段通常只记录其中一路召回来源。工业界通常有两种常见做法：一种是按照召回源优先级进行选择，另一种是按照召回源内部得分进行选择。</p>
+
+<h3 class="subsection-title">4.4.2 召回源配额控制</h3>
+
+<p>不同召回策略返回的候选规模往往差异巨大。如果简单地将所有召回结果直接合并，则容易导致候选集被少数召回源主导，从而降低整体召回的多样性。因此，工业界通常会为每一路召回源设置独立的 Quota（召回配额）。</p>
+
+<table>
+  <caption>表 4.2：召回源 Quota 示例</caption>
+  <thead>
+    <tr><th>召回源</th><th>原始候选数</th><th>保留数量</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>热门召回</td><td>10000</td><td>500</td></tr>
+    <tr><td>Item-CF 召回</td><td>3000</td><td>1000</td></tr>
+    <tr><td>双塔召回</td><td>5000</td><td>1500</td></tr>
+    <tr><td>图召回</td><td>1000</td><td>1000</td></tr>
+  </tbody>
+</table>
+
+<h3 class="subsection-title">4.4.3 候选集截断</h3>
+
+<p>在完成多路召回融合后，系统通常仍会得到数万级别的候选物品。然而后续粗排和精排模型的计算成本远高于召回阶段，因此不可能对无限规模的候选集进行排序。例如：召回阶段候选数为 50000，粗排输入候选数为 5000，而精排输入候选数为 500。因此，在召回融合阶段通常需要进行统一截断（Truncation），将候选规模控制在后续排序模块能够接受的范围内。</p>
+
+<h3 class="subsection-title">4.4.4 召回源兜底机制</h3>
+
+<p>在实际线上环境中，任何一个召回服务都有可能因为模型异常、索引失效、RPC 超时或机器故障而返回空结果。如果缺乏保护机制，则可能导致整体召回结果数量急剧下降，进而影响后续排序效果与用户体验。因此，工业界通常会设计多层次的召回兜底机制（Backup Mechanism），包括：热门内容召回兜底、类目热门召回兜底、地域热门召回兜底、Redis 缓存结果兜底、历史推荐结果兜底等。</p>
+
+<h2 class="section-title">4.5 过滤限流模块</h2>
+
+<p>与召回模块负责从海量候选物品中尽可能找回用户可能感兴趣的内容不同，过滤与限流模块（Filtering & Throttling）承担的是推荐系统中的"守门人（Gatekeeper）"角色。推荐系统本质上是一种流量分配系统，它决定了哪些内容能够被用户看到，哪些内容无法获得曝光。因此，推荐系统不仅需要关注点击率（CTR）、观看时长（Watch Time）等业务指标，还必须保证推荐结果符合平台治理规则、法律法规要求以及内容生态建设目标。</p>
+
+<p>如果缺乏有效的过滤机制，推荐系统可能出现一系列问题：用户已经消费过的内容被反复推荐；违规内容进入推荐链路；低质量内容大量占据流量；黑产账号利用推荐系统获取曝光；甚至导致平台内容生态出现"劣币驱逐良币"的现象。</p>
+
+<h3 class="subsection-title">4.5.1 过滤模块的位置</h3>
+
+<p>在工业级推荐系统中，过滤逻辑通常贯穿整个推荐流程：</p>
+
+<ul>
+  <li><strong>召回前过滤（Pre-retrieval Filtering）</strong>：剔除已经下架、审核未通过、版权违规或删除状态的内容，避免无效内容进入后续推荐链路。</li>
+  <li><strong>召回后过滤（Post-retrieval Filtering）</strong>：处理用户已消费内容过滤、用户屏蔽内容过滤、黑名单作者过滤以及地域限制过滤等逻辑。</li>
+  <li><strong>排序后过滤（Post-ranking Filtering）</strong>：广告比例控制、风险内容降权、同作者内容数量限制等，避免排序模型过度追求点击率而损害用户体验。</li>
+</ul>
+
+<h3 class="subsection-title">4.5.2 常见过滤与限流策略</h3>
+
+<p>过滤与限流策略通常来源于多个维度的信息，包括内容安全、用户体验、生态治理以及业务规则等。典型策略如表 4.3 所示。</p>
+
+<table>
+  <caption>表 4.3：过滤限流策略示例</caption>
+  <thead>
+    <tr><th>过滤限流维度</th><th>典型规则示例</th><th>过滤限流策略</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>封面/画面合规</td><td>封面含色情裸露、低俗暗示、血腥暴力、恐怖元素、敏感标识等</td><td>随机过滤 80% 的请求</td></tr>
+    <tr><td>标题/文本违规</td><td>包含违禁词、夸大误导、政治敏感词、虚假宣传、诱导点击等</td><td>随机过滤 80% 的请求</td></tr>
+    <tr><td>内容主题风险</td><td>涉及政治事件、宗教极端、民族歧视、谣言传播、非法集资等</td><td>100% 完全过滤，内容仅创作者可见</td></tr>
+    <tr><td>内容质量低下</td><td>画面模糊、音画不同步、纯黑屏/白屏、无实质信息等</td><td>随机过滤 75% 的请求，总曝光不能超过 X 次</td></tr>
+    <tr><td>原创性存疑</td><td>内容疑似 AI 批量生成、无真人出镜、脚本高度模板化、存在抄袭或洗稿行为等</td><td>全域随机过滤 60% 的请求</td></tr>
+    <tr><td>用户行为反馈</td><td>被大量用户举报、低完播率+高跳出率组合、负向互动集中爆发等</td><td>不同活跃度人群不同的随机过滤比例</td></tr>
+    <tr><td>发布者信誉</td><td>账号处于黑名单、历史违规频发、新号无认证、批量发布相似内容等</td><td>大流量公域页面 100% 完全过滤，小流量页面随机 50% 的请求</td></tr>
+  </tbody>
+</table>
+
+<p>除了简单的过滤之外，工业界通常还会使用<strong>限流（Throttling）</strong>机制对部分内容进行曝光控制。一些内容虽然并未达到违规标准，但由于内容质量较低、原创性存疑或用户负反馈较高，系统可能不会直接过滤，而是通过降低其流量配额的方式控制其传播范围。相比完全过滤，限流能够在降低风险的同时减少误伤，从而在内容安全与内容供给之间取得更加平衡的效果。</p>
+
+<h3 class="subsection-title">4.5.3 负向判罚体系</h3>
+
+<p>在实际工业系统中，过滤模块通常并不会直接判断某个内容是否违规，而是更多承担"策略执行器"的角色。违规内容的识别往往由独立的内容安全系统、社区治理系统以及反作弊系统完成，而这些系统产生的风险标签最终统一汇聚到<strong>负向判罚体系（Penalty System）</strong>中。</p>
+
+<p>根据风险等级的不同，系统会采用不同的处罚策略：</p>
+
+<ul>
+  <li><strong>硬过滤（Hard Filtering）</strong>：高风险内容（如涉黄、涉暴、违法违规），曝光量直接限制为零。</li>
+  <li><strong>软限流（Soft Throttling）</strong>：中风险内容，保留部分流量、降低排序分数或限制分发范围。</li>
+  <li><strong>定向屏蔽（Targeted Blocking）</strong>：对特定用户群体存在风险的内容，如针对未成年人屏蔽成人内容。</li>
+  <li><strong>风险打标（Risk Tagging）</strong>：不直接过滤，将风险标签透传给排序模型，由模型综合决定最终曝光概率。</li>
+</ul>
+
+<h3 class="subsection-title">4.5.4 风控算法的发展</h3>
+
+<p>上述风险标签大多数并非由推荐系统直接生成，而是由专门的风控团队负责建设和维护。以短视频场景中的违规内容识别为例，风控算法的发展大致经历了两个阶段：</p>
+
+<p><strong>早期阶段：任务专用模型。</strong>针对不同风险类型分别训练独立模型，例如色情识别模型、暴力识别模型、OCR 文本识别模型、人脸检测模型以及 Deepfake 检测模型等。常见网络包括 ResNet、MobileNet、EfficientNet 以及 ViT 等。这种方案在单任务场景下往往能够取得较高精度，但存在模型数量众多、维护成本较高、新风险类型需要重新构建数据集等缺点。</p>
+
+<p><strong>当前阶段：统一建模阶段。</strong>随着大语言模型（LLM）与多模态大模型（VLM）的快速发展，以 CLIP、BLIP、Qwen-VL 等模型为代表的新一代多模态模型，能够同时理解图像、视频、语音以及文本信息，并将不同模态映射到统一语义空间中。系统不再需要为每种风险单独训练模型，而是可以通过统一的大模型完成多种违规任务识别。这种技术路线显著提升了风控系统的泛化能力和迭代效率。</p>
+
+<h3 class="subsection-title">4.5.5 过滤模块面临的挑战</h3>
+
+<p>尽管当前过滤与限流体系已经相对成熟，但仍然面临诸多挑战：</p>
+
+<ul>
+  <li>AIGC 技术的发展使违规内容生成成本大幅降低，传统规则和小模型越来越难以应对快速演化的新型风险内容。</li>
+  <li>跨模态违规问题日益突出。例如视频画面本身完全合规，但语音内容包含敏感信息；或者标题正常但评论区存在违规引导行为。</li>
+  <li>过滤策略还面临误伤优质内容的问题。过于严格的过滤机制可能压制优质长尾创作者的发展，而过于宽松的策略又可能损害平台生态。</li>
+</ul>
+
+<p>未来，过滤模块将逐步从传统的规则驱动模式演进为融合大模型理解能力的智能治理系统，在保障内容安全的同时，更加关注内容生态、公平性与用户体验之间的动态平衡。</p>
+
+<h2 class="section-title">4.6 本章小结</h2>
+
+<p>本章围绕级联式推荐系统架构中的召回与过滤限流两大核心模块展开介绍，系统分析了推荐链路最上游阶段的职责定位、技术原理与工程实践。</p>
+
+<p>首先，在召回模块部分，我们从工业级推荐系统面临的海量候选物品检索问题出发，阐述了召回模块存在的必要性，并介绍了多路召回架构的设计思想。在此基础上，对当前主流召回技术进行了分类梳理，包括协同过滤召回、内容与规则召回、Embedding 向量召回以及图召回等典型范式。同时，我们进一步介绍了召回结果融合环节的核心流程，包括候选集去重、Quota 配额控制、结果截断、召回兜底等关键机制。</p>
+
+<p>随后，本章介绍了过滤限流模块在推荐系统中的重要作用。作为推荐链路中的安全与治理中枢，过滤限流模块承担着内容质量控制、风险内容拦截以及平台生态治理等职责。我们分析了常见的过滤与限流策略，并讨论了过滤限流模块与召回、排序及重排阶段之间的协同关系。</p>
+
+<p>最后，我们结合近年来人工智能技术的发展趋势，介绍了大语言模型（LLM）与视觉语言模型（VLM）在内容安全审核领域的应用。随着 AIGC 内容规模的快速增长，传统依赖规则与专用分类模型的风控体系正逐渐向基于语义理解的统一审核框架演进。</p>
+
+<h2 class="section-title">4.7 参考文献</h2>
+
+<p>[1] Jinze Bai et al. "Qwen-VL: A Versatile Vision-Language Model for Understanding, Localization, Text Reading, and Beyond". In: arXiv preprint arXiv:2308.12966 (2023).</p>
+
+<p>[2] Alexey Dosovitskiy. "An image is worth 16x16 words: Transformers for image recognition at scale". In: arXiv preprint arXiv:2010.11929 (2020).</p>
+
+<p>[3] Kaiming He et al. "Deep residual learning for image recognition". In: Proceedings of the IEEE conference on computer vision and pattern recognition. 2016, pp. 770–778.</p>
+
+<p>[4] Andrew G Howard et al. "MobileNets: Efficient convolutional neural networks for mobile vision applications". In: arXiv preprint arXiv:1704.04861 (2017).</p>
+
+<p>[5] Junnan Li et al. "BLIP: Bootstrapping language-image pre-training for unified vision-language understanding and generation". In: International conference on machine learning. PMLR. 2022, pp. 12888–12900.</p>
+
+<p>[6] Alec Radford et al. "Learning transferable visual models from natural language supervision". In: International conference on machine learning. PMLR. 2021, pp. 8748–8763.</p>
+
+<p>[7] Mingxing Tan and Quoc Le. "EfficientNet: Rethinking model scaling for convolutional neural networks". In: International conference on machine learning. PMLR. 2019, pp. 6105–6114.</p>
+
+<div class="chapter-end">* * *</div>
+
+<div class="nav-bar">
+  <a href="ch03.html">← 上一章：第3章 推荐系统评价体系</a>
+  <a href="ch05.html">下一章：第5章 粗排模块 →</a>
+</div>
+
+</body>
+</html>
