@@ -489,31 +489,61 @@ body{font-family:var(--font-sans);background:var(--bg);color:var(--text);line-he
 
 /* ===== Formula & Image Styles ===== */
 .formula-box{
-  background:var(--accent-bg);
-  border-left:3px solid var(--accent-light);
-  border-radius:0 6px 6px 0;
-  padding:12px 20px;
-  margin:16px 0;
-  font-family:var(--font-mono),'KaTeX_Main',serif;
-  font-size:0.95em;
+  background:linear-gradient(135deg,#faf8f3 0%,#f3eee5 50%,#ece6d8 100%);
+  border:1px solid #d4cfc0;
+  border-left:5px solid #c9a84c;
+  border-radius:12px;
+  padding:28px 32px 20px;
+  margin:28px auto;
+  text-align:center;
+  font-family:'Noto Serif SC',serif;
+  font-size:1.1rem;
+  line-height:1.8;
   overflow-x:auto;
+  box-shadow:0 3px 12px rgba(0,0,0,0.08),0 1px 3px rgba(0,0,0,0.04);
   position:relative;
+  max-width:95%;
 }
 .formula-box::before{
-  content:'Formula';
+  content:'⟁';
   position:absolute;
-  top:-8px;
-  right:12px;
-  font-size:0.65em;
-  color:var(--text-muted);
-  text-transform:uppercase;
-  letter-spacing:1px;
-  background:var(--bg-content);
-  padding:0 6px;
-  border-radius:3px;
+  top:8px;
+  left:14px;
+  font-size:0.75rem;
+  color:#c9a84c;
+  opacity:0.4;
+  font-family:'JetBrains Mono',monospace;
 }
-.formula-box .katex{font-size:1.1em}
-.formula-box .katex-display{margin:0}
+.formula-box::after{
+  content:'';
+  position:absolute;
+  bottom:0;
+  left:0;
+  right:0;
+  height:3px;
+  background:linear-gradient(90deg,transparent,#c9a84c,transparent);
+  border-radius:0 0 12px 12px;
+  opacity:0.3;
+}
+.formula-box .formula-num{
+  color:var(--text-muted,#666);
+  font-size:0.82rem;
+  margin-top:8px;
+  font-family:'Noto Sans SC',sans-serif;
+  font-style:italic;
+}
+.formula-box mjx-container{font-size:1.15em !important}
+.formula-box mjx-container[display="true"]{margin:0 !important;padding:4px 0}
+.formula-box img.formula-svg{
+  max-width:90%;
+  height:auto;
+  margin:0 auto;
+  display:block;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,0.05));
+}
+.formula-box:hover{
+  box-shadow:0 4px 16px rgba(0,0,0,0.12),0 2px 4px rgba(0,0,0,0.06);
+}
 
 .article-content img{
   max-width:100%;
@@ -707,27 +737,15 @@ function loadChapter(num){
   window.scrollTo(0, 0);
   updateProgress();
   
-  // Render KaTeX formulas after loading new chapter
-  if (typeof renderMathInElement !== 'undefined') {
-    renderMathInElement(article, {
-      delimiters: [
-        {left: '$$', right: '$$', display: true},
-        {left: '$', right: '$', display: false}
-      ],
-      throwOnError: false
-    });
+  // Render MathJax formulas after loading new chapter
+  if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+    MathJax.typesetPromise([article]).catch(function(err){console.warn('MathJax error:',err);});
   } else {
-    // KaTeX might not be loaded yet, retry after delay
+    // MathJax might not be loaded yet, retry after delay
     setTimeout(function() {
-      if (typeof renderMathInElement !== 'undefined') {
-        renderMathInElement(article, {
-          delimiters: [
-            {left: '$$', right: '$$', display: true},
-            {left: '$', right: '$', display: false}
-          ],
-          throwOnError: false
-        });
-      }
+      if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+    MathJax.typesetPromise([article]).catch(function(err){console.warn('MathJax error:',err);});
+  }
     }, 300);
   }
 }
@@ -762,18 +780,12 @@ document.addEventListener('DOMContentLoaded', () => {
   
   renderSidebar();
   
-  // Wait for KaTeX to load, then render
+  // Wait for MathJax to load, then render
   setTimeout(function() {
-    if (typeof renderMathInElement !== 'undefined') {
+    if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
       var contentEl = document.getElementById('article');
       if (contentEl) {
-        renderMathInElement(contentEl, {
-          delimiters: [
-            {left: '$$', right: '$$', display: true},
-            {left: '$', right: '$', display: false}
-          ],
-          throwOnError: false
-        });
+        MathJax.typesetPromise([contentEl]).catch(function(err){console.warn('MathJax error:',err);});
       }
     }
   }, 500);

@@ -1,0 +1,415 @@
+/* ===== RecSys-Industrial-Book HTML 样式 ===== */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --primary: #1a1a2e;
+  --accent: #16213e;
+  --highlight: #0f3460;
+  --gold: #c9a84c;
+  --bg: #faf9f6;
+  --card-bg: #ffffff;
+  --text: #2c2c2c;
+  --text-light: #666;
+  --border: #e0ddd5;
+  --code-bg: #f5f3ef;
+  --note-bg: #f0f7ff;
+  --note-border: #4a90d9;
+  --def-bg: #fdf6ec;
+  --def-border: #c9a84c;
+  --formula-bg: #f8f6f1;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.85;
+  font-size: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 30px 80px;
+}
+
+/* ===== 封面/标题区 ===== */
+.book-header {
+  text-align: center;
+  padding: 60px 0 40px;
+  border-bottom: 2px solid var(--gold);
+  margin-bottom: 40px;
+}
+
+.book-title {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+
+.book-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-light);
+  margin-bottom: 20px;
+}
+
+.book-author {
+  font-size: 1rem;
+  color: var(--highlight);
+  font-weight: 500;
+}
+
+/* ===== 章节标题 ===== */
+.chapter-num {
+  text-align: center;
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.chapter-title {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 50px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ===== 节标题 ===== */
+h2.section-title {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 50px;
+  margin-bottom: 20px;
+  padding-left: 15px;
+  border-left: 4px solid var(--gold);
+}
+
+h3.subsection-title {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--highlight);
+  margin-top: 35px;
+  margin-bottom: 15px;
+}
+
+h4.sub-subsection-title {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 25px;
+  margin-bottom: 10px;
+}
+
+/* ===== 正文段落 ===== */
+p {
+  margin-bottom: 18px;
+  text-align: justify;
+  text-indent: 2em;
+}
+
+p.no-indent { text-indent: 0; }
+
+/* ===== 列表 ===== */
+ul, ol {
+  margin: 15px 0 18px 2em;
+  padding-left: 1em;
+}
+
+li { margin-bottom: 8px; }
+
+/* ===== 定义框 ===== */
+.definition-box {
+  background: var(--def-bg);
+  border-left: 4px solid var(--def-border);
+  padding: 15px 20px;
+  margin: 20px 0;
+  border-radius: 0 8px 8px 0;
+}
+
+.definition-box .def-label {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-weight: 600;
+  color: var(--def-border);
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.definition-box p { text-indent: 0; margin-bottom: 8px; }
+
+/* ===== 笔记框 ===== */
+.note-box {
+  background: var(--note-bg);
+  border-left: 4px solid var(--note-border);
+  padding: 15px 20px;
+  margin: 20px 0;
+  border-radius: 0 8px 8px 0;
+}
+
+.note-box .note-label {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-weight: 600;
+  color: var(--note-border);
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.note-box p { text-indent: 0; margin-bottom: 5px; }
+
+/* ===== 公式（MathJax 增强版） ===== */
+.formula-box {
+  background: linear-gradient(135deg, #faf8f3 0%, #f3eee5 50%, #ece6d8 100%);
+  border: 1px solid #d4cfc0;
+  border-left: 5px solid var(--gold);
+  border-radius: 12px;
+  padding: 28px 32px 20px;
+  margin: 28px auto;
+  text-align: center;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  overflow-x: auto;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+  position: relative;
+  letter-spacing: 0.01em;
+  max-width: 95%;
+}
+
+.formula-box::before {
+  content: '⟁';
+  position: absolute;
+  top: 8px;
+  left: 14px;
+  font-size: 0.75rem;
+  color: var(--gold);
+  opacity: 0.4;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.formula-box::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  border-radius: 0 0 12px 12px;
+  opacity: 0.3;
+}
+
+.formula-box .formula-num {
+  color: var(--text-light);
+  font-size: 0.82rem;
+  margin-top: 8px;
+  font-family: 'Noto Sans SC', sans-serif;
+  font-style: italic;
+}
+
+/* MathJax 渲染的公式样式覆盖 */
+.formula-box mjx-container {
+  font-size: 1.15em !important;
+}
+
+.formula-box mjx-container[display="true"] {
+  margin: 0 !important;
+  padding: 4px 0;
+}
+
+/* SVG 公式图片样式 */
+.formula-box img.formula-svg {
+  max-width: 90%;
+  height: auto;
+  margin: 0 auto;
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05));
+}
+
+/* 增强公式中的上下标显示（fallback for non-MathJax） */
+.formula-box sub {
+  font-size: 0.72em;
+  vertical-align: -0.28em;
+  font-style: italic;
+}
+
+.formula-box sup {
+  font-size: 0.72em;
+  vertical-align: 0.55em;
+  font-style: italic;
+}
+
+/* 公式框 hover 效果 */
+.formula-box:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.06);
+  border-left-color: #b89a3a;
+}
+
+/* 公式中的斜体变量 */
+.formula-box {
+  font-feature-settings: "ss01", "ss02";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== 代码 ===== */
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  margin: 15px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--code-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* ===== 表格 ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 0.95rem;
+}
+
+table caption {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+th {
+  background: var(--accent);
+  color: #fff;
+  padding: 12px 15px;
+  text-align: center;
+  font-family: 'Noto Sans SC', sans-serif;
+  font-weight: 600;
+}
+
+td {
+  padding: 10px 15px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+tr:nth-child(even) td { background: #f9f8f5; }
+
+/* ===== 图片占位符 ===== */
+.figure-placeholder {
+  text-align: center;
+  margin: 25px 0;
+  padding: 30px;
+  background: #f0ede8;
+  border: 1px dashed #c0bbb3;
+  border-radius: 8px;
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+.figure-placeholder .fig-label {
+  font-weight: 600;
+  color: var(--highlight);
+  margin-bottom: 8px;
+}
+
+/* ===== 引用块 ===== */
+blockquote {
+  border-left: 3px solid var(--gold);
+  margin: 20px 0;
+  padding: 10px 20px;
+  color: var(--text-light);
+  font-style: italic;
+}
+
+/* ===== 章末分隔 ===== */
+.chapter-end {
+  text-align: center;
+  margin-top: 60px;
+  padding-top: 30px;
+  border-top: 1px solid var(--border);
+  color: var(--gold);
+  font-size: 1.5rem;
+  letter-spacing: 10px;
+}
+
+/* ===== 导航 ===== */
+.nav-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 50px;
+  padding: 20px 0;
+  border-top: 1px solid var(--border);
+}
+
+.nav-bar a {
+  text-decoration: none;
+  color: var(--highlight);
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 0.95rem;
+  padding: 8px 20px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.nav-bar a:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ===== 目录 ===== */
+.toc-box {
+  background: #f9f8f5;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 25px 30px;
+  margin: 30px 0;
+}
+
+.toc-box h3 {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 1.1rem;
+  color: var(--accent);
+  margin-bottom: 15px;
+}
+
+.toc-box ul { list-style: none; margin-left: 0; padding-left: 0; }
+.toc-box li { margin-bottom: 6px; }
+.toc-box a { text-decoration: none; color: var(--text); }
+.toc-box a:hover { color: var(--highlight); }
+
+/* ===== 响应式 ===== */
+@media (max-width: 700px) {
+  body { padding: 20px 15px 60px; font-size: 15px; }
+  .book-title { font-size: 1.6rem; }
+  .chapter-title { font-size: 1.5rem; }
+  h2.section-title { font-size: 1.2rem; }
+  h3.subsection-title { font-size: 1.05rem; }
+  table { font-size: 0.85rem; }
+  th, td { padding: 8px 10px; }
+}

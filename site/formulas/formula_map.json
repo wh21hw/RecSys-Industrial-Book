@@ -1,0 +1,1248 @@
+[
+  {
+    "chapter": 1,
+    "latex": "O(User \\times Item)",
+    "tag": "1.1",
+    "original": "$$ O(User \\times Item) \\tag{1.1} $$",
+    "svg_path": "formulas/ch01_f1_1.svg"
+  },
+  {
+    "chapter": 1,
+    "latex": "",
+    "tag": null,
+    "original": "$$ $$ GMV = \\sum (\\text{商品单价} \\times \\text{购买数量}) $$ \\tag{1.2} $$",
+    "svg_path": null
+  },
+  {
+    "chapter": 1,
+    "latex": "",
+    "tag": null,
+    "original": "$$ $$ OPM = \\frac{\\text{总订单数}}{\\text{总展示次数}} \\times 1000 $$ \\tag{1.3} $$",
+    "svg_path": null
+  },
+  {
+    "chapter": 1,
+    "latex": "",
+    "tag": null,
+    "original": "$$ $$ GMV = \\frac{OPM \\times \\text{展示次数} \\times \\text{客单价}}{1000} $$ \\tag{1.4} $$",
+    "svg_path": null
+  },
+  {
+    "chapter": 1,
+    "latex": "",
+    "tag": null,
+    "original": "$$ $$ CPM = \\frac{\\text{广告总花费}}{\\text{总展示次数}} \\times 1000 $$ \\tag{1.5} $$",
+    "svg_path": null
+  },
+  {
+    "chapter": 1,
+    "latex": "CPC = \\frac{\\text{广告总花费}}{\\text{总点击次数}}",
+    "tag": null,
+    "original": "$$ CPC = \\frac{\\text{广告总花费}}{\\text{总点击次数}} $$\n    <div class=\"formula-num\">(1.6)",
+    "svg_path": "formulas/ch01_fno5.svg"
+  },
+  {
+    "chapter": 1,
+    "latex": "CPA = \\frac{\\text{广告总花费}}{\\text{总转化次数}}",
+    "tag": null,
+    "original": "$$ CPA = \\frac{\\text{广告总花费}}{\\text{总转化次数}} $$\n    <div class=\"formula-num\">(1.7)",
+    "svg_path": "formulas/ch01_fno6.svg"
+  },
+  {
+    "chapter": 1,
+    "latex": "CTR = \\frac{\\text{点击数}}{\\text{曝光数}}",
+    "tag": null,
+    "original": "$$ CTR = \\frac{\\text{点击数}}{\\text{曝光数}} $$<br><br>\n  $$ CVR = \\frac{\\text{转化数}}{\\text{点击数}} $$\n  <div class=\"formula-num\">(1.8)",
+    "svg_path": "formulas/ch01_fno7.svg"
+  },
+  {
+    "chapter": 1,
+    "latex": "CPC = CPA \\times CVR\n  CPM = CPC \\times CTR \\times 1000\n  CPM = CPA \\times CVR \\times CTR \\times 1000",
+    "tag": "1.9",
+    "original": "$$ CPC = CPA \\times CVR\n  CPM = CPC \\times CTR \\times 1000\n  CPM = CPA \\times CVR \\times CTR \\times 1000 \\tag{1.9} $$",
+    "svg_path": "formulas/ch01_f1_9.svg"
+  },
+  {
+    "chapter": 1,
+    "latex": "",
+    "tag": null,
+    "original": "$$ $$ eCPM = \\frac{\\text{广告总收入}}{\\text{总曝光次数}} \\times 1000 $$ \\tag{1.10} $$",
+    "svg_path": null
+  },
+  {
+    "chapter": 1,
+    "latex": "eCPM_{预估} = CTR \\times bid \\times 1000",
+    "tag": "1.11",
+    "original": "$$ eCPM_{预估} = CTR \\times bid \\times 1000 \\tag{1.11} $$",
+    "svg_path": "formulas/ch01_f1_11.svg"
+  },
+  {
+    "chapter": 1,
+    "latex": "eCPM_{预估} = CTR \\times CVR \\times bid \\times 1000",
+    "tag": "1.12",
+    "original": "$$ eCPM_{预估} = CTR \\times CVR \\times bid \\times 1000 \\tag{1.12} $$",
+    "svg_path": "formulas/ch01_f1_12.svg"
+  },
+  {
+    "chapter": 1,
+    "latex": "User \\to Client \\to Server \\to Recommendation System \\to Server \\to Client \\to User",
+    "tag": "1.13",
+    "original": "$$ User \\to Client \\to Server \\to Recommendation System \\to Server \\to Client \\to User \\tag{1.13} $$",
+    "svg_path": "formulas/ch01_f1_13.svg"
+  },
+  {
+    "chapter": 2,
+    "latex": "召回（Retrieval） \\to 粗排（Pre-Ranking） \\to 精排（Ranking） \\to 重排（Re-Ranking）",
+    "tag": null,
+    "original": "$$ 召回（Retrieval） \\to 粗排（Pre-Ranking） \\to 精排（Ranking） \\to 重排（Re-Ranking） $$",
+    "svg_path": "formulas/ch02_fno13.svg"
+  },
+  {
+    "chapter": 2,
+    "latex": "max_{x_{ij}} \\sum_{i=1}^{N} \\sum_{j=1}^{M} x_{ij} Q_{ij}\n  s.t. \\sum_{i=1}^{N} \\sum_{j=1}^{M} x_{ij} q_{j} \\leq C,   \\sum_{j=1}^{M} x_{ij} \\leq 1,   x_{ij} \\in {0, 1}",
+    "tag": "2.1",
+    "original": "$$ max_{x_{ij}} \\sum_{i=1}^{N} \\sum_{j=1}^{M} x_{ij} Q_{ij}\n  s.t. \\sum_{i=1}^{N} \\sum_{j=1}^{M} x_{ij} q_{j} \\leq C,   \\sum_{j=1}^{M} x_{ij} \\leq 1,   x_{ij} \\in {0, 1} \\tag{2.1} $$",
+    "svg_path": "formulas/ch02_f2_1.svg"
+  },
+  {
+    "chapter": 2,
+    "latex": "arg max_{j} (Q_{ij} - \\lambda q_{j})",
+    "tag": "2.2",
+    "original": "$$ arg max_{j} (Q_{ij} - \\lambda q_{j}) \\tag{2.2} $$",
+    "svg_path": "formulas/ch02_f2_2.svg"
+  },
+  {
+    "chapter": 2,
+    "latex": "D_{u} = {item_{1}, item_{2}, \\cdot\\cdot\\cdot, item_{n}}",
+    "tag": "2.4",
+    "original": "$$ D_{u} = {item_{1}, item_{2}, \\cdot\\cdot\\cdot, item_{n}} \\tag{2.4} $$",
+    "svg_path": "formulas/ch02_f2_4.svg"
+  },
+  {
+    "chapter": 3,
+    "latex": "\\text{Accuracy} = \\frac{TP + TN}{TP + TN + FP + FN}",
+    "tag": null,
+    "original": "$$ \\text{Accuracy} = \\frac{TP + TN}{TP + TN + FP + FN} $$ &nbsp;&nbsp;(3.1)",
+    "svg_path": "formulas/ch03_fno17.svg"
+  },
+  {
+    "chapter": 3,
+    "latex": "\\text{Precision} = \\frac{TP}{TP + FP}",
+    "tag": null,
+    "original": "$$ \\text{Precision} = \\frac{TP}{TP + FP} $$ &nbsp;&nbsp;(3.2)",
+    "svg_path": "formulas/ch03_fno18.svg"
+  },
+  {
+    "chapter": 3,
+    "latex": "\\text{Recall} = \\frac{TP}{TP + FN}",
+    "tag": null,
+    "original": "$$ \\text{Recall} = \\frac{TP}{TP + FN} $$ &nbsp;&nbsp;(3.3)",
+    "svg_path": "formulas/ch03_fno19.svg"
+  },
+  {
+    "chapter": 3,
+    "latex": "F1 = 2 \\times Precision \\times Recall / (Precision + Recall)",
+    "tag": "3.4",
+    "original": "$$ F1 = 2 \\times Precision \\times Recall / (Precision + Recall) \\tag{3.4} $$",
+    "svg_path": "formulas/ch03_f3_4.svg"
+  },
+  {
+    "chapter": 3,
+    "latex": "AUC = P(s_{pos} > s_{neg})",
+    "tag": "3.5",
+    "original": "$$ AUC = P(s_{pos} > s_{neg}) \\tag{3.5} $$",
+    "svg_path": "formulas/ch03_f3_5.svg"
+  },
+  {
+    "chapter": 3,
+    "latex": "UAUC = (1/N) \\sum_{u=1}^{N} AUC_{u}",
+    "tag": "3.6",
+    "original": "$$ UAUC = (1/N) \\sum_{u=1}^{N} AUC_{u} \\tag{3.6} $$",
+    "svg_path": "formulas/ch03_f3_6.svg"
+  },
+  {
+    "chapter": 3,
+    "latex": "GAUC = \\sum_{u=1}^{N} n_{u} \\times AUC_{u} / \\sum_{u=1}^{N} n_{u}",
+    "tag": "3.7",
+    "original": "$$ GAUC = \\sum_{u=1}^{N} n_{u} \\times AUC_{u} / \\sum_{u=1}^{N} n_{u} \\tag{3.7} $$",
+    "svg_path": "formulas/ch03_f3_7.svg"
+  },
+  {
+    "chapter": 3,
+    "latex": "DCG@K = \\sum_{i=1}^{K} rel_{i} / log_{2}(i + 1)",
+    "tag": "3.8",
+    "original": "$$ DCG@K = \\sum_{i=1}^{K} rel_{i} / log_{2}(i + 1) \\tag{3.8} $$",
+    "svg_path": "formulas/ch03_f3_8.svg"
+  },
+  {
+    "chapter": 3,
+    "latex": "NDCG@K = \\frac{DCG@K}{IDCG@K}",
+    "tag": null,
+    "original": "$$ NDCG@K = \\frac{DCG@K}{IDCG@K} $$ &nbsp;&nbsp;(3.9)",
+    "svg_path": "formulas/ch03_fno25.svg"
+  },
+  {
+    "chapter": 3,
+    "latex": "PCOC = \\sum_{i} \\hat{y}_{i} / \\sum_{i} y_{i}",
+    "tag": "3.10",
+    "original": "$$ PCOC = \\sum_{i} \\hat{y}_{i} / \\sum_{i} y_{i} \\tag{3.10} $$",
+    "svg_path": "formulas/ch03_f3_10.svg"
+  },
+  {
+    "chapter": 3,
+    "latex": "eCPM = Bid \\times pCTR",
+    "tag": "3.13",
+    "original": "$$ eCPM = Bid \\times pCTR \\tag{3.13} $$",
+    "svg_path": "formulas/ch03_f3_13.svg"
+  },
+  {
+    "chapter": 3,
+    "latex": "Impression \\to Click \\to Watch \\to Interact \\to Conversion \\to Pay",
+    "tag": "3.14",
+    "original": "$$ Impression \\to Click \\to Watch \\to Interact \\to Conversion \\to Pay \\tag{3.14} $$",
+    "svg_path": "formulas/ch03_f3_14.svg"
+  },
+  {
+    "chapter": 3,
+    "latex": "5% \\to 10% \\to 20% \\to 50% \\to 100%",
+    "tag": "3.15",
+    "original": "$$ 5% \\to 10% \\to 20% \\to 50% \\to 100% \\tag{3.15} $$",
+    "svg_path": "formulas/ch03_f3_15.svg"
+  },
+  {
+    "chapter": 5,
+    "latex": "Score = Const \\times [1 + \\sumᵢ (\\alphaᵢpᵢ/\\betaᵢ) + \\sumᵢ<ⱼ (\\alphaᵢ\\alphaⱼpᵢpⱼ)/(\\betaᵢ\\betaⱼ) + \\sumᵢ<ⱼ<ₖ (\\alphaᵢ\\alphaⱼ\\alphaₖpᵢpⱼpₖ)/(\\betaᵢ\\betaⱼ\\betaₖ) + ...]",
+    "tag": null,
+    "original": "$$ Score = Const \\times [1 + \\sumᵢ (\\alphaᵢpᵢ/\\betaᵢ) + \\sumᵢ<ⱼ (\\alphaᵢ\\alphaⱼpᵢpⱼ)/(\\betaᵢ\\betaⱼ) + \\sumᵢ<ⱼ<ₖ (\\alphaᵢ\\alphaⱼ\\alphaₖpᵢpⱼpₖ)/(\\betaᵢ\\betaⱼ\\betaₖ) + ...] $$",
+    "svg_path": null
+  },
+  {
+    "chapter": 5,
+    "latex": "Q_i = f(\\text{User}, \\text{Context}, \\text{BusinessGoal})",
+    "tag": null,
+    "original": "$$ Q_i = f(\\text{User}, \\text{Context}, \\text{BusinessGoal}) $$",
+    "svg_path": "formulas/ch05_fno31.svg"
+  },
+  {
+    "chapter": 5,
+    "latex": "π(s) \\to Quota",
+    "tag": null,
+    "original": "$$ π(s) \\to Quota $$",
+    "svg_path": "formulas/ch05_fno32.svg"
+  },
+  {
+    "chapter": 5,
+    "latex": "若 Exposureᵢ < Targetᵢ，则 Scoreᵢ = Scoreᵢ + \\Delta",
+    "tag": null,
+    "original": "$$ 若 Exposureᵢ < Targetᵢ，则 Scoreᵢ = Scoreᵢ + \\Delta $$",
+    "svg_path": null
+  },
+  {
+    "chapter": 6,
+    "latex": "\\hat{y} = f(p_{\\text{ctr}}, p_{\\text{ltr}}, p_{\\text{cmtr}}, p_{\\text{ftr}}, p_{\\text{cvr}})",
+    "tag": null,
+    "original": "$$ \\hat{y} = f(p_{\\text{ctr}}, p_{\\text{ltr}}, p_{\\text{cmtr}}, p_{\\text{ftr}}, p_{\\text{cvr}}) $$ &nbsp;&nbsp;&nbsp; (6.1)",
+    "svg_path": "formulas/ch06_fno34.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "",
+    "tag": null,
+    "original": "$$ $$ y = \\begin{cases} 1, & \\text{if } t_{\\text{watch}} > 5\\text{s} \\\\\\\\ 0, & \\text{otherwise} \\end{cases} $$ \\tag{6.2} $$",
+    "svg_path": null
+  },
+  {
+    "chapter": 6,
+    "latex": "\\hat{y} = f(x)",
+    "tag": "6.3",
+    "original": "$$ \\hat{y} = f(x) \\tag{6.3} $$",
+    "svg_path": "formulas/ch06_f6_3.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "w_{i} = gift_amount_{i}",
+    "tag": "6.4",
+    "original": "$$ w_{i} = gift_amount_{i} \\tag{6.4} $$",
+    "svg_path": "formulas/ch06_f6_4.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "L = - \\sum_{i} w_{i} (y_{i} log p_{i} + (1 - y_{i}) log(1 - p_{i}))",
+    "tag": "6.5",
+    "original": "$$ L = - \\sum_{i} w_{i} (y_{i} log p_{i} + (1 - y_{i}) log(1 - p_{i})) \\tag{6.5} $$",
+    "svg_path": "formulas/ch06_f6_5.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "Exposure \\to Click \\to Purchase",
+    "tag": "6.6",
+    "original": "$$ Exposure \\to Click \\to Purchase \\tag{6.6} $$",
+    "svg_path": "formulas/ch06_f6_6.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "Like \\to Comment \\to Follow     (6.7)\n  Like \\to Favorite \\to Follow",
+    "tag": "6.8",
+    "original": "$$ Like \\to Comment \\to Follow     (6.7)\n  Like \\to Favorite \\to Follow \\tag{6.8} $$",
+    "svg_path": "formulas/ch06_f6_8.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "s_{i} = (\\beta_{i} + \\alpha_{i} p_{i})^{\\gamma_{i}}",
+    "tag": "6.9",
+    "original": "$$ s_{i} = (\\beta_{i} + \\alpha_{i} p_{i})^{\\gamma_{i}} \\tag{6.9} $$",
+    "svg_path": "formulas/ch06_f6_9.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "(\\beta_{i} + \\alpha_{i} p_{i})^{\\gamma_{i}} = \\beta_{i} + \\alpha_{i} p_{i}",
+    "tag": "6.10",
+    "original": "$$ (\\beta_{i} + \\alpha_{i} p_{i})^{\\gamma_{i}} = \\beta_{i} + \\alpha_{i} p_{i} \\tag{6.10} $$",
+    "svg_path": "formulas/ch06_f6_10.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "S_{i} = 1 / Rank_{i}",
+    "tag": "6.11",
+    "original": "$$ S_{i} = 1 / Rank_{i} \\tag{6.11} $$",
+    "svg_path": "formulas/ch06_f6_11.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "S_{i} = w_{i} / (Rank_{i}^{\\lambda} + b)",
+    "tag": "6.12",
+    "original": "$$ S_{i} = w_{i} / (Rank_{i}^{\\lambda} + b) \\tag{6.12} $$",
+    "svg_path": "formulas/ch06_f6_12.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "S_{i} = w_{i} \\times (1 - (Rank_{i} / N)^{\\lambda})",
+    "tag": "6.13",
+    "original": "$$ S_{i} = w_{i} \\times (1 - (Rank_{i} / N)^{\\lambda}) \\tag{6.13} $$",
+    "svg_path": "formulas/ch06_f6_13.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "S_{i} = w_{i} \\times (e^{k(2\\cdotRank_{i}/N - 1)} - e^{-k(2\\cdotRank_{i}/N - 1)})",
+    "tag": "6.14",
+    "original": "$$ S_{i} = w_{i} \\times (e^{k(2\\cdotRank_{i}/N - 1)} - e^{-k(2\\cdotRank_{i}/N - 1)}) \\tag{6.14} $$",
+    "svg_path": "formulas/ch06_f6_14.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "S_{i} = w_{i} \\times (1 - ((Rank_{i} / N + b)^{\\lambda}))",
+    "tag": "6.15",
+    "original": "$$ S_{i} = w_{i} \\times (1 - ((Rank_{i} / N + b)^{\\lambda})) \\tag{6.15} $$",
+    "svg_path": "formulas/ch06_f6_15.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "S_{i} = 2 w_{i} sinh(k(2\\cdotRank_{i}/N - 1))",
+    "tag": "6.17",
+    "original": "$$ S_{i} = 2 w_{i} sinh(k(2\\cdotRank_{i}/N - 1)) \\tag{6.17} $$",
+    "svg_path": "formulas/ch06_f6_17.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "\\theta = (\\theta_{1}, \\theta_{2}, \\cdot\\cdot\\cdot, \\theta_{N})",
+    "tag": "6.18",
+    "original": "$$ \\theta = (\\theta_{1}, \\theta_{2}, \\cdot\\cdot\\cdot, \\theta_{N}) \\tag{6.18} $$",
+    "svg_path": "formulas/ch06_f6_18.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "\\theta* = arg max_{\\theta} R(\\theta)",
+    "tag": "6.19",
+    "original": "$$ \\theta* = arg max_{\\theta} R(\\theta) \\tag{6.19} $$",
+    "svg_path": "formulas/ch06_f6_19.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "\\theta ~ N(\\mu, \\sum)",
+    "tag": "6.21",
+    "original": "$$ \\theta ~ N(\\mu, \\sum) \\tag{6.21} $$",
+    "svg_path": "formulas/ch06_f6_21.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "\\mu^{(t+1)} = (1/M) \\sum_{i=1}^{M} \\theta^{(i)}",
+    "tag": "6.31",
+    "original": "$$ \\mu^{(t+1)} = (1/M) \\sum_{i=1}^{M} \\theta^{(i)} \\tag{6.31} $$",
+    "svg_path": "formulas/ch06_f6_31.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "\\sum^{(t+1)} = (1/M) \\sum_{i=1}^{M} (\\theta^{(i)} - \\mu^{(t+1)})(\\theta^{(i)} - \\mu^{(t+1)})^{T}",
+    "tag": "6.32",
+    "original": "$$ \\sum^{(t+1)} = (1/M) \\sum_{i=1}^{M} (\\theta^{(i)} - \\mu^{(t+1)})(\\theta^{(i)} - \\mu^{(t+1)})^{T} \\tag{6.32} $$",
+    "svg_path": "formulas/ch06_f6_32.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "D_{KL}(g* ∥ f_{\\theta})",
+    "tag": "6.34",
+    "original": "$$ D_{KL}(g* ∥ f_{\\theta}) \\tag{6.34} $$",
+    "svg_path": "formulas/ch06_f6_34.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "max \\sum_{i=1}^{N} Score_{i}",
+    "tag": "6.43",
+    "original": "$$ max \\sum_{i=1}^{N} Score_{i} \\tag{6.43} $$",
+    "svg_path": "formulas/ch06_f6_43.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "\\sum_{i} x_{i}^{new} \\geq Q_{new}     (6.44)\n  \\sum_{i} x_{i}^{creator} \\geq Q_{creator}     (6.45)\n  \\sum_{i} x_{i}^{commerce} \\geq Q_{commerce}",
+    "tag": "6.46",
+    "original": "$$ \\sum_{i} x_{i}^{new} \\geq Q_{new}     (6.44)\n  \\sum_{i} x_{i}^{creator} \\geq Q_{creator}     (6.45)\n  \\sum_{i} x_{i}^{commerce} \\geq Q_{commerce} \\tag{6.46} $$",
+    "svg_path": "formulas/ch06_f6_46.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "Q_{t} = f(S_{t}^{user}, S_{t}^{Content}, S_{t}^{Platform})",
+    "tag": "6.47",
+    "original": "$$ Q_{t} = f(S_{t}^{user}, S_{t}^{Content}, S_{t}^{Platform}) \\tag{6.47} $$",
+    "svg_path": "formulas/ch06_f6_47.svg"
+  },
+  {
+    "chapter": 6,
+    "latex": "Exposure_{target} \\geq Q_{target}",
+    "tag": "6.48",
+    "original": "$$ Exposure_{target} \\geq Q_{target} \\tag{6.48} $$",
+    "svg_path": "formulas/ch06_f6_48.svg"
+  },
+  {
+    "chapter": 7,
+    "latex": "MMR(D_{i}, Q) = \\lambda \\cdot Sim_{1}(D_{i}, Q) - (1 - \\lambda) \\cdot max_{D_{j} \\in S} Sim_{2}(D_{i}, D_{j})",
+    "tag": null,
+    "original": "$$ MMR(D_{i}, Q) = \\lambda \\cdot Sim_{1}(D_{i}, Q) - (1 - \\lambda) \\cdot max_{D_{j} \\in S} Sim_{2}(D_{i}, D_{j}) $$",
+    "svg_path": "formulas/ch07_fno59.svg"
+  },
+  {
+    "chapter": 7,
+    "latex": "P(Y) ∝ det(L_{Y}) = Vol^{2}({B_i}_{i\\inY})",
+    "tag": null,
+    "original": "$$ P(Y) ∝ det(L_{Y}) = Vol^{2}({B_i}_{i\\inY}) $$",
+    "svg_path": "formulas/ch07_fno60.svg"
+  },
+  {
+    "chapter": 7,
+    "latex": "L = Diag(r) \\cdot S \\cdot Diag(r)",
+    "tag": null,
+    "original": "$$ L = Diag(r) \\cdot S \\cdot Diag(r) $$",
+    "svg_path": "formulas/ch07_fno61.svg"
+  },
+  {
+    "chapter": 7,
+    "latex": "log det L' = \\lambda \\cdot \\sum log(r^{2}_{i}) + (1 - \\lambda) \\cdot log det(S)",
+    "tag": null,
+    "original": "$$ log det L' = \\lambda \\cdot \\sum log(r^{2}_{i}) + (1 - \\lambda) \\cdot log det(S) $$",
+    "svg_path": "formulas/ch07_fno62.svg"
+  },
+  {
+    "chapter": 7,
+    "latex": "X = \\sum \\sigma_{ijk} u^(1)_{i} \\otimes u^(2)_{j} \\otimes u^(3)_{k}",
+    "tag": null,
+    "original": "$$ X = \\sum \\sigma_{ijk} u^(1)_{i} \\otimes u^(2)_{j} \\otimes u^(3)_{k} $$",
+    "svg_path": "formulas/ch07_fno63.svg"
+  },
+  {
+    "chapter": 7,
+    "latex": "v_{j} \\leftarrow v_{j} - (⟨v_{j}, v_{i_{t-1}}⟩ / \\|v_{i_{t-1}}\\|^{2}) \\cdot v_{i_{t-1}}",
+    "tag": null,
+    "original": "$$ v_{j} \\leftarrow v_{j} - (⟨v_{j}, v_{i_{t-1}}⟩ / \\|v_{i_{t-1}}\\|^{2}) \\cdot v_{i_{t-1}} $$",
+    "svg_path": "formulas/ch07_fno64.svg"
+  },
+  {
+    "chapter": 8,
+    "latex": "Score_{seq} = \\sum_{i=1}^{L} \\gamma_{i} \\cdot Score_{i}",
+    "tag": null,
+    "original": "$$ Score_{seq} = \\sum_{i=1}^{L} \\gamma_{i} \\cdot Score_{i} $$",
+    "svg_path": "formulas/ch08_fno65.svg"
+  },
+  {
+    "chapter": 8,
+    "latex": "Value_{ad} = 20 \\times Revenue\nValue_{live} = 10 \\times Gift\nValue_{ecommerce} = 2 \\times GMV",
+    "tag": null,
+    "original": "$$ Value_{ad} = 20 \\times Revenue\nValue_{live} = 10 \\times Gift\nValue_{ecommerce} = 2 \\times GMV $$",
+    "svg_path": "formulas/ch08_fno66.svg"
+  },
+  {
+    "chapter": 8,
+    "latex": "Score_{seq} = \\sum_{i=1}^{L} \\gamma_{i} \\cdot Value(item_{i})",
+    "tag": null,
+    "original": "$$ Score_{seq} = \\sum_{i=1}^{L} \\gamma_{i} \\cdot Value(item_{i}) $$",
+    "svg_path": "formulas/ch08_fno67.svg"
+  },
+  {
+    "chapter": 8,
+    "latex": "e_{t} = r_{t} - y_{t}",
+    "tag": null,
+    "original": "$$ e_{t} = r_{t} - y_{t} $$",
+    "svg_path": "formulas/ch08_fno68.svg"
+  },
+  {
+    "chapter": 8,
+    "latex": "u_{t} = K_{P} \\cdot e_{t} + K_{I} \\cdot \\sum_{i=1}^{t} e_{i} + K_{D} \\cdot (e_{t} - e_{t-1})",
+    "tag": null,
+    "original": "$$ u_{t} = K_{P} \\cdot e_{t} + K_{I} \\cdot \\sum_{i=1}^{t} e_{i} + K_{D} \\cdot (e_{t} - e_{t-1}) $$",
+    "svg_path": "formulas/ch08_fno69.svg"
+  },
+  {
+    "chapter": 8,
+    "latex": "score_{final} = score_{raw} + u_{t}",
+    "tag": null,
+    "original": "$$ score_{final} = score_{raw} + u_{t} $$",
+    "svg_path": "formulas/ch08_fno70.svg"
+  },
+  {
+    "chapter": 9,
+    "latex": "r \\approx e_{1} + e_{2} + ... + e_{M}",
+    "tag": null,
+    "original": "$$ r \\approx e_{1} + e_{2} + ... + e_{M} $$",
+    "svg_path": "formulas/ch09_fno71.svg"
+  },
+  {
+    "chapter": 9,
+    "latex": "L = ||r - D(s)||^{2} + \\beta||r - sg[D(s)]||^{2}",
+    "tag": null,
+    "original": "$$ L = ||r - D(s)||^{2} + \\beta||r - sg[D(s)]||^{2} $$",
+    "svg_path": "formulas/ch09_fno72.svg"
+  },
+  {
+    "chapter": 9,
+    "latex": "L = -(1/T) \\sum_{t=1}^{T} log P(s_{t} | s_{&lt;t}, u)",
+    "tag": null,
+    "original": "$$ L = -(1/T) \\sum_{t=1}^{T} log P(s_{t} | s_{&lt;t}, u) $$",
+    "svg_path": "formulas/ch09_fno73.svg"
+  },
+  {
+    "chapter": 9,
+    "latex": "Score(s) = \\sum_{i=1}^{T} log P(s_{i} | s_{&lt;i}, u)",
+    "tag": null,
+    "original": "$$ Score(s) = \\sum_{i=1}^{T} log P(s_{i} | s_{&lt;i}, u) $$",
+    "svg_path": "formulas/ch09_fno74.svg"
+  },
+  {
+    "chapter": 9,
+    "latex": "~y_{v,j,i} = exp((ℓ_{v,j,i} + g_{v,j,i})/τ) / \\sum_{k=1}^{K} exp((ℓ_{v,j,k} + g_{v,j,k})/τ)",
+    "tag": null,
+    "original": "$$ ~y_{v,j,i} = exp((ℓ_{v,j,i} + g_{v,j,i})/τ) / \\sum_{k=1}^{K} exp((ℓ_{v,j,k} + g_{v,j,k})/τ) $$",
+    "svg_path": "formulas/ch09_fno75.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "S_{ij} = \\frac{\\mathbf{R}_i \\cdot \\mathbf{R}_j}{\\|\\mathbf{R}_i\\| \\cdot \\|\\mathbf{R}_j\\|} = \\frac{\\sum_u R_{ui} \\cdot R_{uj}}{\\sqrt{\\sum_u R^2_{ui}} \\cdot \\sqrt{\\sum_u R^2_{uj}}}",
+    "tag": null,
+    "original": "$$ S_{ij} = \\frac{\\mathbf{R}_i \\cdot \\mathbf{R}_j}{\\|\\mathbf{R}_i\\| \\cdot \\|\\mathbf{R}_j\\|} = \\frac{\\sum_u R_{ui} \\cdot R_{uj}}{\\sqrt{\\sum_u R^2_{ui}} \\cdot \\sqrt{\\sum_u R^2_{uj}}} $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno76.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "\\sum_u R^2_{ui} = \\sum_u R_{ui} = |N(i)|",
+    "tag": null,
+    "original": "$$ \\sum_u R^2_{ui} = \\sum_u R_{ui} = |N(i)| $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno77.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "S_{ij} = \\frac{|N(i) \\cap N(j)|}{\\sqrt{|N(i)| \\cdot |N(j)|}}",
+    "tag": null,
+    "original": "$$ S_{ij} = \\frac{|N(i) \\cap N(j)|}{\\sqrt{|N(i)| \\cdot |N(j)|}} $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno78.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "W_{uv} = \\frac{|N(u) \\cap N(v)|}{\\sqrt{|N(u)| \\cdot |N(v)|}}",
+    "tag": null,
+    "original": "$$ W_{uv} = \\frac{|N(u) \\cap N(v)|}{\\sqrt{|N(u)| \\cdot |N(v)|}} $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno79.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "S_{ij} = \\sum_{u \\in U(i) \\cap U(j)} \\sum_{\\substack{v \\in U(i) \\cap U(j) \\\\ v \\neq u}} \\frac{1}{\\alpha + |N(u) \\cap N(v)|}",
+    "tag": null,
+    "original": "$$ S_{ij} = \\sum_{u \\in U(i) \\cap U(j)} \\sum_{\\substack{v \\in U(i) \\cap U(j) \\\\ v \\neq u}} \\frac{1}{\\alpha + |N(u) \\cap N(v)|} $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno80.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "\\mathbf{R} \\approx \\mathbf{P} \\cdot \\mathbf{Q}^T",
+    "tag": null,
+    "original": "$$ \\mathbf{R} \\approx \\mathbf{P} \\cdot \\mathbf{Q}^T $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno81.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "\\hat{r}_{ui} = \\mathbf{p}_u^T \\cdot \\mathbf{q}_i",
+    "tag": null,
+    "original": "$$ \\hat{r}_{ui} = \\mathbf{p}_u^T \\cdot \\mathbf{q}_i $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno82.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "\\mathcal{L} = \\sum_{(u,i) \\in \\mathcal{R}} \\left( r_{ui} - \\mathbf{p}_u^T \\mathbf{q}_i \\right)^2 + \\lambda \\left( \\|\\mathbf{p}_u\\|^2 + \\|\\mathbf{q}_i\\|^2 \\right)",
+    "tag": null,
+    "original": "$$ \\mathcal{L} = \\sum_{(u,i) \\in \\mathcal{R}} \\left( r_{ui} - \\mathbf{p}_u^T \\mathbf{q}_i \\right)^2 + \\lambda \\left( \\|\\mathbf{p}_u\\|^2 + \\|\\mathbf{q}_i\\|^2 \\right) $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno83.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "\\mathcal{L}_{BPR} = -\\sum_{(u,i,j)} \\ln \\sigma(\\hat{p}_{ui} - \\hat{p}_{uj}) + \\lambda \\|\\Theta\\|^2",
+    "tag": null,
+    "original": "$$ \\mathcal{L}_{BPR} = -\\sum_{(u,i,j)} \\ln \\sigma(\\hat{p}_{ui} - \\hat{p}_{uj}) + \\lambda \\|\\Theta\\|^2 $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno84.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "\\min_\\Phi -\\sum_{(v,w) \\in \\mathcal{D}} \\log P(w | \\Phi(v))",
+    "tag": null,
+    "original": "$$ \\min_\\Phi -\\sum_{(v,w) \\in \\mathcal{D}} \\log P(w | \\Phi(v)) $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno85.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "\\mathbf{h}_v = \\frac{\\sum_{s \\in \\mathcal{S}} \\alpha_{vs} \\cdot \\mathbf{h}_{vs}}{\\sum_{s \\in \\mathcal{S}} \\alpha_{vs}}",
+    "tag": null,
+    "original": "$$ \\mathbf{h}_v = \\frac{\\sum_{s \\in \\mathcal{S}} \\alpha_{vs} \\cdot \\mathbf{h}_{vs}}{\\sum_{s \\in \\mathcal{S}} \\alpha_{vs}} $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno86.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "\\mathbf{H}^{(l+1)} = \\sigma\\left( \\hat{\\mathbf{D}}^{-1/2} \\hat{\\mathbf{A}} \\hat{\\mathbf{D}}^{-1/2} \\mathbf{H}^{(l)} \\mathbf{W}^{(l)} \\right)",
+    "tag": null,
+    "original": "$$ \\mathbf{H}^{(l+1)} = \\sigma\\left( \\hat{\\mathbf{D}}^{-1/2} \\hat{\\mathbf{A}} \\hat{\\mathbf{D}}^{-1/2} \\mathbf{H}^{(l)} \\mathbf{W}^{(l)} \\right) $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno87.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "\\alpha_{ij} = \\text{softmax}_j \\left( \\text{LeakyReLU} \\left( \\mathbf{a}^T [\\mathbf{W}\\mathbf{h}_i \\| \\mathbf{W}\\mathbf{h}_j] \\right) \\right)",
+    "tag": null,
+    "original": "$$ \\alpha_{ij} = \\text{softmax}_j \\left( \\text{LeakyReLU} \\left( \\mathbf{a}^T [\\mathbf{W}\\mathbf{h}_i \\| \\mathbf{W}\\mathbf{h}_j] \\right) \\right) $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno88.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "\\mathbf{h}_v^{(k)} = \\sigma\\left( \\mathbf{W}^{(k)} \\cdot \\text{AGGREGATE}\\left( \\{\\mathbf{h}_v^{(k-1)}\\} \\cup \\{\\mathbf{h}_u^{(k-1)}, \\forall u \\in \\mathcal{N}(v)\\} \\right) \\right)",
+    "tag": null,
+    "original": "$$ \\mathbf{h}_v^{(k)} = \\sigma\\left( \\mathbf{W}^{(k)} \\cdot \\text{AGGREGATE}\\left( \\{\\mathbf{h}_v^{(k-1)}\\} \\cup \\{\\mathbf{h}_u^{(k-1)}, \\forall u \\in \\mathcal{N}(v)\\} \\right) \\right) $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno89.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "\\mathbf{e}_u^{(k+1)} = \\frac{1}{|\\mathcal{N}(u)|} \\sum_{i \\in \\mathcal{N}(u)} \\mathbf{e}_i^{(k)}",
+    "tag": null,
+    "original": "$$ \\mathbf{e}_u^{(k+1)} = \\frac{1}{|\\mathcal{N}(u)|} \\sum_{i \\in \\mathcal{N}(u)} \\mathbf{e}_i^{(k)} $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno90.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "\\text{score}(u, i) = \\text{sim}\\left( f_{\\text{user}}(\\mathbf{x}_u), f_{\\text{item}}(\\mathbf{x}_i) \\right) = \\cos(\\mathbf{e}_u, \\mathbf{e}_i)",
+    "tag": null,
+    "original": "$$ \\text{score}(u, i) = \\text{sim}\\left( f_{\\text{user}}(\\mathbf{x}_u), f_{\\text{item}}(\\mathbf{x}_i) \\right) = \\cos(\\mathbf{e}_u, \\mathbf{e}_i) $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno91.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "\\mathcal{L} = -\\sum_{t=1}^{T} \\sum_{-c \\leq j \\leq c, j \\neq 0} \\log P(w_{t+j} | w_t)",
+    "tag": null,
+    "original": "$$ \\mathcal{L} = -\\sum_{t=1}^{T} \\sum_{-c \\leq j \\leq c, j \\neq 0} \\log P(w_{t+j} | w_t) $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno92.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "\\text{Attention}(\\mathbf{Q}, \\mathbf{K}, \\mathbf{V}) = \\text{softmax}\\left( \\frac{\\mathbf{Q}\\mathbf{K}^T}{\\sqrt{d_k}} \\right) \\mathbf{V}",
+    "tag": null,
+    "original": "$$ \\text{Attention}(\\mathbf{Q}, \\mathbf{K}, \\mathbf{V}) = \\text{softmax}\\left( \\frac{\\mathbf{Q}\\mathbf{K}^T}{\\sqrt{d_k}} \\right) \\mathbf{V} $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno93.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "c_{ij} = \\text{softmax}_j(b_{ij})",
+    "tag": null,
+    "original": "$$ c_{ij} = \\text{softmax}_j(b_{ij}) $$ &nbsp;&nbsp; $$ \\mathbf{e}_u = \\sum_i c_{ij} \\mathbf{e}_i $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno94.svg"
+  },
+  {
+    "chapter": 10,
+    "latex": "a_{ji} = \\frac{\\exp(\\mathbf{e}_{uj}^T \\cdot \\mathbf{e}_i)}{\\sum_{k=1}^{K} \\exp(\\mathbf{e}_{uk}^T \\cdot \\mathbf{e}_i)}",
+    "tag": null,
+    "original": "$$ a_{ji} = \\frac{\\exp(\\mathbf{e}_{uj}^T \\cdot \\mathbf{e}_i)}{\\sum_{k=1}^{K} \\exp(\\mathbf{e}_{uk}^T \\cdot \\mathbf{e}_i)} $$ &nbsp;&nbsp;",
+    "svg_path": "formulas/ch10_fno95.svg"
+  },
+  {
+    "chapter": 11,
+    "latex": "score = ⟨f_user(x_user), f_item(x_item)⟩",
+    "tag": null,
+    "original": "$$ score = ⟨f_user(x_user), f_item(x_item)⟩ $$",
+    "svg_path": "formulas/ch11_fno96.svg"
+  },
+  {
+    "chapter": 11,
+    "latex": "\\text{score} = \\text{MLP}([\\mathbf{u}; \\mathbf{v}; \\mathbf{u} \\odot \\mathbf{v}])",
+    "tag": null,
+    "original": "$$ \\text{score} = \\text{MLP}([\\mathbf{u}; \\mathbf{v}; \\mathbf{u} \\odot \\mathbf{v}]) $$",
+    "svg_path": "formulas/ch11_fno97.svg"
+  },
+  {
+    "chapter": 11,
+    "latex": "L = \\alpha \\cdot CE(y, \\hat{y}_student) + (1-\\alpha) \\cdot KL(q_teacher || q_student)",
+    "tag": null,
+    "original": "$$ L = \\alpha \\cdot CE(y, \\hat{y}_student) + (1-\\alpha) \\cdot KL(q_teacher || q_student) $$",
+    "svg_path": "formulas/ch11_fno98.svg"
+  },
+  {
+    "chapter": 11,
+    "latex": "L_rank = -\\sum_{i<j} I(rank_{T}(i) < rank_{T}(j)) \\cdot log(sigmoid(s_{S}(i) - s_{S}(j)))",
+    "tag": null,
+    "original": "$$ L_rank = -\\sum_{i<j} I(rank_{T}(i) < rank_{T}(j)) \\cdot log(sigmoid(s_{S}(i) - s_{S}(j))) $$",
+    "svg_path": null
+  },
+  {
+    "chapter": 11,
+    "latex": "f(x₁, x₂, ..., x_{n}) = f(x_π(1), x_π(2), ..., x_π(n))",
+    "tag": null,
+    "original": "$$ f(x₁, x₂, ..., x_{n}) = f(x_π(1), x_π(2), ..., x_π(n)) $$",
+    "svg_path": "formulas/ch11_fno100.svg"
+  },
+  {
+    "chapter": 12,
+    "latex": "\\hat{y} = w₀ + \\sum wᵢxᵢ + \\sumᵢ<ⱼ ⟨vᵢ, vⱼ⟩xᵢxⱼ",
+    "tag": null,
+    "original": "$$ \\hat{y} = w₀ + \\sum wᵢxᵢ + \\sumᵢ<ⱼ ⟨vᵢ, vⱼ⟩xᵢxⱼ $$",
+    "svg_path": null
+  },
+  {
+    "chapter": 12,
+    "latex": "\\hat{y} = sigmoid(y_FM + y_DNN)",
+    "tag": null,
+    "original": "$$ \\hat{y} = sigmoid(y_FM + y_DNN) $$",
+    "svg_path": "formulas/ch12_fno102.svg"
+  },
+  {
+    "chapter": 12,
+    "latex": "x_{l+1} = x₀ ⊙ (W_{l} \\cdot x_{l} + b_{l}) + x_{l}",
+    "tag": null,
+    "original": "$$ x_{l+1} = x₀ ⊙ (W_{l} \\cdot x_{l} + b_{l}) + x_{l} $$",
+    "svg_path": "formulas/ch12_fno103.svg"
+  },
+  {
+    "chapter": 12,
+    "latex": "v_{U} = \\sumᵢ a(i) \\cdot eᵢ,   a(i) = MLP([eᵢ, e_{a}, eᵢ ⊙ e_{a}])",
+    "tag": null,
+    "original": "$$ v_{U} = \\sumᵢ a(i) \\cdot eᵢ,   a(i) = MLP([eᵢ, e_{a}, eᵢ ⊙ e_{a}]) $$",
+    "svg_path": "formulas/ch12_fno104.svg"
+  },
+  {
+    "chapter": 12,
+    "latex": "H = Transformer([e₁, e₂, ..., e_{n}] + PE)",
+    "tag": null,
+    "original": "$$ H = Transformer([e₁, e₂, ..., e_{n}] + PE) $$",
+    "svg_path": "formulas/ch12_fno105.svg"
+  },
+  {
+    "chapter": 12,
+    "latex": "y_{t} = \\sumᵢ g_{t}(i) \\cdot fᵢ(x),   g_{t} = softmax(W_{t} \\cdot x)",
+    "tag": null,
+    "original": "$$ y_{t} = \\sumᵢ g_{t}(i) \\cdot fᵢ(x),   g_{t} = softmax(W_{t} \\cdot x) $$",
+    "svg_path": "formulas/ch12_fno106.svg"
+  },
+  {
+    "chapter": 12,
+    "latex": "pCTCVR = pCTR \\times pCVR",
+    "tag": null,
+    "original": "$$ pCTCVR = pCTR \\times pCVR $$",
+    "svg_path": "formulas/ch12_fno107.svg"
+  },
+  {
+    "chapter": 13,
+    "latex": "value = \\sumᵢ wᵢ \\times f(xᵢ),   wᵢ = 1/i 或 wᵢ = e^{-(i-1)}",
+    "tag": null,
+    "original": "$$ value = \\sumᵢ wᵢ \\times f(xᵢ),   wᵢ = 1/i 或 wᵢ = e^{-(i-1)} $$",
+    "svg_path": "formulas/ch13_fno108.svg"
+  },
+  {
+    "chapter": 13,
+    "latex": "p(itemᵢ) = p₀ \\times \\prodⱼ₌₁^{i-1} p_slide(xⱼ)",
+    "tag": null,
+    "original": "$$ p(itemᵢ) = p₀ \\times \\prodⱼ₌₁^{i-1} p_slide(xⱼ) $$",
+    "svg_path": "formulas/ch13_fno109.svg"
+  },
+  {
+    "chapter": 13,
+    "latex": "MMR = argmaxᵢ [\\lambda \\cdot Sim₁(Dᵢ, Q) - (1-\\lambda) \\cdot maxⱼ\\inS Sim₂(Dᵢ, Dⱼ)]",
+    "tag": null,
+    "original": "$$ MMR = argmaxᵢ [\\lambda \\cdot Sim₁(Dᵢ, Q) - (1-\\lambda) \\cdot maxⱼ\\inS Sim₂(Dᵢ, Dⱼ)] $$",
+    "svg_path": "formulas/ch13_fno110.svg"
+  },
+  {
+    "chapter": 13,
+    "latex": "L = Diag(r) \\cdot S \\cdot Diag(r)",
+    "tag": null,
+    "original": "$$ L = Diag(r) \\cdot S \\cdot Diag(r) $$",
+    "svg_path": "formulas/ch13_fno111.svg"
+  },
+  {
+    "chapter": 13,
+    "latex": "u(t) = Kₚ \\cdot e(t) + Kᵢ \\cdot \\sum e(τ) + K_{d} \\cdot de(t)/dt",
+    "tag": null,
+    "original": "$$ u(t) = Kₚ \\cdot e(t) + Kᵢ \\cdot \\sum e(τ) + K_{d} \\cdot de(t)/dt $$",
+    "svg_path": "formulas/ch13_fno112.svg"
+  },
+  {
+    "chapter": 14,
+    "latex": "CTR_smooth = (clicks + \\alpha) / (impressions + \\alpha + \\beta)",
+    "tag": "14.1",
+    "original": "$$ CTR_smooth = (clicks + \\alpha) / (impressions + \\alpha + \\beta) \\tag{14.1} $$",
+    "svg_path": "formulas/ch14_f14_1.svg"
+  },
+  {
+    "chapter": 14,
+    "latex": "CTR_decay = \\sum w_{t} \\cdot ctr_{t} / \\sum w_{t},   w_{t} = e^(-\\lambda\\cdot(T-t))",
+    "tag": "14.2",
+    "original": "$$ CTR_decay = \\sum w_{t} \\cdot ctr_{t} / \\sum w_{t},   w_{t} = e^(-\\lambda\\cdot(T-t)) \\tag{14.2} $$",
+    "svg_path": "formulas/ch14_f14_2.svg"
+  },
+  {
+    "chapter": 16,
+    "latex": "召回(万\\to千) \\to 粗排(千\\to百) \\to 精排(百\\to十) \\to 重排(十\\to最终)",
+    "tag": "16.1",
+    "original": "$$ 召回(万\\to千) \\to 粗排(千\\to百) \\to 精排(百\\to十) \\to 重排(十\\to最终) \\tag{16.1} $$",
+    "svg_path": "formulas/ch16_f16_1.svg"
+  },
+  {
+    "chapter": 18,
+    "latex": "v_{U} = \\sumᵢ a(i) \\cdot eᵢ",
+    "tag": null,
+    "original": "$$ v_{U} = \\sumᵢ a(i) \\cdot eᵢ $$",
+    "svg_path": "formulas/ch18_fno116.svg"
+  },
+  {
+    "chapter": 18,
+    "latex": "a(i) = MLP([eᵢ, e_{a}, eᵢ ⊙ e_{a}])",
+    "tag": null,
+    "original": "$$ a(i) = MLP([eᵢ, e_{a}, eᵢ ⊙ e_{a}]) $$",
+    "svg_path": "formulas/ch18_fno117.svg"
+  },
+  {
+    "chapter": 18,
+    "latex": "\\mathbf{H} = \\text{TransformerEncoder}([\\mathbf{e}_1, \\mathbf{e}_2, \\ldots, \\mathbf{e}_n] + \\text{PE})",
+    "tag": null,
+    "original": "$$ \\mathbf{H} = \\text{TransformerEncoder}([\\mathbf{e}_1, \\mathbf{e}_2, \\ldots, \\mathbf{e}_n] + \\text{PE}) $$",
+    "svg_path": "formulas/ch18_fno118.svg"
+  },
+  {
+    "chapter": 18,
+    "latex": "cⱼ = \\sumᵢ wᵢⱼ \\cdot eᵢ,   wᵢⱼ = softmax(bᵢⱼ)",
+    "tag": null,
+    "original": "$$ cⱼ = \\sumᵢ wᵢⱼ \\cdot eᵢ,   wᵢⱼ = softmax(bᵢⱼ) $$",
+    "svg_path": "formulas/ch18_fno119.svg"
+  },
+  {
+    "chapter": 18,
+    "latex": "\\mathbf{h}_i = \\text{sign}(\\mathbf{e}_i \\cdot \\mathbf{R}), \\quad \\mathbf{h}_i \\in \\{-1, +1\\}^L",
+    "tag": null,
+    "original": "$$ \\mathbf{h}_i = \\text{sign}(\\mathbf{e}_i \\cdot \\mathbf{R}), \\quad \\mathbf{h}_i \\in \\{-1, +1\\}^L $$",
+    "svg_path": "formulas/ch18_fno120.svg"
+  },
+  {
+    "chapter": 18,
+    "latex": "\\text{sim}(\\mathbf{e}_i, \\mathbf{e}_j) \\approx 1 - \\frac{d_H(\\mathbf{h}_i, \\mathbf{h}_j)}{L}",
+    "tag": null,
+    "original": "$$ \\text{sim}(\\mathbf{e}_i, \\mathbf{e}_j) \\approx 1 - \\frac{d_H(\\mathbf{h}_i, \\mathbf{h}_j)}{L} $$",
+    "svg_path": "formulas/ch18_fno121.svg"
+  },
+  {
+    "chapter": 18,
+    "latex": "P(\\text{false positive}) = \\left(\\frac{1}{2^L}\\right)^M",
+    "tag": null,
+    "original": "$$ P(\\text{false positive}) = \\left(\\frac{1}{2^L}\\right)^M $$",
+    "svg_path": "formulas/ch18_fno122.svg"
+  },
+  {
+    "chapter": 19,
+    "latex": "y_{t} = Tower_{t}( \\sumᵢ g_{t}(i) \\cdot fᵢ(x) )",
+    "tag": null,
+    "original": "$$ y_{t} = Tower_{t}( \\sumᵢ g_{t}(i) \\cdot fᵢ(x) ) $$",
+    "svg_path": "formulas/ch19_fno123.svg"
+  },
+  {
+    "chapter": 19,
+    "latex": "g_{t} = softmax( W_{t} \\cdot x )",
+    "tag": null,
+    "original": "$$ g_{t} = softmax( W_{t} \\cdot x ) $$",
+    "svg_path": "formulas/ch19_fno124.svg"
+  },
+  {
+    "chapter": 19,
+    "latex": "y_{t} = Tower_{t}( \\sumᵢ g_{t}^{s}(i) \\cdot fᵢ^{s}(x) + \\sumⱼ g_{t}^{t}(j) \\cdot fⱼ^{t}(x) )",
+    "tag": null,
+    "original": "$$ y_{t} = Tower_{t}( \\sumᵢ g_{t}^{s}(i) \\cdot fᵢ^{s}(x) + \\sumⱼ g_{t}^{t}(j) \\cdot fⱼ^{t}(x) ) $$",
+    "svg_path": "formulas/ch19_fno125.svg"
+  },
+  {
+    "chapter": 19,
+    "latex": "pCTCVR = pCTR \\times pCVR",
+    "tag": null,
+    "original": "$$ pCTCVR = pCTR \\times pCVR $$",
+    "svg_path": "formulas/ch19_fno126.svg"
+  },
+  {
+    "chapter": 19,
+    "latex": "L = L_CTR + L_CTCVR = L_CTR + L(pCTR \\times pCVR, y_CTCVR)",
+    "tag": null,
+    "original": "$$ L = L_CTR + L_CTCVR = L_CTR + L(pCTR \\times pCVR, y_CTCVR) $$",
+    "svg_path": "formulas/ch19_fno127.svg"
+  },
+  {
+    "chapter": 19,
+    "latex": "W* = W_central ⊙ W_domain",
+    "tag": null,
+    "original": "$$ W* = W_central ⊙ W_domain $$",
+    "svg_path": "formulas/ch19_fno128.svg"
+  },
+  {
+    "chapter": 20,
+    "latex": "L = \\alpha \\cdot CE(y, \\hat{y}_student) + (1-\\alpha) \\cdot KL(q_teacher || q_student)",
+    "tag": null,
+    "original": "$$ L = \\alpha \\cdot CE(y, \\hat{y}_student) + (1-\\alpha) \\cdot KL(q_teacher || q_student) $$",
+    "svg_path": "formulas/ch20_fno129.svg"
+  },
+  {
+    "chapter": 20,
+    "latex": "L_rank = -\\sum_{i<j} I(rank_{T}(i) < rank_{T}(j)) \\cdot log \\sigma(s_{S}(i) - s_{S}(j))",
+    "tag": null,
+    "original": "$$ L_rank = -\\sum_{i<j} I(rank_{T}(i) < rank_{T}(j)) \\cdot log \\sigma(s_{S}(i) - s_{S}(j)) $$",
+    "svg_path": null
+  },
+  {
+    "chapter": 21,
+    "latex": "",
+    "tag": null,
+    "original": "$$ $$ y = \\begin{cases} 1, & \\text{if } t_{\\text{watch}} > \\tau \\\\\\\\ 0, & \\text{otherwise} \\end{cases} $$ $$",
+    "svg_path": null
+  },
+  {
+    "chapter": 21,
+    "latex": "L = (log(\\hat{y} + 1) - log(y + 1))^{2}",
+    "tag": null,
+    "original": "$$ L = (log(\\hat{y} + 1) - log(y + 1))^{2} $$",
+    "svg_path": "formulas/ch21_fno132.svg"
+  },
+  {
+    "chapter": 21,
+    "latex": "L = 0.5\\cdot(\\hat{y}-y)^{2}, if |\\hat{y}-y| \\leq \\delta; \\delta\\cdot(|\\hat{y}-y| - 0.5\\cdot\\delta), otherwise",
+    "tag": null,
+    "original": "$$ L = 0.5\\cdot(\\hat{y}-y)^{2}, if |\\hat{y}-y| \\leq \\delta; \\delta\\cdot(|\\hat{y}-y| - 0.5\\cdot\\delta), otherwise $$",
+    "svg_path": "formulas/ch21_fno133.svg"
+  },
+  {
+    "chapter": 21,
+    "latex": "\\hat{y}_watch = P(valid) \\times t_valid",
+    "tag": null,
+    "original": "$$ \\hat{y}_watch = P(valid) \\times t_valid $$",
+    "svg_path": "formulas/ch21_fno134.svg"
+  },
+  {
+    "chapter": 21,
+    "latex": "",
+    "tag": null,
+    "original": "$$ $$ FR = \\frac{t_{\\text{watch}}}{t_{\\text{video}}} $$ $$",
+    "svg_path": null
+  },
+  {
+    "chapter": 22,
+    "latex": "L_IPS = (1/N) * Sum_{i} [ y_{i} / p_{i} * L(f(x_{i}), y_{i}) ]",
+    "tag": null,
+    "original": "$$ L_IPS = (1/N) * Sum_{i} [ y_{i} / p_{i} * L(f(x_{i}), y_{i}) ] $$",
+    "svg_path": "formulas/ch22_fno136.svg"
+  },
+  {
+    "chapter": 22,
+    "latex": "L_DR = (1/N) * Sum_{i} [ f_hat(x_{i}) + (y_{i} - f_hat(x_{i})) / p_{i} ]",
+    "tag": null,
+    "original": "$$ L_DR = (1/N) * Sum_{i} [ f_hat(x_{i}) + (y_{i} - f_hat(x_{i})) / p_{i} ] $$",
+    "svg_path": "formulas/ch22_fno137.svg"
+  },
+  {
+    "chapter": 23,
+    "latex": "\\text{score} = \\sum_{i=1}^{n} w_i \\cdot p_i = w_1 \\cdot p_{\\text{CTR}} + w_2 \\cdot p_{\\text{CVR}} + w_3 \\cdot p_{\\text{WatchTime}} + \\cdots + w_n \\cdot p_n",
+    "tag": null,
+    "original": "$$ \\text{score} = \\sum_{i=1}^{n} w_i \\cdot p_i = w_1 \\cdot p_{\\text{CTR}} + w_2 \\cdot p_{\\text{CVR}} + w_3 \\cdot p_{\\text{WatchTime}} + \\cdots + w_n \\cdot p_n $$",
+    "svg_path": "formulas/ch23_fno138.svg"
+  },
+  {
+    "chapter": 23,
+    "latex": "\\mathbf{w} = g(\\mathbf{x}_{\\text{user}})",
+    "tag": null,
+    "original": "$$ \\mathbf{w} = g(\\mathbf{x}_{\\text{user}}) $$",
+    "svg_path": "formulas/ch23_fno139.svg"
+  },
+  {
+    "chapter": 24,
+    "latex": "\\text{score} = \\sum_{i=1}^{n} w_i \\cdot p_i",
+    "tag": null,
+    "original": "$$ \\text{score} = \\sum_{i=1}^{n} w_i \\cdot p_i $$",
+    "svg_path": "formulas/ch24_fno140.svg"
+  },
+  {
+    "chapter": 24,
+    "latex": "score = Product_{i} (bi + ai*pi)^gi",
+    "tag": null,
+    "original": "$$ score = Product_{i} (bi + ai*pi)^gi $$",
+    "svg_path": "formulas/ch24_fno141.svg"
+  },
+  {
+    "chapter": 24,
+    "latex": "Score = Const * [1 + Sum_{i} (ai*pi/bi) + Sum_{i<j} (ai*aj*pi*pj/(bi*bj)) + ...]",
+    "tag": null,
+    "original": "$$ Score = Const * [1 + Sum_{i} (ai*pi/bi) + Sum_{i<j} (ai*aj*pi*pj/(bi*bj)) + ...] $$",
+    "svg_path": null
+  },
+  {
+    "chapter": 24,
+    "latex": "\\frac{\\partial \\text{score}}{\\partial p_1} = a_1 \\cdot (b_2 + a_2 \\cdot p_2)",
+    "tag": null,
+    "original": "$$ \\frac{\\partial \\text{score}}{\\partial p_1} = a_1 \\cdot (b_2 + a_2 \\cdot p_2) $$",
+    "svg_path": "formulas/ch24_fno143.svg"
+  },
+  {
+    "chapter": 24,
+    "latex": "score = f(pxtr) * g(Rank_pxtr)",
+    "tag": null,
+    "original": "$$ score = f(pxtr) * g(Rank_pxtr) $$",
+    "svg_path": "formulas/ch24_fno144.svg"
+  },
+  {
+    "chapter": 25,
+    "latex": "R = Sum_{t=0}^{T} gamma^{t} * r_{t}",
+    "tag": null,
+    "original": "$$ R = Sum_{t=0}^{T} gamma^{t} * r_{t} $$",
+    "svg_path": "formulas/ch25_fno145.svg"
+  },
+  {
+    "chapter": 26,
+    "latex": "score = mu + alpha * sqrt(2 * ln(N) / n_{i})",
+    "tag": null,
+    "original": "$$ score = mu + alpha * sqrt(2 * ln(N) / n_{i}) $$",
+    "svg_path": "formulas/ch26_fno146.svg"
+  },
+  {
+    "chapter": 26,
+    "latex": "score ~ Beta(alpha + clicks, beta + non_clicks)",
+    "tag": null,
+    "original": "$$ score ~ Beta(alpha + clicks, beta + non_clicks) $$",
+    "svg_path": "formulas/ch26_fno147.svg"
+  },
+  {
+    "chapter": 26,
+    "latex": "score = theta^{T} * x + alpha * sqrt(x^{T} * A^{-1} * x)",
+    "tag": null,
+    "original": "$$ score = theta^{T} * x + alpha * sqrt(x^{T} * A^{-1} * x) $$",
+    "svg_path": "formulas/ch26_fno148.svg"
+  },
+  {
+    "chapter": 27,
+    "latex": "L_IPS = (1/N) * Sum_{i} [ y_{i} / p_{i} * L(f(x_{i}), y_{i}) ]",
+    "tag": null,
+    "original": "$$ L_IPS = (1/N) * Sum_{i} [ y_{i} / p_{i} * L(f(x_{i}), y_{i}) ] $$",
+    "svg_path": "formulas/ch27_fno149.svg"
+  },
+  {
+    "chapter": 27,
+    "latex": "L_DR = (1/N) * Sum_{i} [ f_hat(x_{i}) + (y_{i} - f_hat(x_{i})) / p_{i} ]",
+    "tag": null,
+    "original": "$$ L_DR = (1/N) * Sum_{i} [ f_hat(x_{i}) + (y_{i} - f_hat(x_{i})) / p_{i} ] $$",
+    "svg_path": "formulas/ch27_fno150.svg"
+  },
+  {
+    "chapter": 27,
+    "latex": "\\text{Uplift} = P(y \\mid do(\\text{recommend})) - P(y \\mid do(\\text{not recommend}))",
+    "tag": null,
+    "original": "$$ \\text{Uplift} = P(y \\mid do(\\text{recommend})) - P(y \\mid do(\\text{not recommend})) $$",
+    "svg_path": "formulas/ch27_fno151.svg"
+  },
+  {
+    "chapter": 29,
+    "latex": "R(T) = T\\cdot\\mu* - \\sumₜ₌₁ᵀ \\muₐₜ",
+    "tag": "29.1",
+    "original": "$$ R(T) = T\\cdot\\mu* - \\sumₜ₌₁ᵀ \\muₐₜ \\tag{29.1} $$",
+    "svg_path": "formulas/ch29_f29_1.svg"
+  },
+  {
+    "chapter": 29,
+    "latex": "UCBᵢ = x̄ᵢ + \\sqrt(2\\cdotln(t) / nᵢ)",
+    "tag": "29.2",
+    "original": "$$ UCBᵢ = x̄ᵢ + \\sqrt(2\\cdotln(t) / nᵢ) \\tag{29.2} $$",
+    "svg_path": "formulas/ch29_f29_2.svg"
+  },
+  {
+    "chapter": 29,
+    "latex": "E[r | x, a] = xₐᵀ \\cdot \\theta",
+    "tag": "29.3",
+    "original": "$$ E[r | x, a] = xₐᵀ \\cdot \\theta \\tag{29.3} $$",
+    "svg_path": "formulas/ch29_f29_3.svg"
+  },
+  {
+    "chapter": 29,
+    "latex": "aₜ = argmaxₐ (xₐᵀ \\cdot \\thetâ + \\alpha \\cdot \\sqrt(xₐᵀ \\cdot A⁻¹ \\cdot xₐ))",
+    "tag": "29.4",
+    "original": "$$ aₜ = argmaxₐ (xₐᵀ \\cdot \\thetâ + \\alpha \\cdot \\sqrt(xₐᵀ \\cdot A⁻¹ \\cdot xₐ)) \\tag{29.4} $$",
+    "svg_path": "formulas/ch29_f29_4.svg"
+  },
+  {
+    "chapter": 29,
+    "latex": "aₜ = argmaxₐ \\thetãₐ,   \\thetãₐ ~ posterior(\\thetaₐ | history)",
+    "tag": "29.5",
+    "original": "$$ aₜ = argmaxₐ \\thetãₐ,   \\thetãₐ ~ posterior(\\thetaₐ | history) \\tag{29.5} $$",
+    "svg_path": "formulas/ch29_f29_5.svg"
+  },
+  {
+    "chapter": 30,
+    "latex": "score = w₁\\cdotCTR + w₂\\cdotCVR + w₃\\cdotDwellTime + w₄\\cdotDiversity",
+    "tag": "30.1",
+    "original": "$$ score = w₁\\cdotCTR + w₂\\cdotCVR + w₃\\cdotDwellTime + w₄\\cdotDiversity \\tag{30.1} $$",
+    "svg_path": "formulas/ch30_f30_1.svg"
+  },
+  {
+    "chapter": 30,
+    "latex": "rₜ = w₁\\cdotr_click + w₂\\cdotr_buy + w₃\\cdotr_dwell + w₄\\cdotr_diversity",
+    "tag": "30.2",
+    "original": "$$ rₜ = w₁\\cdotr_click + w₂\\cdotr_buy + w₃\\cdotr_dwell + w₄\\cdotr_diversity \\tag{30.2} $$",
+    "svg_path": "formulas/ch30_f30_2.svg"
+  },
+  {
+    "chapter": 30,
+    "latex": "R = \\sumₜ \\gammaᵗ \\cdot rₜ",
+    "tag": "30.3",
+    "original": "$$ R = \\sumₜ \\gammaᵗ \\cdot rₜ \\tag{30.3} $$",
+    "svg_path": "formulas/ch30_f30_3.svg"
+  },
+  {
+    "chapter": 30,
+    "latex": "R = \\sumₜ₌₀^\\infty \\gammaᵗ \\cdot rₜ = r₀ + \\gamma\\cdotr₁ + \\gamma^{2}\\cdotr₂ + ...",
+    "tag": "30.4",
+    "original": "$$ R = \\sumₜ₌₀^\\infty \\gammaᵗ \\cdot rₜ = r₀ + \\gamma\\cdotr₁ + \\gamma^{2}\\cdotr₂ + ... \\tag{30.4} $$",
+    "svg_path": "formulas/ch30_f30_4.svg"
+  },
+  {
+    "chapter": 31,
+    "latex": "∇J(\\theta) = E[\\sumₜ ∇log π(aₜ|sₜ; \\theta) \\cdot (Gₜ - bₜ)]",
+    "tag": "31.1",
+    "original": "$$ ∇J(\\theta) = E[\\sumₜ ∇log π(aₜ|sₜ; \\theta) \\cdot (Gₜ - bₜ)] \\tag{31.1} $$",
+    "svg_path": "formulas/ch31_f31_1.svg"
+  },
+  {
+    "chapter": 31,
+    "latex": "Actor: ∇J = E[∇log π(aₜ|sₜ) \\cdot (rₜ + \\gammaV(sₜ₊₁) - V(sₜ))]\n  Critic: L = (rₜ + \\gammaV(sₜ₊₁) - V(sₜ))^{2}",
+    "tag": "31.2",
+    "original": "$$ Actor: ∇J = E[∇log π(aₜ|sₜ) \\cdot (rₜ + \\gammaV(sₜ₊₁) - V(sₜ))]\n  Critic: L = (rₜ + \\gammaV(sₜ₊₁) - V(sₜ))^{2} \\tag{31.2} $$",
+    "svg_path": "formulas/ch31_f31_2.svg"
+  },
+  {
+    "chapter": 32,
+    "latex": "P(S) ∝ det(K_{S})",
+    "tag": "32.1",
+    "original": "$$ P(S) ∝ det(K_{S}) \\tag{32.1} $$",
+    "svg_path": "formulas/ch32_f32_1.svg"
+  },
+  {
+    "chapter": 32,
+    "latex": "MMR = argmaxₐ [\\alpha\\cdotSim(a, q) - (1-\\alpha)\\cdotmax_{a'\\inS} Sim(a, a')]",
+    "tag": "32.2",
+    "original": "$$ MMR = argmaxₐ [\\alpha\\cdotSim(a, q) - (1-\\alpha)\\cdotmax_{a'\\inS} Sim(a, a')] \\tag{32.2} $$",
+    "svg_path": "formulas/ch32_f32_2.svg"
+  },
+  {
+    "chapter": 32,
+    "latex": "rₜ = w₁\\cdotCTR(aₜ) + w₂\\cdotDiversity(aₜ, S) + w₃\\cdotContext(aₜ, aₜ₋₁) + w₄\\cdotNovelty(aₜ)",
+    "tag": "32.3",
+    "original": "$$ rₜ = w₁\\cdotCTR(aₜ) + w₂\\cdotDiversity(aₜ, S) + w₃\\cdotContext(aₜ, aₜ₋₁) + w₄\\cdotNovelty(aₜ) \\tag{32.3} $$",
+    "svg_path": "formulas/ch32_f32_3.svg"
+  },
+  {
+    "chapter": 33,
+    "latex": "\\mathbf{H} = \\text{TransformerEncoder}([\\mathbf{t}; \\mathbf{v}; \\mathbf{g}])",
+    "tag": null,
+    "original": "$$ \\mathbf{H} = \\text{TransformerEncoder}([\\mathbf{t}; \\mathbf{v}; \\mathbf{g}]) $$ &nbsp;&nbsp;(33.1)",
+    "svg_path": "formulas/ch33_fno166.svg"
+  },
+  {
+    "chapter": 33,
+    "latex": "Cross-Attn(Q=text, K=image_regions, V=image_regions)",
+    "tag": "33.2",
+    "original": "$$ Cross-Attn(Q=text, K=image_regions, V=image_regions) \\tag{33.2} $$",
+    "svg_path": "formulas/ch33_f33_2.svg"
+  },
+  {
+    "chapter": 33,
+    "latex": "g = \\sigma(W_{t}\\cdott + W_{v}\\cdotv + b)   (33.3)\n  fused = g ⊙ t + (1-g) ⊙ v",
+    "tag": null,
+    "original": "$$ g = \\sigma(W_{t}\\cdott + W_{v}\\cdotv + b)   (33.3)\n  fused = g ⊙ t + (1-g) ⊙ v $$",
+    "svg_path": "formulas/ch33_fno168.svg"
+  },
+  {
+    "chapter": 33,
+    "latex": "L_{CLIP} = -log[exp(sim(t,v)^{+}/τ) / \\sum exp(sim(t,v)_{i}/τ)]",
+    "tag": "33.4",
+    "original": "$$ L_{CLIP} = -log[exp(sim(t,v)^{+}/τ) / \\sum exp(sim(t,v)_{i}/τ)] \\tag{33.4} $$",
+    "svg_path": "formulas/ch33_f33_4.svg"
+  },
+  {
+    "chapter": 33,
+    "latex": "L = L_{CF} + \\lambda \\cdot L_{contrastive}",
+    "tag": "33.5",
+    "original": "$$ L = L_{CF} + \\lambda \\cdot L_{contrastive} \\tag{33.5} $$",
+    "svg_path": "formulas/ch33_f33_5.svg"
+  },
+  {
+    "chapter": 33,
+    "latex": "\\alpha_{i} = softmax(a_{u}^{T} tanh(W_{p} p_{i} + W_{u} u + b))   (33.6)\n  u_{repr} = \\sum \\alpha_{i} \\cdot p_{i}",
+    "tag": null,
+    "original": "$$ \\alpha_{i} = softmax(a_{u}^{T} tanh(W_{p} p_{i} + W_{u} u + b))   (33.6)\n  u_{repr} = \\sum \\alpha_{i} \\cdot p_{i} $$",
+    "svg_path": "formulas/ch33_fno171.svg"
+  },
+  {
+    "chapter": 33,
+    "latex": "e_{u}^{(l+1,m)} = AGG({e_{i}^{(l,m)} : i \\in N(u)})   (33.7)\n  e_{i}^{(l+1,m)} = AGG({e_{u}^{(l,m)} : u \\in N(i)})",
+    "tag": null,
+    "original": "$$ e_{u}^{(l+1,m)} = AGG({e_{i}^{(l,m)} : i \\in N(u)})   (33.7)\n  e_{i}^{(l+1,m)} = AGG({e_{u}^{(l,m)} : u \\in N(i)}) $$",
+    "svg_path": "formulas/ch33_fno172.svg"
+  },
+  {
+    "chapter": 33,
+    "latex": "H^{m} = softmax(D^{-1/2} S^{m} D^{-1/2} H^{m} W^{m})",
+    "tag": "33.8",
+    "original": "$$ H^{m} = softmax(D^{-1/2} S^{m} D^{-1/2} H^{m} W^{m}) \\tag{33.8} $$",
+    "svg_path": "formulas/ch33_f33_8.svg"
+  },
+  {
+    "chapter": 34,
+    "latex": "z = Encoder(item)   (34.1)\n  z \\approx \\sum_{l=1}^{L} c_{l},   c_{l} = Quantize_{l}(z - \\sum_{j&lt;l} c_{j})",
+    "tag": "34.2",
+    "original": "$$ z = Encoder(item)   (34.1)\n  z \\approx \\sum_{l=1}^{L} c_{l},   c_{l} = Quantize_{l}(z - \\sum_{j&lt;l} c_{j}) \\tag{34.2} $$",
+    "svg_path": "formulas/ch34_f34_2.svg"
+  },
+  {
+    "chapter": 34,
+    "latex": "P(item | history) = \\prod_{l=1}^{L} P(c_{l} | c_{&lt;l}, history)",
+    "tag": "34.3",
+    "original": "$$ P(item | history) = \\prod_{l=1}^{L} P(c_{l} | c_{&lt;l}, history) \\tag{34.3} $$",
+    "svg_path": "formulas/ch34_f34_3.svg"
+  },
+  {
+    "chapter": 34,
+    "latex": "h_{0} = Encoder(history)   (34.4)\n  h_{t+1} = LatentStep(h_{t})   (34.5)\n  prediction = Decoder(h_{T})",
+    "tag": null,
+    "original": "$$ h_{0} = Encoder(history)   (34.4)\n  h_{t+1} = LatentStep(h_{t})   (34.5)\n  prediction = Decoder(h_{T}) $$",
+    "svg_path": "formulas/ch34_fno176.svg"
+  },
+  {
+    "chapter": 36,
+    "latex": "// 向量召回工具\n  recall_items(user_id, query_text, top_{k}) \\to item_list\n  // 精排工具\n  rank_items(user_id, item_list) \\to ranked_list\n  // 知识查询工具\n  query_knowledge(item_id) \\to item_attributes\n  // 搭配推荐工具\n  get_matching_items(item_id, matching_type) \\to matched_items\n  // 多模态理解工具\n  understand_image(image_url) \\to text_description",
+    "tag": null,
+    "original": "$$ // 向量召回工具\n  recall_items(user_id, query_text, top_{k}) \\to item_list\n  // 精排工具\n  rank_items(user_id, item_list) \\to ranked_list\n  // 知识查询工具\n  query_knowledge(item_id) \\to item_attributes\n  // 搭配推荐工具\n  get_matching_items(item_id, matching_type) \\to matched_items\n  // 多模态理解工具\n  understand_image(image_url) \\to text_description $$",
+    "svg_path": "formulas/ch36_fno177.svg"
+  }
+]
