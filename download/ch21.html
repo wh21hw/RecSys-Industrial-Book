@@ -5,10 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第21章 时长预估 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
-<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
+
+<link rel="stylesheet" href="style.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true,
+    tags: 'all',
+    macros: {
+      bm: ["\\boldsymbol{#1}", 1],
+      R: "\\mathbb{R}",
+      N: "\\mathbb{N}",
+      E: "\\mathbb{E}",
+      argmax: ["\\operatorname*{argmax}", 0],
+      argmin: ["\\operatorname*{argmin}", 0],
+    }
+  },
+  svg: {
+    fontCache: 'global'
+  },
+  chtml: {
+    matchFontHeight: false,
+    scale: 1.05,
+  },
+  options: {
+    enableMenu: false,
+    renderActions: {
+      addMenu: []
+    }
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
 </head>
 <body>
 <div class="book-header">
@@ -37,7 +67,7 @@
 
 <p>将连续时长转换为分类问题是工业界最常用的做法。通过设定阈值将观看行为离散化为二分类或多分类：</p>
 
-<div class="formula-box">$$ label = 1, if watch_time > threshold; 0, otherwise $$</div>
+<div class="formula-box">$$ $$ y = \begin{cases} 1, & \text{if } t_{\text{watch}} > \tau \\\\ 0, & \text{otherwise} \end{cases} $$ $$</div>
 
 <p>常见阈值包括：</p>
 <ul>
@@ -113,7 +143,7 @@
 
 <p>长视频天然有更高观看时长——一个 60 秒的视频即使被完整观看，其时长也远超一个 15 秒视频的完播。如果直接优化原始时长，模型会倾向于推荐长视频。工业界通常通过完播率（Finish Rate）来归一化：</p>
 
-<div class="formula-box">$$ FR = watch_time / video_duration $$</div>
+<div class="formula-box">$$ $$ FR = \frac{t_{\text{watch}}}{t_{\text{video}}} $$ $$</div>
 
 <p>完播率消除了视频时长对预估的影响，使得不同时长的视频可以在同一尺度上比较。</p>
 

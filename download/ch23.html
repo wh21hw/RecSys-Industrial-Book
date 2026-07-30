@@ -5,10 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第23章 个性化参数 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
-<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
+
+<link rel="stylesheet" href="style.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true,
+    tags: 'all',
+    macros: {
+      bm: ["\\boldsymbol{#1}", 1],
+      R: "\\mathbb{R}",
+      N: "\\mathbb{N}",
+      E: "\\mathbb{E}",
+      argmax: ["\\operatorname*{argmax}", 0],
+      argmin: ["\\operatorname*{argmin}", 0],
+    }
+  },
+  svg: {
+    fontCache: 'global'
+  },
+  chtml: {
+    matchFontHeight: false,
+    scale: 1.05,
+  },
+  options: {
+    enableMenu: false,
+    renderActions: {
+      addMenu: []
+    }
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
 </head>
 <body>
 <div class="book-header">
@@ -25,7 +55,7 @@
 
 <p>传统推荐系统使用全局统一的排序公式参数。例如，多目标融合公式中的权重 w1, w2, ..., wn 对所有用户相同：</p>
 
-<div class="formula-box">score = w1 * pCTR + w2 * pCVR + w3 * pWatchTime + ... + wn * pn</div>
+<div class="formula-box">$$ \text{score} = \sum_{i=1}^{n} w_i \cdot p_i = w_1 \cdot p_{\text{CTR}} + w_2 \cdot p_{\text{CVR}} + w_3 \cdot p_{\text{WatchTime}} + \cdots + w_n \cdot p_n $$</div>
 
 <p>这种"一刀切"的参数配置存在明显局限：不同用户群体对点击、转化、时长等目标的偏好差异很大。例如，重度内容消费者更关注内容质量和观看时长，新用户更关注点击引导和内容发现，商业化高价值用户更关注转化和 GMV。全局参数无法兼顾这些差异——一组参数在某类用户上效果好，在另一类用户上可能效果差。</p>
 
@@ -53,7 +83,7 @@
 
 <p>更先进的方案是使用模型预测个性化参数。核心思想是：用一个轻量级参数预测网络，根据用户特征动态输出对应的排序权重：</p>
 
-<div class="formula-box">w = g(UserFeatures)</div>
+<div class="formula-box">$$ \mathbf{w} = g(\mathbf{x}_{\text{user}}) $$</div>
 
 <p>其中 g() 是一个小型神经网络（通常 1-2 层 MLP），输入用户特征（年龄、活跃度、兴趣标签等），输出对应的排序权重向量 w = (w1, w2, ..., wn)。这种方案实现了细粒度的参数个性化——每个用户都有自己独特的权重配置。</p>
 

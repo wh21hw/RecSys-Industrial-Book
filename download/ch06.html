@@ -5,10 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第6章 精排模块 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
-<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
+
+<link rel="stylesheet" href="style.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true,
+    tags: 'all',
+    macros: {
+      bm: ["\\boldsymbol{#1}", 1],
+      R: "\\mathbb{R}",
+      N: "\\mathbb{N}",
+      E: "\\mathbb{E}",
+      argmax: ["\\operatorname*{argmax}", 0],
+      argmin: ["\\operatorname*{argmin}", 0],
+    }
+  },
+  svg: {
+    fontCache: 'global'
+  },
+  chtml: {
+    matchFontHeight: false,
+    scale: 1.05,
+  },
+  options: {
+    enableMenu: false,
+    renderActions: {
+      addMenu: []
+    }
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
 </head>
 <body>
 
@@ -54,12 +84,12 @@
 <p>这些预估值分别对应不同目标，公式 6.1 给出了这些指标：</p>
 
 <div class="formula-box">
-  pctr, pltr, pcmtr, pftr, pcvr &nbsp;&nbsp;&nbsp; (6.1)
+  $$ \hat{y} = f(p_{\text{ctr}}, p_{\text{ltr}}, p_{\text{cmtr}}, p_{\text{ftr}}, p_{\text{cvr}}) $$ &nbsp;&nbsp;&nbsp; (6.1)
 </div>
 
 <p>除了显式互动行为外，隐式反馈如有效播放率（Effective View Rate）、完整播放率（Finish Rate）、长时观看率（Long View Rate）等也常采用分类方式建模。例如：</p>
 
-<div class="formula-box">$$ label = { 1, if watch_time > 5s; 0, otherwise } \tag{6.2} $$</div>
+<div class="formula-box">$$ $$ y = \begin{cases} 1, & \text{if } t_{\text{watch}} > 5\text{s} \\\\ 0, & \text{otherwise} \end{cases} $$ \tag{6.2} $$</div>
 
 <p>另一类常见任务是回归任务，直接预测连续数值，适用于观看时长、停留时长、消费金额、GMV 等连续型指标：</p>
 

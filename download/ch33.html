@@ -5,10 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第33章 多模态推荐 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
-<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
+
+<link rel="stylesheet" href="style.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true,
+    tags: 'all',
+    macros: {
+      bm: ["\\boldsymbol{#1}", 1],
+      R: "\\mathbb{R}",
+      N: "\\mathbb{N}",
+      E: "\\mathbb{E}",
+      argmax: ["\\operatorname*{argmax}", 0],
+      argmin: ["\\operatorname*{argmin}", 0],
+    }
+  },
+  svg: {
+    fontCache: 'global'
+  },
+  chtml: {
+    matchFontHeight: false,
+    scale: 1.05,
+  },
+  options: {
+    enableMenu: false,
+    renderActions: {
+      addMenu: []
+    }
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
 </head>
 <body>
 
@@ -138,7 +168,7 @@
 <p><strong>自注意力融合：</strong>将各模态向量作为 token 输入 Transformer，通过 self-attention 学习模态间的交互关系。这种方法灵活且效果好，但计算开销较大。形式化地，给定文本向量 t、图像向量 v、视频向量 g，将它们拼接为序列 [t; v; g]，输入多层 Transformer 编码器：</p>
 
 <div class="formula-box">
-  H = TransformerEncoder([t; v; g]) &nbsp;&nbsp;(33.1)
+  $$ \mathbf{H} = \text{TransformerEncoder}([\mathbf{t}; \mathbf{v}; \mathbf{g}]) $$ &nbsp;&nbsp;(33.1)
 </div>
 
 <p>取 H 的 [CLS] 位置输出或平均 pooling 作为融合后的物品表示。</p>

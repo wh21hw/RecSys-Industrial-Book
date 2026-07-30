@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="root">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>推荐系统：工业架构与核心算法</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+
+
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ===== CSS Reset & Variables ===== */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --bg:#faf8f5;
+  --bg-sidebar:#f3efe9;
+  --bg-content:#ffffff;
+  --bg-hover:#e8e2d8;
+  --bg-active:#d4c8b4;
+  --text:#2c2418;
+  --text-secondary:#6b5d4f;
+  --text-muted:#9a8b7a;
+  --accent:#8b6914;
+  --accent-light:#c9a84c;
+  --accent-bg:#fdf6ec;
+  --border:#e0d8cc;
+  --shadow:0 1px 3px rgba(0,0,0,.06);
+  --shadow-lg:0 4px 12px rgba(0,0,0,.08);
+  --radius:8px;
+  --sidebar-w:300px;
+  --font-serif:'Noto Serif SC','Songti SC',serif;
+  --font-sans:'Noto Sans SC',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+
+.dark{
+  --bg:#1a1714;
+  --bg-sidebar:#151210;
+  --bg-content:#222019;
+  --bg-hover:#2a2620;
+  --bg-active:#3d3528;
+  --text:#e8e0d4;
+  --text-secondary:#b0a594;
+  --text-muted:#7a6e5e;
+  --accent:#c9a84c;
+  --accent-light:#e0c060;
+  --accent-bg:#2a2418;
+  --border:#3a342c;
+  --shadow:0 1px 3px rgba(0,0,0,.3);
+  --shadow-lg:0 4px 12px rgba(0,0,0,.4);
+}
+
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--text);line-height:1.7;transition:background .3s,color .3s}
+
+/* ===== Layout ===== */
+.app{display:flex;min-height:100vh}
+
+.sidebar{
+  width:var(--sidebar-w);
+  height:100vh;
+  position:fixed;
+  left:0;top:0;
+  background:var(--bg-sidebar);
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  z-index:100;
+  transition:transform .3s ease;
+}
+
+.main{
+  margin-left:var(--sidebar-w);
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ===== Sidebar ===== */
+.sidebar-header{
+  padding:24px 20px 16px;
+  border-bottom:1px solid var(--border);
+}
+
+.sidebar-header h1{
+  font-family:var(--font-serif);
+  font-size:1.15rem;
+  font-weight:700;
+  color:var(--text);
+  line-height:1.4;
+  margin-bottom:4px;
+}
+
+.sidebar-header .subtitle{
+  font-size:.75rem;
+  color:var(--text-muted);
+  letter-spacing:.5px;
+}
+
+.sidebar-tools{
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+.search-box{
+  flex:1;
+  position:relative;
+}
+
+.search-box input{
+  width:100%;
+  padding:8px 12px 8px 34px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--bg-content);
+  color:var(--text);
+  font-size:.85rem;
+  font-family:var(--font-sans);
+  outline:none;
+  transition:border-color .2s;
+}
+
+.search-box input:focus{border-color:var(--accent)}
+
+.search-box svg{
+  position:absolute;
+  left:10px;top:50%;
+  transform:translateY(-50%);
+  width:16px;height:16px;
+  color:var(--text-muted);
+}
+
+.tool-btn{
+  width:36px;height:36px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--bg-content);
+  color:var(--text-secondary);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all .2s;
+  flex-shrink:0;
+}
+
+.tool-btn:hover{background:var(--bg-hover);color:var(--accent)}
+
+.tool-btn svg{width:18px;height:18px}
+
+/* Chapter List */
+.chapter-list{
+  flex:1;
+  overflow-y:auto;
+  padding:8px 0;
+}
+
+.chapter-list::-webkit-scrollbar{width:6px}
+.chapter-list::-webkit-scrollbar-track{background:transparent}
+.chapter-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+.part-group{margin-bottom:12px}
+
+.part-title{
+  padding:8px 20px 6px;
+  font-size:.7rem;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  color:var(--text-muted);
+}
+
+.ch-item{
+  display:flex;
+  align-items:center;
+  padding:8px 20px;
+  cursor:pointer;
+  font-size:.875rem;
+  color:var(--text-secondary);
+  transition:all .15s;
+  border-left:3px solid transparent;
+  gap:10px;
+}
+
+.ch-item:hover{background:var(--bg-hover);color:var(--text)}
+
+.ch-item.active{
+  background:var(--bg-active);
+  color:var(--text);
+  border-left-color:var(--accent);
+  font-weight:500;
+}
+
+.ch-num{
+  font-size:.7rem;
+  color:var(--text-muted);
+  font-family:var(--font-mono);
+  min-width:24px;
+}
+
+.ch-item.active .ch-num{color:var(--accent)}
+
+.sidebar-footer{
+  padding:12px 20px;
+  border-top:1px solid var(--border);
+  font-size:.7rem;
+  color:var(--text-muted);
+  text-align:center;
+}
+
+/* ===== Main Content ===== */
+.topbar{
+  height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 24px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg);
+  position:sticky;top:0;
+  z-index:50;
+}
+
+.topbar-left,.topbar-right{display:flex;align-items:center;gap:8px}
+
+.topbar-btn{
+  border:none;
+  background:none;
+  color:var(--text-secondary);
+  cursor:pointer;
+  padding:6px 10px;
+  border-radius:6px;
+  font-size:.85rem;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  transition:all .15s;
+  font-family:var(--font-sans);
+}
+
+.topbar-btn:hover{background:var(--bg-hover);color:var(--text)}
+.topbar-btn:disabled{opacity:.3;cursor:not-allowed}
+.topbar-btn svg{width:16px;height:16px}
+
+.progress-bar{
+  position:fixed;
+  top:56px;
+  left:var(--sidebar-w);
+  right:0;
+  height:2px;
+  background:var(--border);
+  z-index:49;
+}
+
+.progress-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--accent),var(--accent-light));
+  width:0%;
+  transition:width .1s;
+}
+
+/* Mobile menu button */
+.mobile-menu{
+  display:none;
+  border:none;
+  background:none;
+  color:var(--text);
+  cursor:pointer;
+  padding:6px;
+}
+
+.mobile-menu svg{width:24px;height:24px}
+
+/* Content Area */
+.content{
+  flex:1;
+  padding:40px 0;
+  display:flex;
+  justify-content:center;
+}
+
+.article{
+  width:100%;
+  max-width:780px;
+  padding:0 32px;
+}
+
+/* Article Typography */
+.article .ch-label{
+  text-align:center;
+  font-size:.8rem;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:12px;
+  font-weight:500;
+}
+
+.article h1{
+  font-family:var(--font-serif);
+  font-size:2rem;
+  font-weight:700;
+  text-align:center;
+  margin-bottom:32px;
+  color:var(--text);
+  line-height:1.3;
+}
+
+.article h2{
+  font-family:var(--font-sans);
+  font-size:1.35rem;
+  font-weight:600;
+  margin:40px 0 16px;
+  padding-bottom:8px;
+  border-bottom:2px solid var(--accent-light);
+  color:var(--text);
+}
+
+.article h3{
+  font-family:var(--font-sans);
+  font-size:1.1rem;
+  font-weight:600;
+  margin:28px 0 12px;
+  color:var(--text);
+}
+
+.article p{
+  font-family:var(--font-serif);
+  font-size:1rem;
+  line-height:1.85;
+  margin-bottom:16px;
+  color:var(--text);
+  text-align:justify;
+}
+
+.article ul,.article ol{
+  margin:12px 0 16px 24px;
+  font-family:var(--font-serif);
+  line-height:1.85;
+}
+
+.article li{margin-bottom:6px}
+
+.article strong{font-weight:600;color:var(--text)}
+
+.article code{
+  font-family:var(--font-mono);
+  font-size:.85em;
+  background:var(--bg-hover);
+  padding:2px 6px;
+  border-radius:4px;
+  color:var(--accent);
+}
+
+.article pre{
+  background:var(--bg-sidebar);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:16px;
+  overflow-x:auto;
+  margin:16px 0;
+}
+
+.article pre code{
+  background:none;
+  padding:0;
+  color:var(--text);
+}
+
+.article table{
+  width:100%;
+  border-collapse:collapse;
+  margin:16px 0;
+  font-size:.9rem;
+}
+
+.article th,.article td{
+  border:1px solid var(--border);
+  padding:8px 12px;
+  text-align:left;
+}
+
+.article th{
+  background:var(--bg-sidebar);
+  font-weight:600;
+}
+
+.article blockquote{
+  border-left:4px solid var(--accent-light);
+  background:var(--accent-bg);
+  padding:12px 20px;
+  margin:16px 0;
+  border-radius:0 6px 6px 0;
+  font-size:.95rem;
+}
+
+.article hr{
+  border:none;
+  border-top:1px solid var(--border);
+  margin:32px 0;
+}
+
+/* Chapter Navigation */
+.ch-nav{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:48px;
+  padding-top:24px;
+  border-top:1px solid var(--border);
+}
+
+.ch-nav-btn{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 20px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--bg-content);
+  color:var(--text-secondary);
+  text-decoration:none;
+  font-size:.85rem;
+  cursor:pointer;
+  transition:all .2s;
+  font-family:var(--font-sans);
+}
+
+.ch-nav-btn:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+  box-shadow:var(--shadow);
+}
+
+.ch-nav-btn svg{width:16px;height:16px}
+
+/* Back to top */
+.back-top{
+  position:fixed;
+  bottom:32px;right:32px;
+  width:44px;height:44px;
+  border-radius:50%;
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:var(--shadow-lg);
+  opacity:0;
+  visibility:hidden;
+  transition:all .3s;
+  z-index:50;
+}
+
+.back-top.show{opacity:1;visibility:visible}
+.back-top svg{width:20px;height:20px}
+
+/* Mobile */
+.mobile-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.4);
+  z-index:99;
+}
+
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .progress-bar{left:0}
+  .mobile-menu{display:flex}
+  .mobile-overlay.show{display:block}
+  .article{padding:0 20px}
+  .article h1{font-size:1.5rem}
+  .article h2{font-size:1.15rem}
+  .topbar{padding:0 16px}
+}
+
+/* ===== Formula & Image Styles ===== */
+.formula-box{
+  background:var(--accent-bg);
+  border-left:3px solid var(--accent-light);
+  border-radius:0 6px 6px 0;
+  padding:12px 20px;
+  margin:16px 0;
+  font-family:var(--font-mono),monospace;
+  font-size:0.95em;
+  overflow-x:auto;
+  position:relative;
+}
+.formula-box::before{
+  content:'Formula';
+  position:absolute;
+  top:-8px;
+  right:12px;
+  font-size:0.65em;
+  color:var(--text-muted);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  background:var(--bg-content);
+  padding:0 6px;
+  border-radius:3px;
+}
+.article-content .formula-box .katex{display:none}
+
+.article-content img{
+  max-width:100%;
+  height:auto;
+  border-radius:8px;
+  box-shadow:var(--shadow-lg);
+  margin:16px auto;
+  display:block;
+}
+
+.article-content .figure-caption{
+  text-align:center;
+  font-size:0.85em;
+  color:var(--text-muted);
+  margin-top:-8px;
+  margin-bottom:16px;
+}
+
+.article-content table{
+  width:100%;
+  border-collapse:collapse;
+  margin:16px 0;
+  font-size:0.9em;
+}
+.article-content th,.article-content td{
+  border:1px solid var(--border);
+  padding:8px 12px;
+  text-align:left;
+}
+.article-content th{
+  background:var(--bg-sidebar);
+  font-weight:600;
+}
+.article-content tr:nth-child(even){background:var(--bg-sidebar)}
+
+.article-content .definition-box,.article-content .note-box{
+  border-radius:8px;
+  padding:12px 20px;
+  margin:16px 0;
+}
+.article-content .definition-box{
+  background:var(--accent-bg);
+  border-left:3px solid var(--accent-light);
+}
+.article-content .note-box{
+  background:#eef5ff;
+  border-left:3px solid #4a90d9;
+}
+.dark .article-content .note-box{
+  background:#1a2030;
+  border-left-color:#3a7bc8;
+}
+
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h1>推荐系统：工业架构与核心算法</h1>
+      <div class="subtitle">RecSys-Industrial-Book</div>
+    </div>
+    <div class="sidebar-tools">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="search" placeholder="搜索章节..." />
+      </div>
+      <button class="tool-btn" id="theme-toggle" title="切换主题">
+        <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </div>
+    <div class="chapter-list" id="chapter-list"></div>
+    <div class="sidebar-footer">共 38 章 · 完整版</div>
+  </aside>
+
+  <!-- Mobile overlay -->
+  <div class="mobile-overlay" id="overlay"></div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu" id="mobile-menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+        <button class="topbar-btn" id="btn-prev">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+          上一章
+        </button>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn" id="btn-next">
+          下一章
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+    <div class="content">
+      <div class="article" id="article"></div>
+    </div>
+  </div>
+</div>
+
+<button class="back-top" id="back-top">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+</button>
+
+<script src="data-v13.js"></script>
+<script>
+const PARTS = [
+  {name:'第一部分 · 推荐系统基础', start:0, end:3},
+  {name:'第二部分 · 推荐系统模块', start:4, end:9},
+  {name:'第三部分 · 推荐系统核心算法', start:10, end:13},
+  {name:'第四部分 · 推荐系统工程实践', start:14, end:17},
+  {name:'第五部分 · 推荐系统进阶', start:18, end:27},
+  {name:'第六部分 · 强化学习推荐', start:28, end:32},
+  {name:'第七部分 · 多模态与生成式推荐', start:33, end:34},
+  {name:'第八部分 · 前沿趋势', start:35, end:37},
+];
+
+let currentCh = 0;
+
+// Render sidebar
+function renderSidebar(filter=''){
+  const list = document.getElementById('chapter-list');
+  list.innerHTML = '';
+  
+  PARTS.forEach(part => {
+    const chapters = CHAPTERS.filter(ch => ch.num >= part.start && ch.num <= part.end);
+    const filtered = filter ? chapters.filter(ch => 
+      ch.title.toLowerCase().includes(filter.toLowerCase()) ||
+      ch.body.toLowerCase().includes(filter.toLowerCase())
+    ) : chapters;
+    
+    if(filtered.length === 0) return;
+    
+    const group = document.createElement('div');
+    group.className = 'part-group';
+    
+    const title = document.createElement('div');
+    title.className = 'part-title';
+    title.textContent = part.name;
+    group.appendChild(title);
+    
+    filtered.forEach(ch => {
+      const item = document.createElement('div');
+      item.className = 'ch-item' + (ch.num === currentCh ? ' active' : '');
+      item.innerHTML = `<span class="ch-num">${String(ch.num).padStart(2,'0')}</span><span>${ch.title}</span>`;
+      item.onclick = () => loadChapter(ch.num);
+      group.appendChild(item);
+    });
+    
+    list.appendChild(group);
+  });
+}
+
+// Load chapter
+function loadChapter(num){
+  currentCh = num;
+  const ch = CHAPTERS[num];
+  if(!ch) return;
+  
+  const article = document.getElementById('article');
+  article.innerHTML = `
+    <div class="ch-label">${ch.ch_label}</div>
+    <h1>${ch.title}</h1>
+    ${ch.body}
+    <div class="ch-nav">
+      ${num > 0 ? `<button class="ch-nav-btn" onclick="loadChapter(${num-1})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>上一章</button>` : '<span></span>'}
+      ${num < CHAPTERS.length-1 ? `<button class="ch-nav-btn" onclick="loadChapter(${num+1})">下一章<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>` : '<span></span>'}
+    </div>
+  `;
+  
+  // Update sidebar active state
+  renderSidebar(document.getElementById('search').value);
+  
+  // Update prev/next buttons
+  document.getElementById('btn-prev').disabled = num === 0;
+  document.getElementById('btn-next').disabled = num === CHAPTERS.length - 1;
+  
+  // Close mobile sidebar
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+  
+  // Scroll to top
+  window.scrollTo(0, 0);
+  updateProgress();
+}
+
+// Theme toggle
+function toggleTheme(){
+  const root = document.getElementById('root');
+  root.classList.toggle('dark');
+  const isDark = root.classList.contains('dark');
+  document.getElementById('icon-moon').style.display = isDark ? 'none' : 'block';
+  document.getElementById('icon-sun').style.display = isDark ? 'block' : 'none';
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+}
+
+// Progress bar
+function updateProgress(){
+  const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+  const scrolled = window.scrollY;
+  const pct = scrollable > 0 ? (scrolled / scrollable) * 100 : 0;
+  document.getElementById('progress').style.width = pct + '%';
+  
+  // Back to top button
+  const backTop = document.getElementById('back-top');
+  if(scrolled > 300) backTop.classList.add('show');
+  else backTop.classList.remove('show');
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  // Restore theme
+  if(localStorage.getItem('theme') === 'dark') toggleTheme();
+  
+  renderSidebar();
+  loadChapter(0);
+  
+  // Event listeners
+  document.getElementById('search').addEventListener('input', e => renderSidebar(e.target.value));
+  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+  document.getElementById('btn-prev').addEventListener('click', () => currentCh > 0 && loadChapter(currentCh - 1));
+  document.getElementById('btn-next').addEventListener('click', () => currentCh < CHAPTERS.length - 1 && loadChapter(currentCh + 1));
+  document.getElementById('back-top').addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
+  
+  // Mobile menu
+  document.getElementById('mobile-menu').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('show');
+  });
+  document.getElementById('overlay').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('overlay').classList.remove('show');
+  });
+  
+  // Scroll
+  window.addEventListener('scroll', updateProgress);
+  
+  // Keyboard navigation
+  document.addEventListener('keydown', e => {
+    if(e.target.tagName === 'INPUT') return;
+    if(e.key === 'ArrowLeft' && currentCh > 0) loadChapter(currentCh - 1);
+    if(e.key === 'ArrowRight' && currentCh < CHAPTERS.length - 1) loadChapter(currentCh + 1);
+  });
+});
+</script>
+</body>
+</html>

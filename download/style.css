@@ -170,43 +170,67 @@ li { margin-bottom: 8px; }
 
 .note-box p { text-indent: 0; margin-bottom: 5px; }
 
-/* ===== 公式（增强版） ===== */
+/* ===== 公式（MathJax 增强版） ===== */
 .formula-box {
-  background: linear-gradient(135deg, #f8f6f1 0%, #f5f2eb 100%);
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--gold);
-  border-radius: 10px;
-  padding: 24px 28px;
-  margin: 24px auto;
+  background: linear-gradient(135deg, #faf8f3 0%, #f3eee5 50%, #ece6d8 100%);
+  border: 1px solid #d4cfc0;
+  border-left: 5px solid var(--gold);
+  border-radius: 12px;
+  padding: 28px 32px 20px;
+  margin: 28px auto;
   text-align: center;
-  font-family: 'Cambria Math', 'STIX Two Math', 'Latin Modern Math', 'Noto Serif SC', serif;
-  font-size: 1.15rem;
-  line-height: 2.2;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.1rem;
+  line-height: 1.8;
   overflow-x: auto;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
   position: relative;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  max-width: 95%;
 }
 
 .formula-box::before {
-  content: '𝑓';
+  content: '⟁';
   position: absolute;
-  top: 6px;
-  left: 12px;
-  font-size: 0.7rem;
+  top: 8px;
+  left: 14px;
+  font-size: 0.75rem;
   color: var(--gold);
-  opacity: 0.5;
-  font-style: italic;
+  opacity: 0.4;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.formula-box::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  border-radius: 0 0 12px 12px;
+  opacity: 0.3;
 }
 
 .formula-box .formula-num {
   color: var(--text-light);
-  font-size: 0.85rem;
-  margin-top: 10px;
+  font-size: 0.82rem;
+  margin-top: 8px;
   font-family: 'Noto Sans SC', sans-serif;
+  font-style: italic;
 }
 
-/* 增强公式中的上下标显示 */
+/* MathJax 渲染的公式样式覆盖 */
+.formula-box mjx-container {
+  font-size: 1.15em !important;
+}
+
+.formula-box mjx-container[display="true"] {
+  margin: 0 !important;
+  padding: 4px 0;
+}
+
+/* 增强公式中的上下标显示（fallback for non-MathJax） */
 .formula-box sub {
   font-size: 0.72em;
   vertical-align: -0.28em;
@@ -219,13 +243,15 @@ li { margin-bottom: 8px; }
   font-style: italic;
 }
 
+/* 公式框 hover 效果 */
+.formula-box:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.06);
+  border-left-color: #b89a3a;
+}
+
 /* 公式中的斜体变量 */
 .formula-box {
   font-feature-settings: "ss01", "ss02";
-}
-
-/* 希腊字母和数学符号优化 */
-.formula-box {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

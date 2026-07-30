@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第5章 粗排模块 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第 5 章</div>
+<h1 class="chapter-title">粗排模块</h1>
+
+<p>第 4 章详细介绍了推荐系统链路最上游的召回与过滤模块。召回模块从海量物品库中快速获取候选内容，过滤模块则对候选结果进行规则约束与质量控制。二者共同构成了推荐链路的起点，为后续模块提供输入数据。本章将继续沿着推荐链路，介绍级联式推荐系统架构中紧接召回之后的第二个核心模块——粗排模块（Rough Ranking）。</p>
+
+<h2 class="section-title">5.1 为什么需要粗排</h2>
+
+<p>在级联式推荐系统架构中，召回模块通常需要从十亿级物品库中筛选出数千个候选物品。这些候选物品随后进入粗排阶段。粗排模块的核心职责是：在有限计算资源约束下，对召回结果进行快速筛选，为后续精排阶段构建高质量候选集。</p>
+
+<div class="note-box">
+  <div class="note-label">📝 思考</div>
+  <p>既然召回模块已经筛选出了数千个候选物品，为什么不直接将这些物品送入精排模型进行排序？</p>
+</div>
+
+<p>核心原因在于<strong>算力与精度的权衡</strong>。精排模型通常结构复杂、特征数量多、计算成本高。如果直接对数千个候选物品进行精排打分，在线推理延迟将远超系统预算。因此，工业界引入粗排阶段作为召回与精排之间的"缓冲层"，用轻量级模型快速筛选出数百个高质量候选，再交给精排模型进行精细排序。</p>
+
+<p>粗排模块的设计需要平衡两个核心指标：</p>
+<ul>
+  <li><strong>召回率（Recall）</strong>：精排偏好的内容是否被粗排成功保留</li>
+  <li><strong>延迟（Latency）</strong>：粗排模块的整体计算耗时</li>
+</ul>
+
+<h2 class="section-title">5.2 粗排模块整体架构</h2>
+
+<p>一个完整的工业级粗排模块通常包含以下核心环节：</p>
+
+<ol>
+  <li><strong>粗排主模型</strong>：对候选物品进行快速打分</li>
+  <li><strong>链路一致性模型</strong>：学习下游精排模型的排序偏好</li>
+  <li><strong>多目标融合</strong>：将多个 pxtr 统一映射到同一排序空间</li>
+  <li><strong>粗排后处理</strong>：Quota 调控、保量策略、候选集截断</li>
+</ol>
+
+<h2 class="section-title">5.3 粗排主模型</h2>
+
+<p>粗排主模型负责对召回阶段返回的数千个候选物品进行快速打分。由于粗排处于召回与精排之间，其模型设计需要同时兼顾效率与精度。工业界常用的粗排主模型架构包括双塔模型、轻量级排序模型以及知识蒸馏模型等。</p>
+
+<p>双塔模型是粗排阶段最常用的模型架构之一。用户塔和物品塔分别独立构建，在线推理时只需计算用户向量和物品向量的内积或余弦相似度，具有极高的计算效率。物品向量可以离线预计算并存储在向量索引中，在线推理时只需一次向量检索即可完成打分。</p>
+
+<h2 class="section-title">5.4 链路一致性</h2>
+
+<p>粗排模块的输出将直接作为精排模块的输入。如果粗排模型与精排模型的排序偏好不一致，则可能出现以下问题：粗排阶段高分的内容在精排阶段得分很低，而精排阶段偏好的内容在粗排阶段就被过滤掉了。这种现象被称为<strong>链路不一致</strong>（Link Inconsistency）。</p>
+
+<p>为了解决这一问题，工业界引入了<strong>链路一致性模型</strong>（Link Consistency Model），通过知识蒸馏等方式让粗排模型学习精排模型的排序偏好。具体做法包括：</p>
+<ul>
+  <li><strong>软标签蒸馏</strong>：使用精排模型的输出概率作为软标签训练粗排模型</li>
+  <li><strong>排序关系蒸馏</strong>：让粗排模型的排序结果与精排模型的排序结果尽可能一致</li>
+  <li><strong>特征对齐</strong>：让粗排模型使用精排模型的部分特征</li>
+</ul>
+
+<h2 class="section-title">5.5 多目标融合机制分析</h2>
+
+<p>现代推荐系统通常需要同时优化多个目标，例如点击率（CTR）、转化率（CVR）、点赞率（LTR）、评论率等。粗排阶段需要将这些不同目标的预测值（pxtr）融合为统一的排序分数。工业界常用的多目标融合方法包括：</p>
+
+<ul>
+  <li><strong>值融合</strong>：直接对 pxtr 数值进行加权组合</li>
+  <li><strong>序融合</strong>：基于排序位置进行融合</li>
+  <li><strong>值序融合</strong>：结合数值与排序位置</li>
+  <li><strong>自动化融合</strong>：通过贝叶斯优化等方法自动搜索最优参数</li>
+</ul>
+
+<h3 class="subsection-title">5.5.1 加法融合与乘法融合</h3>
+
+<p>最基础的多目标融合公式包括加法公式和乘法公式：</p>
+
+<div class="formula-box">
+  <div class="formula-label">加法公式</div>
+  Score = w₁p₁ + w₂p₂ + ... + wₙpₙ
+</div>
+
+<div class="formula-box">
+  <div class="formula-label">乘法公式</div>
+  Score = ∏ᵢ(βᵢ + αᵢpᵢ)^γᵢ
+</div>
+
+<p>通过一个简单示例可以直观理解二者的差异。假设有两个内容 A 和 B，两个目标 pctr 和 pcvr：</p>
+
+<table>
+  <caption>表 5.1：加法公式与乘法公式示例</caption>
+  <thead>
+    <tr><th>内容</th><th>pctr</th><th>pcvr</th><th>加法 (pctr+pcvr)</th><th>乘法 (pctr×pcvr)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>A</td><td>0.9</td><td>0.1</td><td>1.0</td><td>0.09</td></tr>
+    <tr><td>B</td><td>0.5</td><td>0.5</td><td>1.0</td><td>0.25</td></tr>
+    <tr><td>C</td><td>0.1</td><td>0.9</td><td>1.0</td><td>0.09</td></tr>
+  </tbody>
+</table>
+
+<p>从上述例子可以观察到一个重要现象：加法公式与乘法公式对于不同类型内容的偏好并不相同。</p>
+
+<div class="definition-box">
+  <div class="def-label">定义 5.2</div>
+  <p>加法融合是一种<strong>补偿型（Compensatory）</strong>排序机制，高目标可以补偿低目标；而乘法融合是一种<strong>短板约束型（Bottleneck-Constrained）</strong>排序机制，任何一个目标过低都会显著拉低最终得分。</p>
+</div>
+
+<p>可以将二者类比为不同的人才选拔机制：加法公式更偏好"偏科生"，允许某个维度特别突出；乘法公式更偏好"六边形战士"，要求多个维度均衡发展。</p>
+
+<h3 class="subsection-title">5.5.2 广义乘法公式的数学分析</h3>
+
+<p>工业界广泛使用的是广义乘法公式 ∏ᵢ(βᵢ + αᵢpᵢ)^γᵢ。通过 Taylor 展开，可以将其分解为：</p>
+
+<div class="formula-box">
+  Score = Const × [1 + Σᵢ (αᵢpᵢ/βᵢ) + Σᵢ<ⱼ (αᵢαⱼpᵢpⱼ)/(βᵢβⱼ) + Σᵢ<ⱼ<ₖ (αᵢαⱼαₖpᵢpⱼpₖ)/(βᵢβⱼβₖ) + ...]
+</div>
+
+<p>其中：</p>
+<ul>
+  <li><strong>一阶项</strong>对应线性加权求和</li>
+  <li><strong>二阶项</strong>对应目标之间的两两协同作用</li>
+  <li><strong>三阶项</strong>对应三个目标同时优秀时的协同奖励</li>
+  <li><strong>更高阶项</strong>对应更复杂的多目标交互关系</li>
+</ul>
+
+<p>当 βᵢ ≫ αᵢpᵢ 时，高阶项可以忽略，乘法公式退化为加法公式。因此：</p>
+
+<div class="definition-box">
+  <div class="def-label">定义 5.3</div>
+  <p>乘法公式并不是一种完全不同于加法公式的融合机制。从数学结构上看，广义乘法公式可以分解为<strong>线性加法项 + 高阶交互项</strong>。βᵢ → ∞ 时趋近加法融合；βᵢ → 0 时高阶交互项占主导。γ 控制流量分布的陡峭程度（Traffic Sharpness）。</p>
+</div>
+
+<h2 class="section-title">5.6 粗排分 Quota 调控与截断</h2>
+
+<h3 class="subsection-title">5.6.1 粗排 Quota 调控</h3>
+
+<div class="note-box">
+  <div class="note-label">📝 思考</div>
+  <p>粗排模块为什么需要 Quota 调控机制？</p>
+</div>
+
+<p>假设在一个直播推荐系统中，当前有游戏直播池、电商直播池、秀场直播池、新主播池、高价值主播池。如果完全按照排序分数筛选 TopK(score)，则最终候选集可能全部来自同一个候选池。</p>
+
+<table>
+  <caption>表 5.2：无 Quota 约束下的候选集示例</caption>
+  <thead>
+    <tr><th>主播ID</th><th>类别</th><th>Score</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>A</td><td>游戏</td><td>0.98</td></tr>
+    <tr><td>B</td><td>游戏</td><td>0.96</td></tr>
+    <tr><td>C</td><td>游戏</td><td>0.95</td></tr>
+    <tr><td>D</td><td>游戏</td><td>0.94</td></tr>
+    <tr><td>E</td><td>游戏</td><td>0.93</td></tr>
+  </tbody>
+</table>
+
+<p>虽然上述结果在短期业务指标上可能达到最优，但长期来看往往会导致内容同质化、新主播无法获得曝光、商业化内容流量不足以及平台生态失衡等问题。因此，工业界通常在粗排阶段引入 Quota 机制：</p>
+
+<table>
+  <caption>表 5.3：示例 Quota 配置</caption>
+  <thead>
+    <tr><th>候选池</th><th>配额</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>游戏直播池</td><td>40%</td></tr>
+    <tr><td>娱乐直播池</td><td>30%</td></tr>
+    <tr><td>电商直播池</td><td>20%</td></tr>
+    <tr><td>新主播池</td><td>10%</td></tr>
+  </tbody>
+</table>
+
+<p>固定 Quota 策略实现简单但灵活性较差。对于重度游戏用户，继续使用固定 40% 的游戏 Quota 显然不合理。因此工业界也会引入按流量比例的动态 Quota 调控策略：</p>
+
+<div class="formula-box">
+  Quotaᵢ = f(User, Context, BusinessGoal)
+</div>
+
+<p>进一步地，一些系统会利用强化学习或在线优化方法学习最优 Quota 分配策略：</p>
+
+<div class="formula-box">
+  π(s) → Quota
+</div>
+
+<h3 class="subsection-title">5.6.2 粗排保量机制</h3>
+
+<p>推荐系统通常还需要实现保量（Guarantee）机制，例如新主播保量、新视频保量、广告保量等。一种简单实现方式：</p>
+
+<div class="formula-box">
+  若 Exposureᵢ < Targetᵢ，则 Scoreᵢ = Scoreᵢ + Δ
+</div>
+
+<p>另一种方式是在 Quota 层面直接保留固定曝光位置，例如在粗排最终输出的候选集 Top100 中预留 5% 的流量给冷启动的新内容。</p>
+
+<h3 class="subsection-title">5.6.3 粗排截断机制</h3>
+
+<p>完成 Quota 和保量之后，系统通常还需要进行截断（Truncation）。假设召回阶段返回 5000 个候选，粗排阶段输出 300~500 个候选，则需要执行 TopK 截断操作。截断的核心目的包括：控制精排计算成本、提高后续模型吞吐、降低推荐系统整体延迟等。</p>
+
+<h2 class="section-title">5.7 粗排候选集集合优化</h2>
+
+<p>从系统视角来看，粗排阶段真正优化的对象并不是单个物品（Item），而是整个候选集合（Candidate Set）。</p>
+
+<div class="definition-box">
+  <div class="def-label">定义 5.4</div>
+  <p><strong>精排优化的是物品排序（Item Ranking）；粗排优化的是候选集合（Candidate Set）。</strong></p>
+</div>
+
+<p>候选集优化需要关注以下几个维度：</p>
+
+<ul>
+  <li><strong>兴趣覆盖（Interest Coverage）</strong>：候选集需要充分覆盖用户的多个兴趣方向</li>
+  <li><strong>聚集度控制（Concentration Control）</strong>：避免候选集过度集中于某一类内容</li>
+  <li><strong>探索性（Exploration）</strong>：向候选集中注入一定比例的探索流量</li>
+</ul>
+
+<p>在建模方式上，粗排模型正在经历从 Point-wise → List-wise → Set-wise 的演进趋势：</p>
+
+<ul>
+  <li><strong>Point-wise</strong>：对每个物品独立打分，L = Σᵢ CE(yᵢ, ŷᵢ)</li>
+  <li><strong>List-wise</strong>：直接学习整个候选列表对于用户价值的贡献，如 ListNet、ListMLE、LambdaRank、Soft-NDCG</li>
+  <li><strong>Set-wise</strong>：直接评估整个候选集合的质量，要求模型对输入顺序不敏感，如 Set Transformer、Deep Sets</li>
+</ul>
+
+<h2 class="section-title">5.8 本章小结</h2>
+
+<p>本章详细介绍了级联式推荐系统架构中的粗排模块及其核心设计思想。首先，从"为什么需要粗排模块"这一问题出发，分析了在海量候选集和严格时延约束下，推荐系统为何需要在召回与精排之间引入粗排阶段。粗排的核心职责并非精确预测用户对单个物品的兴趣，而是在有限计算资源约束下，对召回结果进行快速筛选，为后续精排阶段构建高质量候选集。</p>
+
+<p>随后，从粗排模块的内部结构出发，依次介绍了粗排主模型、链路一致性模型、多目标融合以及粗排后处理等关键环节。其中，粗排主模型负责对候选物品进行快速打分；链路一致性模型通过学习下游精排模型的排序偏好，提高上下游链路的一致性；多目标融合模块则将多个不同目标对应的 pxtr 统一映射到同一排序空间；而粗排后处理模块则进一步完成 Quota 调控、保量策略以及候选集截断等工程化处理。</p>
+
+<p>在粗排多目标融合部分，系统讨论了工业界常见的多目标融合方法，包括值融合、序融合、值序融合以及自动化融合等不同技术路线。同时，从数学推导的角度分析了加法融合与乘法融合两种最常见的融合方式，并通过泰勒展开证明了广义乘法公式本质上可以视为在线性融合基础上引入多阶目标交互项的结果，从而解释了乘法融合更倾向于选择多目标均衡内容的原因。</p>
+
+<p>在粗排后处理部分，进一步讨论了 Quota 调控、保量策略以及候选集截断等工程实践问题。通过对不同内容池、业务池和流量池进行配额控制，推荐系统能够在用户体验、商业化目标以及内容生态之间取得平衡，从而避免候选集过度集中于某一类内容。</p>
+
+<p>最后，从更高层的系统视角重新审视了粗排模块的优化目标。与精排阶段关注单个物品排序不同，粗排阶段真正优化的对象是整个候选集合（Candidate Set）。围绕这一目标，介绍了覆盖度优化、多样性优化、探索性优化等候选集优化策略，并讨论了从 Point-wise 到 List-wise，再到 Set-wise 的建模演进趋势。</p>
+
+<h2 class="section-title">5.9 参考文献</h2>
+
+<p>[1] Christopher JC Burges. "From ranknet to lambdarank to lambdamart: An overview". In: Learning 11.23-581 (2010), p. 81.</p>
+<p>[2] Zhe Cao et al. "Learning to rank: from pairwise approach to listwise approach". In: Proceedings of the 24th international conference on Machine learning. 2007, pp. 129–136.</p>
+<p>[3] Mark Ebden. "Gaussian processes: A quick introduction". In: arXiv preprint arXiv:1505.02965 (2015).</p>
+<p>[4] Peter I Frazier. "A tutorial on Bayesian optimization". In: arXiv preprint arXiv:1807.02811 (2018).</p>
+<p>[5] Geoffrey Hinton, Oriol Vinyals, and Jeff Dean. "Distilling the knowledge in a neural network". In: arXiv preprint arXiv:1503.02531 (2015).</p>
+<p>[6] Juho Lee et al. "Set transformer: A framework for attention-based permutation-invariant neural networks". In: International conference on machine learning. PMLR. 2019, pp. 3744–3753.</p>
+<p>[7] Tao Qin, Tie-Yan Liu, and Hang Li. "A general approximation framework for direct optimization of information retrieval measures". In: Information retrieval 13.4 (2010), pp. 375–397.</p>
+<p>[8] Carl Edward Rasmussen. "Gaussian processes in machine learning". In: Summer school on machine learning. Springer, 2003, pp. 63–71.</p>
+<p>[9] Michael Taylor et al. "SoftRank: optimizing non-smooth rank metrics". In: Proceedings of the 2008 international conference on web search and data mining. 2008, pp. 77–86.</p>
+<p>[10] Shuhei Watanabe. "Tree-structured parzen estimator: Understanding its algorithm components and their roles for better empirical performance". In: arXiv preprint arXiv:2304.11127 (2023).</p>
+<p>[11] Christopher Williams and Carl Rasmussen. "Gaussian processes for regression". In: Advances in neural information processing systems 8 (1995).</p>
+<p>[12] Fen Xia et al. "Listwise approach to learning to rank: theory and algorithm". In: Proceedings of the 25th international conference on Machine learning. 2008, pp. 1192–1199.</p>
+<p>[13] Manzil Zaheer et al. "Deep sets". In: Advances in neural information processing systems 30 (2017).</p>
+
+<div class="chapter-end">* * *</div>
+
+<div class="nav-bar">
+  <a href="ch04.html">← 上一章：第4章 召回与过滤模块</a>
+  <a href="ch06.html">下一章：第6章 精排模块 →</a>
+</div>
+
+</body>
+</html>

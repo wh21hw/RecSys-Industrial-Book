@@ -5,10 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第27章 因果推荐 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
-<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
+
+<link rel="stylesheet" href="style.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true,
+    tags: 'all',
+    macros: {
+      bm: ["\\boldsymbol{#1}", 1],
+      R: "\\mathbb{R}",
+      N: "\\mathbb{N}",
+      E: "\\mathbb{E}",
+      argmax: ["\\operatorname*{argmax}", 0],
+      argmin: ["\\operatorname*{argmin}", 0],
+    }
+  },
+  svg: {
+    fontCache: 'global'
+  },
+  chtml: {
+    matchFontHeight: false,
+    scale: 1.05,
+  },
+  options: {
+    enableMenu: false,
+    renderActions: {
+      addMenu: []
+    }
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
 </head>
 <body>
 <div class="book-header">
@@ -96,7 +126,7 @@
 
 <p>Uplift 模型关注推荐系统对用户行为的<strong>增量效应</strong>（Treatment Effect），而非绝对效果。核心问题是："推荐系统推荐了内容 A，用户点击了。但如果不推荐 A，用户会点击吗？"两者的差值就是 Uplift。</p>
 
-<div class="formula-box">Uplift = P(y | do(recommend)) - P(y | do(not recommend))</div>
+<div class="formula-box">$$ \text{Uplift} = P(y \mid do(\text{recommend})) - P(y \mid do(\text{not recommend})) $$</div>
 
 <p>Uplift 模型将用户分为四类：</p>
 <ul>

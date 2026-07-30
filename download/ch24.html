@@ -5,10 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第24章 多任务融合 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
-<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
+
+<link rel="stylesheet" href="style.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true,
+    tags: 'all',
+    macros: {
+      bm: ["\\boldsymbol{#1}", 1],
+      R: "\\mathbb{R}",
+      N: "\\mathbb{N}",
+      E: "\\mathbb{E}",
+      argmax: ["\\operatorname*{argmax}", 0],
+      argmin: ["\\operatorname*{argmin}", 0],
+    }
+  },
+  svg: {
+    fontCache: 'global'
+  },
+  chtml: {
+    matchFontHeight: false,
+    scale: 1.05,
+  },
+  options: {
+    enableMenu: false,
+    renderActions: {
+      addMenu: []
+    }
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
 </head>
 <body>
 <div class="book-header">
@@ -42,7 +72,7 @@
 
 <p>加法融合（Additive Fusion）是最简单的融合方式，将多个预估值进行线性加权求和：</p>
 
-<div class="formula-box">score = w1*p1 + w2*p2 + ... + wn*pn</div>
+<div class="formula-box">$$ \text{score} = \sum_{i=1}^{n} w_i \cdot p_i $$</div>
 
 <p>其中 pi 为第 i 个目标的预估值（如 pCTR、pCVR 等），wi 为对应的权重。加法融合的核心特性是<strong>补偿性</strong>（Compensatory）：一个目标的高值可以补偿另一个目标的低值。例如，一个高 CTR 但低 CVR 的内容，与一个低 CTR 但高 CVR 的内容，可能获得相同的融合分数。</p>
 
@@ -80,7 +110,7 @@
 
 <p>从梯度视角可以更直观地理解两种融合方式的差异。对于乘法融合 Score = (b1 + a1*p1)(b2 + a2*p2)，对 p1 求偏导：</p>
 
-<div class="formula-box">dScore/dp1 = a1 * (b2 + a2*p2)</div>
+<div class="formula-box">$$ \frac{\partial \text{score}}{\partial p_1} = a_1 \cdot (b_2 + a_2 \cdot p_2) $$</div>
 
 <p>即 p1 的重要性依赖于 p2 的大小——当 p2 较大时，p1 的提升价值更高。这体现了目标之间的<strong>正向协同</strong>（Positive Synergy）：一个目标越优秀，另一个目标的提升价值越高。</p>
 

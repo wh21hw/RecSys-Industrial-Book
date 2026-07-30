@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第8章 混排模块 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第 8 章</div>
+<h1 class="chapter-title">混排模块</h1>
+
+<p>第 7 章详细介绍了级联式推荐系统架构中的重排模块。重排模块从序列整体优化的视角，对精排结果进行二次调整，以提升推荐列表的相关性、多样性以及序列级用户体验。然而，重排模块的优化范围仍然局限于单一业务内部。在真实的工业场景中，大型推荐平台通常需要同时支撑短视频、直播、广告、电商、图文等多种业务。如何将这些不同业务的推荐结果融合到统一的推荐流中，是一个比单一业务重排更加复杂的问题。本章将介绍级联式推荐系统架构中的最后一个核心模块——混排模块（Blending）。</p>
+
+<h2 class="section-title">8.1 为什么需要混排</h2>
+
+<p>在大型互联网平台中，用户在首页信息流中看到的内容通常并非来自单一业务。以短视频平台为例，用户在刷新首页时看到的推荐流可能包含：普通短视频内容、广告内容、直播内容、电商内容、图文内容、短剧内容等。这些内容来自完全不同的业务推荐系统，拥有不同的优化目标、不同的打分体系以及不同的价值衡量标准。混排模块的核心职责是：将这些来自不同业务的推荐结果融合到统一的推荐流中，在保证用户体验的前提下，实现平台整体价值的最大化。</p>
+
+<p>混排模块与重排模块虽然都涉及序列优化，但在问题设定上存在本质区别：</p>
+<ul>
+  <li><strong>重排</strong>：单一业务内部，候选物品同质，优化目标是序列级相关性/diversity</li>
+  <li><strong>混排</strong>：多业务之间，候选物品异质，优化目标是跨业务流量分配与全局价值最大化</li>
+</ul>
+
+<h2 class="section-title">8.2 混排模块整体架构</h2>
+
+<p>一个完整的工业级混排模块通常包含以下三个核心阶段：</p>
+<ol>
+  <li><strong>混排预处理</strong>：业务分校准与归一化，使不同业务的分数具备可比性</li>
+  <li><strong>混排序列生成与排序</strong>：生成候选序列、评估序列价值、选择最优序列</li>
+  <li><strong>混排后处理</strong>：流量调控（Load Control）、强插策略、保量与降权</li>
+</ol>
+
+<h2 class="section-title">8.3 混排预处理：业务分校准</h2>
+
+<p>不同业务推荐系统输出的分数通常不具备直接可比性。例如，广告系统输出的 eCPM（元）与短视频系统输出的 pCTR（概率）在数值尺度和业务含义上完全不同。因此，混排预处理阶段的核心任务是<strong>业务分校准</strong>（Score Calibration），将不同业务的分数映射到统一的价值空间。</p>
+
+<p>常见的校准方法包括：</p>
+<ul>
+  <li><strong>保序回归（Isotonic Regression, PAVA）</strong>：通过单调约束拟合校准曲线</li>
+  <li><strong>平滑保序回归（Smoothed Isotonic Regression, SIR）</strong>：在保序基础上引入平滑性约束</li>
+  <li><strong>贝叶斯平滑校准（Bayesian SIR）</strong>：引入先验分布，解决低曝光物品的校准不稳定问题</li>
+</ul>
+
+<h2 class="section-title">8.4 混排序列生成</h2>
+
+<p>混排序列生成的核心任务是：从多个业务的候选集合中，生成满足业务约束的候选序列。与重排模块类似，混排序列生成也可以采用贪心搜索或 Beam Search 等策略。但由于混排需要处理多业务约束（如广告间隔、业务配额等），其搜索空间更加复杂。</p>
+
+<p>在系统架构层面，混排序列生成存在两种典型模式：</p>
+<ul>
+  <li><strong>业务预竞价</strong>：各业务侧提前完成候选筛选和流量决策，混排系统仅负责序列排序。优点是系统复杂度低，缺点是丧失部分全局优化能力。</li>
+  <li><strong>全竞价</strong>：各业务返回候选列表，由混排系统统一决定是否插入、插入多少、插入哪些。理论上更容易获得全局最优，但面临组合爆炸问题。</li>
+</ul>
+
+<p>工业实践中通常采用折中方案：业务侧完成粗粒度筛选和预竞价，混排系统在有限候选空间内进行统一决策。</p>
+
+<h2 class="section-title">8.5 序列价值评估体系</h2>
+
+<p>序列价值评估是混排模块的核心环节。一个科学的序列价值函数需要考虑以下关键因素：</p>
+
+<h3 class="subsection-title">8.5.1 位置偏差建模</h3>
+
+<p>用户对不同位置内容的关注程度存在显著差异，靠前坑位获得更多曝光和点击。工业界通常引入位置衰减因子：</p>
+<div class="formula-box">
+Score<sub>seq</sub> = Σ<sub>i=1</sub><sup>L</sup> γ<sub>i</sub> · Score<sub>i</sub>
+</div>
+<p>其中 γ<sub>i</sub> = e<sup>-λ(i-1)</sup> 为指数衰减权重。</p>
+
+<h3 class="subsection-title">8.5.2 长度归一化与 Mock Item</h3>
+
+<p>不同长度的候选序列直接比较会导致统计偏置。工业界通常采用 Mock Item 对较短序列进行长度补齐，使所有候选序列在同一长度下进行公平比较。</p>
+
+<h3 class="subsection-title">8.5.3 统一价值模型</h3>
+
+<p>不同业务的价值定义不同（短视频看时长、广告看收入、直播看打赏）。工业界通过长期 A/B 实验和 ROI 分析建立不同业务价值之间的<strong>兑换关系</strong>，将所有业务价值映射到统一的价值空间：</p>
+<div class="formula-box">
+Value<sub>ad</sub> = 20 × Revenue<br>
+Value<sub>live</sub> = 10 × Gift<br>
+Value<sub>ecommerce</sub> = 2 × GMV
+</div>
+<p>最终序列价值函数为：</p>
+<div class="formula-box">
+Score<sub>seq</sub> = Σ<sub>i=1</sub><sup>L</sup> γ<sub>i</sub> · Value(item<sub>i</sub>)
+</div>
+
+<h2 class="section-title">8.6 混排后处理与流量调控</h2>
+
+<p>混排后处理是保障系统稳定性和业务可控性的最后一道防线。</p>
+
+<h3 class="subsection-title">8.6.1 Load 调控</h3>
+
+<p>Load 调控的核心价值在于推荐链路末端实现多业务流量的实时闭环调控，规避上游模型异常波动引发的流量分配失衡问题。工业界普遍为各业务设定流量占比目标与安全波动区间，通过滑动时间窗口实时统计各业务的实际曝光占比。</p>
+
+<h3 class="subsection-title">8.6.2 PID 控制</h3>
+
+<p>PID（Proportional-Integral-Derivative）控制器是工业界流量 Load 调控的主流方案。以目标流量占比与实际流量占比的偏差为核心输入：</p>
+<div class="formula-box">
+e<sub>t</sub> = r<sub>t</sub> - y<sub>t</sub>
+</div>
+<p>PID 控制器输出由比例项、积分项、微分项线性叠加构成：</p>
+<div class="formula-box">
+u<sub>t</sub> = K<sub>P</sub> · e<sub>t</sub> + K<sub>I</sub> · Σ<sub>i=1</sub><sup>t</sup> e<sub>i</sub> + K<sub>D</sub> · (e<sub>t</sub> - e<sub>t-1</sub>)
+</div>
+
+<p>三项各司其职：</p>
+<ul>
+  <li><strong>比例项（P）</strong>：即时响应误差，误差越大调节力度越强</li>
+  <li><strong>积分项（I）</strong>：消除长期稳态误差，确保实际流量占比精准收敛至目标值</li>
+  <li><strong>微分项（D）</strong>：预测误差变化趋势，抑制调节过程中的震荡与超调</li>
+</ul>
+
+<p>PID 控制器的输出直接作用于内容排序分数的修正：</p>
+<div class="formula-box">
+score<sub>final</sub> = score<sub>raw</sub> + u<sub>t</sub>
+</div>
+
+<p>PID 控制器无需标注数据与模型训练，不依赖上游模型参数，在模型异常、流量突增等极端场景下仍能稳定工作，具备极强的工程实用性。</p>
+
+<h3 class="subsection-title">8.6.3 强插策略</h3>
+
+<p>平台运营人员通过后台配置规则，在特定用户群体、特定刷次、特定坑位插入指定内容，保证运营活动获得确定性曝光机会。强插优先级高于混排排序结果。</p>
+
+<h3 class="subsection-title">8.6.4 保量与降权</h3>
+
+<p>保量机制为新兴业务提供最低曝光保障（如短剧、AI 漫剧等），降权策略对低质内容、重复内容、高营销感内容进行排序分数打压。二者共同构成平台生态治理的重要手段。</p>
+
+<h2 class="section-title">8.7 本章小结</h2>
+
+<p>本章围绕级联式推荐系统中的混排模块展开系统性介绍。作为多业务推荐结果融合的核心组件，混排模块主要解决异质化内容在统一推荐流中的组织、排序与流量分配问题。</p>
+
+<p>首先，从多业务混排这一实际业务场景出发，分析了混排模块存在的必要性。在此基础上，对混排模块的整体架构进行了概述，并将其划分为混排预处理、混排序列生成与排序以及混排后处理三个核心阶段。</p>
+
+<p>在混排预处理阶段，重点介绍了多种业务分校准方法，包括保序回归、平滑保序回归以及贝叶斯平滑校准方法。在混排序列生成阶段，分析了混排与重排在问题设定上的共性与差异，并探讨了基于业务预竞价与全竞价的两类系统架构。在序列价值评估阶段，重点讨论了位置偏差建模、长度归一化以及统一价值模型等关键问题。在混排后处理阶段，介绍了基于 PID 控制器的流量 Load 调控方法，以及强插策略、保量与降权策略在业务约束落地中的作用。</p>
+
+<p>总体而言，混排模块是级联式推荐系统中实现多业务协同与全局流量优化的关键环节，其核心价值在于将多个独立推荐系统的输出统一映射到同一序列空间中，在保证用户体验一致性的同时，实现跨业务目标的综合平衡。</p>
+
+<h2 class="section-title">8.8 参考文献</h2>
+
+<p>[1] Jan De Leeuw, Kurt Hornik, and Patrick Mair. "Isotone optimization in R: pool-adjacent-violators algorithm (PAVA) and active set methods". In: Journal of statistical software 32 (2010), pp. 1–24.</p>
+
+<p>[2] Chao Deng et al. "Calibrating user response predictions in online advertising". In: Joint European Conference on Machine Learning and Knowledge Discovery in Databases. Springer. 2020, pp. 208–223.</p>
+
+<p>[3] A Fielding. Statistical inference under order restrictions. the theory and application of isotonic regression. 1974.</p>
+
+<div class="chapter-end">* * *</div>
+
+<div class="nav-bar">
+  <a href="ch07.html">← 上一章：第7章 重排模块</a>
+  <a href="ch09.html">下一章：第9章 生成式推荐模块 →</a>
+</div>
+
+</body>
+</html>

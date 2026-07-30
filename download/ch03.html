@@ -5,10 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第3章 推荐系统评价体系 - 《推荐系统：工业架构与核心算法》</title>
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
-<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});});</script>
+
+<link rel="stylesheet" href="style.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true,
+    tags: 'all',
+    macros: {
+      bm: ["\\boldsymbol{#1}", 1],
+      R: "\\mathbb{R}",
+      N: "\\mathbb{N}",
+      E: "\\mathbb{E}",
+      argmax: ["\\operatorname*{argmax}", 0],
+      argmin: ["\\operatorname*{argmin}", 0],
+    }
+  },
+  svg: {
+    fontCache: 'global'
+  },
+  chtml: {
+    matchFontHeight: false,
+    scale: 1.05,
+  },
+  options: {
+    enableMenu: false,
+    renderActions: {
+      addMenu: []
+    }
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
 </head>
 <body>
 
@@ -40,7 +70,7 @@
 <p>Accuracy 表示模型所有预测结果中预测正确的比例，其计算公式为：</p>
 
 <div class="formula-box">
-  Accuracy = (TP + TN) / (TP + TN + FP + FN) &nbsp;&nbsp;(3.1)
+  $$ \text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} $$ &nbsp;&nbsp;(3.1)
 </div>
 
 <p>其中，TP、TN、FP 和 FN 分别表示真正例、真负例、假正例和假负例。</p>
@@ -52,7 +82,7 @@
 <p>Precision 表示模型预测为正样本的结果中，真实为正样本的比例：</p>
 
 <div class="formula-box">
-  Precision = TP / (TP + FP) &nbsp;&nbsp;(3.2)
+  $$ \text{Precision} = \frac{TP}{TP + FP} $$ &nbsp;&nbsp;(3.2)
 </div>
 
 <p>Precision 反映了模型预测结果的准确程度。Precision 越高，说明模型产生的误报（False Positive）越少。在推荐场景中，可以理解为模型推荐给用户的内容中，有多少真正会被用户点击或转化。</p>
@@ -62,7 +92,7 @@
 <p>Recall 表示所有真实正样本中被模型成功识别出来的比例：</p>
 
 <div class="formula-box">
-  Recall = TP / (TP + FN) &nbsp;&nbsp;(3.3)
+  $$ \text{Recall} = \frac{TP}{TP + FN} $$ &nbsp;&nbsp;(3.3)
 </div>
 
 <p>Recall 反映了模型发现正样本的能力。Recall 越高，说明模型遗漏的正样本越少。在召回阶段或候选集生成阶段，Recall 通常是重点关注指标，因为过低的 Recall 会导致大量潜在感兴趣内容在后续排序阶段之前就被过滤掉。</p>
@@ -122,7 +152,7 @@
 <p>其中，rel<sub>i</sub> 表示位置 i 处内容的相关性得分。可以看到，DCG 通过对数衰减项对排名位置进行加权，使得前部位置具有更高权重。进一步利用理想排序下的 DCG 进行归一化：</p>
 
 <div class="formula-box">
-  NDCG@K = DCG@K / IDCG@K &nbsp;&nbsp;(3.9)
+  $$ NDCG@K = \frac{DCG@K}{IDCG@K} $$ &nbsp;&nbsp;(3.9)
 </div>
 
 <p>NDCG 取值范围为 [0, 1]，越接近 1 表示排序结果越接近理想排序。由于 NDCG 指标建模了推荐中存在的位置偏置（Position Bias），因此在搜索排序、首页推荐以及重排阶段，NDCG 通常比 AUC 更能反映真实用户体验，因此被广泛应用于 Top-K 排序质量评估。</p>
