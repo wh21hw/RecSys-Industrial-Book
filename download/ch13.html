@@ -66,23 +66,23 @@ window.MathJax = {
 
 <h3 class="subsection-title">13.2.1 位置衰减加权</h3>
 <p>最简化的序列评估方式是将序列中每个物品的单点分数 f(xᵢ) 按位置衰减加权求和：</p>
-<div class="formula-box">$$ value = \sumᵢ wᵢ \times f(xᵢ),   wᵢ = 1/i 或 wᵢ = e^{-(i-1)} $$</div>
+<div class="formula-box"><img src="formulas/ch13_fno108.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <h3 class="subsection-title">13.2.2 曝光概率建模</h3>
 <p>更贴合产品逻辑的评估方式基于用户"是否继续下滑"的行为建模曝光概率。设用户打开 App 的初始概率为 p₀，观看第 j 个视频后继续下滑的概率为 p_slide(xⱼ)，则第 i 个物品的曝光概率为：</p>
-<div class="formula-box">$$ p(itemᵢ) = p₀ \times \prodⱼ₌₁^{i-1} p_slide(xⱼ) $$</div>
+<div class="formula-box"><img src="formulas/ch13_fno109.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 <p>相应地，第 i 个物品的价值为 valueᵢ = p(itemᵢ) × f(xᵢ)。这种建模方式能够反映用户在浏览过程中的注意力衰减和退出行为。</p>
 
 <h2 class="section-title">13.3 多样性打散算法</h2>
 
 <h3 class="subsection-title">13.3.1 MMR (Maximal Marginal Relevance)</h3>
 <p>MMR [2] 是信息检索领域经典的多样性排序算法。其核心思想是在选择每个物品时，同时考虑物品与用户需求的相关性以及与已选物品的差异度：</p>
-<div class="formula-box">$$ MMR = argmaxᵢ [\lambda \cdot Sim₁(Dᵢ, Q) - (1-\lambda) \cdot maxⱼ\inS Sim₂(Dᵢ, Dⱼ)] $$</div>
+<div class="formula-box"><img src="formulas/ch13_fno110.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 <p>其中 Sim₁ 衡量物品与用户意图的相关性，Sim₂ 衡量物品间的相似度，λ 控制相关性与多样性的权衡。MMR 的贪心选择策略简单有效，是工业界最常用的多样性打散方法之一。</p>
 
 <h3 class="subsection-title">13.3.2 DPP (Determinantal Point Process)</h3>
 <p>DPP [3] 源于量子力学中的费米子统计行为，通过行列式刻画集合的多样性。给定候选集合 V，DPP 定义了一个核矩阵 L：</p>
-<div class="formula-box">$$ L = Diag(r) \cdot S \cdot Diag(r) $$</div>
+<div class="formula-box"><img src="formulas/ch13_fno111.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 <p>其中 r 为相关性分数向量，S 为物品间相似度矩阵。子集 Y 的多样性质量定义为 det(L_Y)。DPP 的 MAP 推理是子模函数最大化问题，可通过贪心算法近似求解，计算复杂度为 O(K²N)。通过 Cholesky 分解可以高效计算增量行列式，实现快速贪心选择。</p>
 
 <h3 class="subsection-title">13.3.3 SSD (Sliding Spectrum Decomposition)</h3>
@@ -95,7 +95,7 @@ window.MathJax = {
 
 <h3 class="subsection-title">13.4.2 PID 流量调控</h3>
 <p>混排后处理阶段通常使用 PID 控制器进行实时流量 Load 调控：</p>
-<div class="formula-box">$$ u(t) = Kₚ \cdot e(t) + Kᵢ \cdot \sum e(τ) + K_{d} \cdot de(t)/dt $$</div>
+<div class="formula-box"><img src="formulas/ch13_fno112.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 <p>其中 e(t) 为目标流量占比与实际流量占比的误差。PID 控制器通过比例项实现快速纠偏、积分项消除稳态误差、微分项抑制超调震荡，实现各业务流量的稳态收敛。</p>
 
 <h2 class="section-title">13.5 本章小结</h2>

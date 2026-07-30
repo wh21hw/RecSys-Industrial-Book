@@ -123,16 +123,7 @@ window.MathJax = {
 
 <p><strong>推荐工具函数示例：</strong></p>
 
-<div class="formula-box">$$ // 向量召回工具
-  recall_items(user_id, query_text, top_{k}) \to item_list
-  // 精排工具
-  rank_items(user_id, item_list) \to ranked_list
-  // 知识查询工具
-  query_knowledge(item_id) \to item_attributes
-  // 搭配推荐工具
-  get_matching_items(item_id, matching_type) \to matched_items
-  // 多模态理解工具
-  understand_image(image_url) \to text_description $$</div>
+<div class="formula-box"><img src="formulas/ch36_fno177.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>LLM 根据用户输入决定调用哪些工具。例如，用户说"帮我找适合面试的衬衫"，LLM 的调用链可能是：</p>
 

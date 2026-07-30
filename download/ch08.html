@@ -102,7 +102,7 @@ window.MathJax = {
 <h3 class="subsection-title">8.5.1 位置偏差建模</h3>
 
 <p>用户对不同位置内容的关注程度存在显著差异，靠前坑位获得更多曝光和点击。工业界通常引入位置衰减因子：</p>
-<div class="formula-box">$$ Score_{seq} = \sum_{i=1}^{L} \gamma_{i} \cdot Score_{i} $$</div>
+<div class="formula-box"><img src="formulas/ch08_fno65.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 <p>其中 γ<sub>i</sub> = e<sup>-λ(i-1)</sup> 为指数衰减权重。</p>
 
 <h3 class="subsection-title">8.5.2 长度归一化与 Mock Item</h3>
@@ -112,11 +112,9 @@ window.MathJax = {
 <h3 class="subsection-title">8.5.3 统一价值模型</h3>
 
 <p>不同业务的价值定义不同（短视频看时长、广告看收入、直播看打赏）。工业界通过长期 A/B 实验和 ROI 分析建立不同业务价值之间的<strong>兑换关系</strong>，将所有业务价值映射到统一的价值空间：</p>
-<div class="formula-box">$$ Value_{ad} = 20 \times Revenue
-Value_{live} = 10 \times Gift
-Value_{ecommerce} = 2 \times GMV $$</div>
+<div class="formula-box"><img src="formulas/ch08_fno66.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 <p>最终序列价值函数为：</p>
-<div class="formula-box">$$ Score_{seq} = \sum_{i=1}^{L} \gamma_{i} \cdot Value(item_{i}) $$</div>
+<div class="formula-box"><img src="formulas/ch08_fno67.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <h2 class="section-title">8.6 混排后处理与流量调控</h2>
 
@@ -129,9 +127,9 @@ Value_{ecommerce} = 2 \times GMV $$</div>
 <h3 class="subsection-title">8.6.2 PID 控制</h3>
 
 <p>PID（Proportional-Integral-Derivative）控制器是工业界流量 Load 调控的主流方案。以目标流量占比与实际流量占比的偏差为核心输入：</p>
-<div class="formula-box">$$ e_{t} = r_{t} - y_{t} $$</div>
+<div class="formula-box"><img src="formulas/ch08_fno68.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 <p>PID 控制器输出由比例项、积分项、微分项线性叠加构成：</p>
-<div class="formula-box">$$ u_{t} = K_{P} \cdot e_{t} + K_{I} \cdot \sum_{i=1}^{t} e_{i} + K_{D} \cdot (e_{t} - e_{t-1}) $$</div>
+<div class="formula-box"><img src="formulas/ch08_fno69.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>三项各司其职：</p>
 <ul>
@@ -141,7 +139,7 @@ Value_{ecommerce} = 2 \times GMV $$</div>
 </ul>
 
 <p>PID 控制器的输出直接作用于内容排序分数的修正：</p>
-<div class="formula-box">$$ score_{final} = score_{raw} + u_{t} $$</div>
+<div class="formula-box"><img src="formulas/ch08_fno70.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>PID 控制器无需标注数据与模型训练，不依赖上游模型参数，在模型异常、流量突增等极端场景下仍能稳定工作，具备极强的工程实用性。</p>
 

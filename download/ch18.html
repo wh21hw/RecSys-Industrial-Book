@@ -75,11 +75,11 @@ window.MathJax = {
 
 <p>DIN 通过注意力网络计算用户历史行为与当前候选物品的相关性：</p>
 
-<div class="formula-box">$$ v_{U} = \sumᵢ a(i) \cdot eᵢ $$</div>
+<div class="formula-box"><img src="formulas/ch18_fno116.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 eᵢ 为用户第 i 次行为物品的 Embedding，a(i) 为注意力权重。注意力权重的计算方式为：</p>
 
-<div class="formula-box">$$ a(i) = MLP([eᵢ, e_{a}, eᵢ ⊙ e_{a}]) $$</div>
+<div class="formula-box"><img src="formulas/ch18_fno117.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 e_a 为候选物品 Embedding，⊙ 为 Hadamard 积（逐元素乘积）。MLP 接收三个输入的拼接：用户行为 Embedding、候选物品 Embedding、以及它们的逐元素积。逐元素积 eᵢ ⊙ e_a 能够捕捉用户行为与候选物品之间的交互信息，是注意力权重的关键特征。</p>
 
@@ -120,7 +120,7 @@ window.MathJax = {
 
 <p>BST 将用户行为序列 [e₁, e₂, ..., eₙ] 加上位置编码 PE 后输入 Transformer 编码器：</p>
 
-<div class="formula-box">$$ \mathbf{H} = \text{TransformerEncoder}([\mathbf{e}_1, \mathbf{e}_2, \ldots, \mathbf{e}_n] + \text{PE}) $$</div>
+<div class="formula-box"><img src="formulas/ch18_fno118.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>Transformer 的核心是多头自注意力机制（Multi-Head Self-Attention），通过多个注意力头从不同子空间捕捉用户行为序列中的兴趣模式。每个注意力头可以关注不同的兴趣维度：一部分头可能关注用户长期兴趣偏好，另一部分可能关注用户最近的兴趣变化。</p>
 
@@ -142,7 +142,7 @@ window.MathJax = {
 
 <p>动态路由的迭代过程为：对于每个用户行为 eᵢ 和每个兴趣胶囊 cⱼ，计算路由权重 bᵢⱼ，然后更新胶囊表示：</p>
 
-<div class="formula-box">$$ cⱼ = \sumᵢ wᵢⱼ \cdot eᵢ,   wᵢⱼ = softmax(bᵢⱼ) $$</div>
+<div class="formula-box"><img src="formulas/ch18_fno119.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>路由权重 bᵢⱼ 通过"一致性度量"（Agreement Measure）迭代更新：如果行为 eᵢ 与胶囊 cⱼ 的相似度高，则增加路由权重 bᵢⱼ，使得 eᵢ 更多地贡献给胶囊 cⱼ。经过 T 次迭代后，每个胶囊收敛到一个稳定的兴趣表示。</p>
 
@@ -186,11 +186,11 @@ window.MathJax = {
 
 <p>ETA 的核心创新是使用 SimHash 将高维 Embedding 压缩为低维二进制串。对于行为 Embedding $\mathbf{e}_i \in \mathbb{R}^d$，SimHash 通过随机投影矩阵 $\mathbf{R} \in \mathbb{R}^{d \times L}$ 将其映射为 $L$ 位二进制串：</p>
 
-<div class="formula-box">$$ \mathbf{h}_i = \text{sign}(\mathbf{e}_i \cdot \mathbf{R}), \quad \mathbf{h}_i \in \{-1, +1\}^L $$</div>
+<div class="formula-box"><img src="formulas/ch18_fno120.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>两个 Embedding 的相似度通过 Hamming 距离近似计算：</p>
 
-<div class="formula-box">$$ \text{sim}(\mathbf{e}_i, \mathbf{e}_j) \approx 1 - \frac{d_H(\mathbf{h}_i, \mathbf{h}_j)}{L} $$</div>
+<div class="formula-box"><img src="formulas/ch18_fno121.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 $d_H$ 为 Hamming 距离。$L$ 越大精度越高但计算开销越大，工业实践中通常取 $L = 64$ 或 $128$。</p>
 
@@ -206,7 +206,7 @@ window.MathJax = {
 
 <p>SDIM 的核心创新是使用 $M$ 个独立的哈希函数，每个哈希函数将 Embedding 映射为 $L$ 位二进制串。两个行为被判定为"相似"当且仅当它们在所有 $M$ 轮哈希中都有相同的二进制串。多轮哈希的假阳性率随 $M$ 增加而指数下降：</p>
 
-<div class="formula-box">$$ P(\text{false positive}) = \left(\frac{1}{2^L}\right)^M $$</div>
+<div class="formula-box"><img src="formulas/ch18_fno122.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>通过调整 $M$ 和 $L$，SDIM 可以在检索精度和计算效率之间灵活权衡。工业实践中通常取 $M = 4, L = 16$，能够在毫秒内完成万级序列的检索。</p>
 

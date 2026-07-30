@@ -97,7 +97,7 @@ window.MathJax = {
 
 <p>使用精排输出的软标签（Soft Label）作为粗排的训练目标。软标签是精排模型输出的连续概率值，而非硬标签（0 或 1）：</p>
 
-<div class="formula-box">$$ L = \alpha \cdot CE(y, \hat{y}_student) + (1-\alpha) \cdot KL(q_teacher || q_student) $$</div>
+<div class="formula-box"><img src="formulas/ch20_fno129.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 CE 为交叉熵损失，KL 为 KL 散度，q_teacher 和 q_student 分别为 Teacher 和 Student 的输出分布，α 为损失权重。软标签的核心优势在于：它包含了物品之间的相对排序关系。例如，精排对物品 A 的预测分数为 0.8，对物品 B 为 0.3，软标签不仅告诉 Student "A 比 B 好"，还告诉它"A 比 B 好多少"。这种丰富的监督信号比硬标签（"A 是正样本，B 是负样本"）提供了更多信息。</p>
 

@@ -176,7 +176,7 @@ window.MathJax = {
 
 <p>REINFORCE 是最简单的策略梯度方法：</p>
 
-<div class="formula-box">$$ ∇J(\theta) = E[\sumₜ ∇log π(aₜ|sₜ; \theta) \cdot (Gₜ - bₜ)] \tag{31.1} $$</div>
+<div class="formula-box"><img src="formulas/ch31_f31_1.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(31.1)</div></div>
 
 <p>其中 Gₜ 是从 t 时刻开始的累积折扣奖励，bₜ 是基线。</p>
 
@@ -190,8 +190,7 @@ window.MathJax = {
 
 <p>Actor-Critic 同时学习策略（Actor）和值函数（Critic）：</p>
 
-<div class="formula-box">$$ Actor: ∇J = E[∇log π(aₜ|sₜ) \cdot (rₜ + \gammaV(sₜ₊₁) - V(sₜ))]
-  Critic: L = (rₜ + \gammaV(sₜ₊₁) - V(sₜ))^{2} \tag{31.2} $$</div>
+<div class="formula-box"><img src="formulas/ch31_f31_2.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(31.2)</div></div>
 
 <p>Critic 提供时序差分（TD）误差作为 Actor 的梯度信号，比 REINFORCE 的蒙特卡洛回报方差更小。</p>
 

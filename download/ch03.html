@@ -70,7 +70,7 @@ window.MathJax = {
 <p>Accuracy 表示模型所有预测结果中预测正确的比例，其计算公式为：</p>
 
 <div class="formula-box">
-  $$ \text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} $$ &nbsp;&nbsp;(3.1)
+  <img src="formulas/ch03_fno17.svg" alt="公式" class="formula-svg" loading="lazy">
 </div>
 
 <p>其中，TP、TN、FP 和 FN 分别表示真正例、真负例、假正例和假负例。</p>
@@ -82,7 +82,7 @@ window.MathJax = {
 <p>Precision 表示模型预测为正样本的结果中，真实为正样本的比例：</p>
 
 <div class="formula-box">
-  $$ \text{Precision} = \frac{TP}{TP + FP} $$ &nbsp;&nbsp;(3.2)
+  <img src="formulas/ch03_fno18.svg" alt="公式" class="formula-svg" loading="lazy">
 </div>
 
 <p>Precision 反映了模型预测结果的准确程度。Precision 越高，说明模型产生的误报（False Positive）越少。在推荐场景中，可以理解为模型推荐给用户的内容中，有多少真正会被用户点击或转化。</p>
@@ -92,7 +92,7 @@ window.MathJax = {
 <p>Recall 表示所有真实正样本中被模型成功识别出来的比例：</p>
 
 <div class="formula-box">
-  $$ \text{Recall} = \frac{TP}{TP + FN} $$ &nbsp;&nbsp;(3.3)
+  <img src="formulas/ch03_fno19.svg" alt="公式" class="formula-svg" loading="lazy">
 </div>
 
 <p>Recall 反映了模型发现正样本的能力。Recall 越高，说明模型遗漏的正样本越少。在召回阶段或候选集生成阶段，Recall 通常是重点关注指标，因为过低的 Recall 会导致大量潜在感兴趣内容在后续排序阶段之前就被过滤掉。</p>
@@ -101,7 +101,7 @@ window.MathJax = {
 
 <p>F1 Score 是 Precision 与 Recall 的调和平均值，其计算公式为：</p>
 
-<div class="formula-box">$$ F1 = 2 \times Precision \times Recall / (Precision + Recall) \tag{3.4} $$</div>
+<div class="formula-box"><img src="formulas/ch03_f3_4.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(3.4)</div></div>
 
 <p>F1 能够综合衡量模型的查准率和查全率。当 Precision 和 Recall 存在明显冲突时，F1 能够给出更加均衡的评价结果。在推荐系统中，F1 虽然不像 AUC 那样被广泛使用，但在召回模型评估、冷启动任务以及样本极度不均衡的场景中仍具有一定参考价值。</p>
 
@@ -113,7 +113,7 @@ window.MathJax = {
 
 <p>AUC 用于衡量模型将正样本排序在负样本之前的能力。从概率角度来看，可以表示为：</p>
 
-<div class="formula-box">$$ AUC = P(s_{pos} > s_{neg}) \tag{3.5} $$</div>
+<div class="formula-box"><img src="formulas/ch03_f3_5.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(3.5)</div></div>
 
 <p>其中，s<sub>pos</sub> 和 s<sub>neg</sub> 分别表示正样本和负样本的预测分数。AUC 的取值范围为 [0, 1]。</p>
 
@@ -129,7 +129,7 @@ window.MathJax = {
 
 <p>传统 AUC 会将所有样本统一计算，容易受到高活跃用户的影响。为了更加真实地反映用户维度的排序效果，工业界提出了 UAUC 指标。其首先对每个用户单独计算 AUC，然后再进行平均：</p>
 
-<div class="formula-box">$$ UAUC = (1/N) \sum_{u=1}^{N} AUC_{u} \tag{3.6} $$</div>
+<div class="formula-box"><img src="formulas/ch03_f3_6.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(3.6)</div></div>
 
 <p>其中，AUC<sub>u</sub> 表示用户 u 对应的 AUC 值。UAUC 能够有效避免少数高活跃用户的大量行为数据主导整体评估结果，从而更加公平地衡量不同用户群体的体验。</p>
 
@@ -137,7 +137,7 @@ window.MathJax = {
 
 <p>GAUC 是在 UAUC 基础上的进一步改进，其根据用户样本量进行加权平均：</p>
 
-<div class="formula-box">$$ GAUC = \sum_{u=1}^{N} n_{u} \times AUC_{u} / \sum_{u=1}^{N} n_{u} \tag{3.7} $$</div>
+<div class="formula-box"><img src="formulas/ch03_f3_7.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(3.7)</div></div>
 
 <p>其中，n<sub>u</sub> 表示用户 u 对应的样本数量。相比 UAUC，GAUC 既保留了用户维度评估思想，又能够反映真实流量分布，因此更符合工业生产环境。目前在 CTR 预估领域，GAUC 已经成为应用最广泛的离线评价指标之一。在工业界实践中，GAUC 有时候也被称之为 WUAUC（Weighted UAUC），虽然具体定义可能存在细微差异，但本质上都是基于用户样本维度的加权 AUC 指标。</p>
 
@@ -147,12 +147,12 @@ window.MathJax = {
 
 <p>首先定义 DCG 指标：</p>
 
-<div class="formula-box">$$ DCG@K = \sum_{i=1}^{K} rel_{i} / log_{2}(i + 1) \tag{3.8} $$</div>
+<div class="formula-box"><img src="formulas/ch03_f3_8.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(3.8)</div></div>
 
 <p>其中，rel<sub>i</sub> 表示位置 i 处内容的相关性得分。可以看到，DCG 通过对数衰减项对排名位置进行加权，使得前部位置具有更高权重。进一步利用理想排序下的 DCG 进行归一化：</p>
 
 <div class="formula-box">
-  $$ NDCG@K = \frac{DCG@K}{IDCG@K} $$ &nbsp;&nbsp;(3.9)
+  <img src="formulas/ch03_fno25.svg" alt="公式" class="formula-svg" loading="lazy">
 </div>
 
 <p>NDCG 取值范围为 [0, 1]，越接近 1 表示排序结果越接近理想排序。由于 NDCG 指标建模了推荐中存在的位置偏置（Position Bias），因此在搜索排序、首页推荐以及重排阶段，NDCG 通常比 AUC 更能反映真实用户体验，因此被广泛应用于 Top-K 排序质量评估。</p>
@@ -171,7 +171,7 @@ window.MathJax = {
 
 <p>PCOC 用于衡量模型预测概率与真实概率之间的一致性，其计算公式为：</p>
 
-<div class="formula-box">$$ PCOC = \sum_{i} \hat{y}_{i} / \sum_{i} y_{i} \tag{3.10} $$</div>
+<div class="formula-box"><img src="formulas/ch03_f3_10.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(3.10)</div></div>
 
 <p>其中，ŷ<sub>i</sub> 表示模型预测 CTR；y<sub>i</sub> 表示真实点击标签。</p>
 
@@ -181,7 +181,7 @@ window.MathJax = {
 
 <p>在广告推荐系统中，广告排序模型预测出的点击率（pCTR）通常直接参与竞价排序：</p>
 
-<div class="formula-box">$$ eCPM = Bid \times pCTR \tag{3.13} $$</div>
+<div class="formula-box"><img src="formulas/ch03_f3_13.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(3.13)</div></div>
 
 <p>如果 pCTR 存在系统性偏差，将直接影响广告排序结果以及平台收益。因此，工业界通常会同时监控 AUC（或 GAUC）与 PCOC，以分别评估模型的排序能力和概率校准能力。此外，部分公司和论文也将类似指标称为 COPC（Calibration Of Predicted CTR）。虽然具体定义可能存在细微差异，但本质上都用于衡量模型预测概率与真实概率之间的匹配程度。</p>
 
@@ -226,7 +226,7 @@ window.MathJax = {
 
 <p>表 3.1 汇总了推荐系统中常见的 pxtr 指标及其业务含义。从表 3.1 可以看出，不同的 pxtr 指标实际上对应着用户价值链路中的不同阶段。从用户行为发生顺序来看，这些目标通常具有天然的漏斗结构（Funnel Structure）：</p>
 
-<div class="formula-box">$$ Impression \to Click \to Watch \to Interact \to Conversion \to Pay \tag{3.14} $$</div>
+<div class="formula-box"><img src="formulas/ch03_f3_14.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(3.14)</div></div>
 
 <p>其中：</p>
 <ul>
@@ -346,7 +346,7 @@ window.MathJax = {
 
 <p>在实际工作中，一个新策略通常不会直接全量上线，而是经历逐步扩量的过程。典型流程如下：</p>
 
-<div class="formula-box">$$ 5% \to 10% \to 20% \to 50% \to 100% \tag{3.15} $$</div>
+<div class="formula-box"><img src="formulas/ch03_f3_15.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(3.15)</div></div>
 
 <p>首先通过 5% 左右的小流量验证策略安全性。若核心指标获得统计显著提升，且诊断指标无明显恶化，则逐步扩大实验流量。当实验在更大流量规模下依然保持稳定收益，并持续运行多个用户行为周期后，才会执行全量发布（Full Rollout）。与此同时，许多公司还会保留约 1% 的长期 Holdout 流量作为永久对照组，用于观察系统长期演化趋势以及进行跨实验横向比较。</p>
 

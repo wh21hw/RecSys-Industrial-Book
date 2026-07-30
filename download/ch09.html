@@ -103,13 +103,13 @@ window.MathJax = {
 
 <p>最终得到语义ID：s = (s<sub>1</sub>, s<sub>2</sub>, ..., s<sub>M</sub>)，其中 s<sub>j</sub> 是第j层码本中最近码字的索引。</p>
 
-<div class="formula-box">$$ r \approx e_{1} + e_{2} + ... + e_{M} $$</div>
+<div class="formula-box"><img src="formulas/ch09_fno71.svg" alt="公式" class="formula-svg" loading="lazy"></div>
   <div class="formula-num">(9.1)</div>
 </div>
 
 <p>RQ-VAE的训练目标包括重建损失和码本承诺损失：</p>
 
-<div class="formula-box">$$ L = ||r - D(s)||^{2} + \beta||r - sg[D(s)]||^{2} $$</div>
+<div class="formula-box"><img src="formulas/ch09_fno72.svg" alt="公式" class="formula-svg" loading="lazy"></div>
   <div class="formula-num">(9.2)</div>
 </div>
 
@@ -155,7 +155,7 @@ window.MathJax = {
 
 <p>生成式推荐模型的训练目标为 Next-Token Prediction：</p>
 
-<div class="formula-box">$$ L = -(1/T) \sum_{t=1}^{T} log P(s_{t} | s_{&lt;t}, u) $$</div>
+<div class="formula-box"><img src="formulas/ch09_fno73.svg" alt="公式" class="formula-svg" loading="lazy"></div>
   <div class="formula-num">(9.3)</div>
 </div>
 
@@ -173,7 +173,7 @@ window.MathJax = {
 
 <p>Beam Search 的路径评分公式为：</p>
 
-<div class="formula-box">$$ Score(s) = \sum_{i=1}^{T} log P(s_{i} | s_{&lt;i}, u) $$</div>
+<div class="formula-box"><img src="formulas/ch09_fno74.svg" alt="公式" class="formula-svg" loading="lazy"></div>
   <div class="formula-num">(9.4)</div>
 </div>
 
@@ -187,7 +187,7 @@ window.MathJax = {
 
 <p>核心机制：在前向传播阶段采用硬选择（Hard Assignment），保持语义ID的离散性；在反向传播阶段利用 Gumbel-Softmax 得到的连续概率进行软更新（Soft Update），实现梯度传播。</p>
 
-<div class="formula-box">$$ ~y_{v,j,i} = exp((ℓ_{v,j,i} + g_{v,j,i})/τ) / \sum_{k=1}^{K} exp((ℓ_{v,j,k} + g_{v,j,k})/τ) $$</div>
+<div class="formula-box"><img src="formulas/ch09_fno75.svg" alt="公式" class="formula-svg" loading="lazy"></div>
   <div class="formula-num">(9.5)</div>
 </div>
 

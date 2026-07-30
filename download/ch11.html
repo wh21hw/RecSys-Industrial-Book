@@ -57,7 +57,7 @@ window.MathJax = {
 
 <p>双塔模型（Two-Tower Model）是工业界粗排阶段最经典的模型架构。其核心思想是将用户特征和物品特征分别通过独立的神经网络（用户塔和物品塔）进行编码，得到固定维度的向量表示，再通过向量点积或余弦相似度计算匹配分数：</p>
 
-<div class="formula-box">$$ score = ⟨f_user(x_user), f_item(x_item)⟩ $$</div>
+<div class="formula-box"><img src="formulas/ch11_fno96.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 f_user 和 f_item 分别为用户塔和物品塔的编码网络。用户塔通常接收用户画像特征、历史行为序列特征以及上下文特征；物品塔接收物品属性特征、统计特征以及内容理解特征。</p>
 
@@ -72,7 +72,7 @@ window.MathJax = {
 <p><strong>（1）交叉特征拼接</strong>：在双塔输出向量之后，将用户向量 u、物品向量 v 以及它们的 Hadamard 积（逐元素乘积 u⊙v）拼接在一起，再通过一层 MLP 输出最终分数：</p>
 
 <div class="formula-box">
-  $$ \text{score} = \text{MLP}([\mathbf{u}; \mathbf{v}; \mathbf{u} \odot \mathbf{v}]) $$
+  <img src="formulas/ch11_fno97.svg" alt="公式" class="formula-svg" loading="lazy">
 </div>
 
 <p>这种方法引入了用户与物品的交叉信息，但代价是失去了离线预计算物品向量的能力，在线推理时需要对每个候选物品单独计算交叉特征，计算开销显著增加。</p>
@@ -89,7 +89,7 @@ window.MathJax = {
 
 <p>将精排模型作为 Teacher，粗排模型作为 Student，使用精排输出的软标签（Soft Label）作为粗排的训练目标：</p>
 
-<div class="formula-box">$$ L = \alpha \cdot CE(y, \hat{y}_student) + (1-\alpha) \cdot KL(q_teacher || q_student) $$</div>
+<div class="formula-box"><img src="formulas/ch11_fno98.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 CE 为交叉熵损失，KL 为 KL 散度，q_teacher 和 q_student 分别为 Teacher 和 Student 的输出分布，α 为损失权重。软标签蒸馏的核心思想是让 Student 学习 Teacher 的输出分布，而非仅仅学习硬标签。由于 Teacher 的输出分布包含了物品之间的相对排序关系，Student 能够从中获取比硬标签更丰富的监督信号。</p>
 
@@ -117,7 +117,7 @@ window.MathJax = {
 
 <p>Set-wise 方法直接评估整个候选集合的质量，要求模型对输入顺序不敏感（Permutation Invariant）：</p>
 
-<div class="formula-box">$$ f(x₁, x₂, ..., x_{n}) = f(x_π(1), x_π(2), ..., x_π(n)) $$</div>
+<div class="formula-box"><img src="formulas/ch11_fno100.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 π 表示任意排列。典型方法包括：</p>
 <ul>

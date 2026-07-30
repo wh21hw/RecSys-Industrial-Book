@@ -130,8 +130,7 @@ window.MathJax = {
 
 <p><strong>RQ-VAE（Residual Quantized VAE）：</strong>TIGER 提出的方法。首先使用 VAE 或预训练模型获取物品的连续向量表示，然后通过残差量化将连续向量分解为多级离散 token：</p>
 
-<div class="formula-box">$$ z = Encoder(item)   (34.1)
-  z \approx \sum_{l=1}^{L} c_{l},   c_{l} = Quantize_{l}(z - \sum_{j&lt;l} c_{j}) \tag{34.2} $$</div>
+<div class="formula-box"><img src="formulas/ch34_f34_2.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(34.2)</div></div>
 
 <p>其中 z 是物品的连续表示，c<sub>l</sub> 是第 l 级的量化码本向量。每级码本大小通常为 256-1024，级数 L 通常为 4-8。这样每个物品被表示为 L 个 token 的序列，每个 token 来自大小为 256-1024 的词表，总表示能力为 256<sup>4</sup> ≈ 43 亿到 1024<sup>8</sup> ≈ 10<sup>24</sup>，远超任何实际物品库规模。</p>
 
@@ -159,7 +158,7 @@ window.MathJax = {
 
 <p><strong>模型架构：</strong>TIGER 使用标准 Transformer encoder-decoder 架构。Encoder 将用户历史物品的语义ID序列编码为上下文向量，Decoder 自回归地生成目标物品的语义ID token 序列：</p>
 
-<div class="formula-box">$$ P(item | history) = \prod_{l=1}^{L} P(c_{l} | c_{&lt;l}, history) \tag{34.3} $$</div>
+<div class="formula-box"><img src="formulas/ch34_f34_3.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(34.3)</div></div>
 
 <p>其中 c<sub>l</sub> 是目标物品语义ID的第 l 个 token。</p>
 
@@ -235,9 +234,7 @@ window.MathJax = {
 
 <p><strong>方法：</strong>给定用户历史序列，ReaRec 不是直接做一次预测，而是通过多步自回归推理逐步精化用户表示：</p>
 
-<div class="formula-box">$$ h_{0} = Encoder(history)   (34.4)
-  h_{t+1} = LatentStep(h_{t})   (34.5)
-  prediction = Decoder(h_{T}) $$</div>
+<div class="formula-box"><img src="formulas/ch34_fno176.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 T 是推理步数（通常 3-10 步）。每步推理在潜在空间中进行，不生成实际物品，而是精化用户兴趣表示。</p>
 

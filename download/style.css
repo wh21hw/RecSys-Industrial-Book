@@ -230,6 +230,15 @@ li { margin-bottom: 8px; }
   padding: 4px 0;
 }
 
+/* SVG 公式图片样式 */
+.formula-box img.formula-svg {
+  max-width: 90%;
+  height: auto;
+  margin: 0 auto;
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05));
+}
+
 /* 增强公式中的上下标显示（fallback for non-MathJax） */
 .formula-box sub {
   font-size: 0.72em;

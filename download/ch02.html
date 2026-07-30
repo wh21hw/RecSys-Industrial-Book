@@ -75,7 +75,7 @@ window.MathJax = {
 
 <p>如图 2.2 所示，现代推荐系统通常采用四阶段级联架构，整体流程可划分为：</p>
 
-<div class="formula-box">$$ 召回（Retrieval） \to 粗排（Pre-Ranking） \to 精排（Ranking） \to 重排（Re-Ranking） $$</div>
+<div class="formula-box"><img src="formulas/ch02_fno13.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <h3 class="subsection-title">（1）召回阶段：从十亿内容中找到一万个候选</h3>
 
@@ -176,15 +176,14 @@ window.MathJax = {
 
 <p>DCAF 将资源分配问题建模为一个带约束的背包问题（Knapsack Problem）：</p>
 
-<div class="formula-box">$$ max_{x_{ij}} \sum_{i=1}^{N} \sum_{j=1}^{M} x_{ij} Q_{ij}
-  s.t. \sum_{i=1}^{N} \sum_{j=1}^{M} x_{ij} q_{j} \leq C,   \sum_{j=1}^{M} x_{ij} \leq 1,   x_{ij} \in {0, 1} \tag{2.1} $$</div>
+<div class="formula-box"><img src="formulas/ch02_f2_1.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(2.1)</div></div>
 </div>
 
 <p>其中：x<sub>ij</sub> = 1 表示请求 i 选择动作 j；Q<sub>ij</sub> 表示请求 i 在动作 j 下能够获得的预期收益；q<sub>j</sub> 表示动作 j 所对应的计算资源消耗。</p>
 
 <p>通过拉格朗日对偶分析，DCAF 证明：在收益随计算资源增加而递增、但边际收益递减的条件下，最优策略可简化为：</p>
 
-<div class="formula-box">$$ arg max_{j} (Q_{ij} - \lambda q_{j}) \tag{2.2} $$</div>
+<div class="formula-box"><img src="formulas/ch02_f2_2.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(2.2)</div></div>
 </div>
 
 <p>即对于每个请求，只需选择使 Q<sub>ij</sub> - λq<sub>j</sub> 最大的动作即可。其中 λ 为与全局资源预算相关的拉格朗日乘子，可通过二分搜索等方法高效求解。</p>
@@ -228,7 +227,7 @@ window.MathJax = {
 
 <p>完成用户召回与排序后，对于每个用户 u，将所有通过作者侧推荐系统匹配到该用户的物品聚合形成候选集合：</p>
 
-<div class="formula-box">$$ D_{u} = {item_{1}, item_{2}, \cdot\cdot\cdot, item_{n}} \tag{2.4} $$</div>
+<div class="formula-box"><img src="formulas/ch02_f2_4.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(2.4)</div></div>
 </div>
 
 <p>随后，系统以用户 ID 作为 Key，将对应的候选集合 D<sub>u</sub> 以 Key-Value 的形式写入 Redis 缓存。对于作者侧推荐结果数量仍未达到用户日消费上限 Q 的用户，即满足 |D<sub>u</sub>| < Q，系统会将其加入在线用户池中。DualRec 还会引入用户活跃度预测服务，对用户未来一段时间内是否仍将保持在线状态进行预测。</p>

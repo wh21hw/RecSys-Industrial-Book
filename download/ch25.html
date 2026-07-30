@@ -86,7 +86,7 @@ window.MathJax = {
 
 <p>将长期价值建模为强化学习中的累计回报：</p>
 
-<div class="formula-box">$$ R = Sum_{t=0}^{T} gamma^{t} * r_{t} $$</div>
+<div class="formula-box"><img src="formulas/ch25_fno145.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 r_t 为时刻 t 的即时奖励，gamma 为折扣因子，T 为时间跨度。RL 通过学习最优策略 pi(a|s) 最大化累计回报，能够直接优化长期目标而非短期指标。RL 的核心优势在于能够建模"当前推荐如何影响用户未来行为"的因果关系。</p>
 

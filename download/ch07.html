@@ -120,7 +120,7 @@ window.MathJax = {
 
 <p>MMR（Maximal Marginal Relevance）由 Carbonell 和 Goldstein 于 1998 年提出。其核心思想是在每次选择物品时，同时考虑物品与用户需求的相关性以及物品与已选物品的不相似性：</p>
 
-<div class="formula-box">$$ MMR(D_{i}, Q) = \lambda \cdot Sim_{1}(D_{i}, Q) - (1 - \lambda) \cdot max_{D_{j} \in S} Sim_{2}(D_{i}, D_{j}) $$</div>
+<div class="formula-box"><img src="formulas/ch07_fno59.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 Sim_1 表示物品与用户查询的相关性，Sim_2 表示物品间相似度，S 为已选集合，λ ∈ [0, 1] 为权衡参数。MMR 采用贪心策略，每次选择使 MMR 分数最大的物品加入序列。</p>
 
@@ -130,15 +130,15 @@ window.MathJax = {
 
 <p>给定核矩阵 L = B^T B，子集 Y 的 DPP 概率为：</p>
 
-<div class="formula-box">$$ P(Y) ∝ det(L_{Y}) = Vol^{2}({B_i}_{i\inY}) $$</div>
+<div class="formula-box"><img src="formulas/ch07_fno60.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>在推荐场景中，可以将 B_i = r_i · f_i，其中 r_i 是物品的分数，f_i 是物品的归一化 Embedding 向量。核矩阵可写为：</p>
 
-<div class="formula-box">$$ L = Diag(r) \cdot S \cdot Diag(r) $$</div>
+<div class="formula-box"><img src="formulas/ch07_fno61.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 S 是相似度矩阵，S_{ij} = ⟨f_i, f_j⟩。通过引入超参数 λ 平衡相关性与多样性：</p>
 
-<div class="formula-box">$$ log det L' = \lambda \cdot \sum log(r^{2}_{i}) + (1 - \lambda) \cdot log det(S) $$</div>
+<div class="formula-box"><img src="formulas/ch07_fno62.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>DPP 的 MAP 推断是 NP-难问题，Chen 等人（NeurIPS 2018）提出了一种基于 Cholesky 分解的高效贪心算法，将复杂度从 O(N⁴) 降低到 O(K²N)，其中 K 为选取的物品数量。该算法利用行列式的递推性质，在每次迭代中仅需计算 O(K) 维向量的增量更新，显著提升了计算效率。</p>
 
@@ -148,11 +148,11 @@ window.MathJax = {
 
 <p>SSD 将用户完整的长度为 T 的浏览序列划分为 L = T − W + 1 个连续滑动窗口（W 为窗口长度），将所有窗口的物品 Embedding 矩阵堆叠为三维张量 X ∈ R^{L×W×d}，采用高阶奇异值分解（HOSVD）进行分解：</p>
 
-<div class="formula-box">$$ X = \sum \sigma_{ijk} u^(1)_{i} \otimes u^(2)_{j} \otimes u^(3)_{k} $$</div>
+<div class="formula-box"><img src="formulas/ch07_fno63.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>SSD 将张量 X 的"序列体积"定义为所有非零奇异值的乘积，以此度量整个滑动窗口序列中物品间的全局多样性。在求解优化问题时，SSD 引入了一种计算高效的<strong>一步改进型 Gram-Schmidt 正交化</strong>（one-step MGS）策略：每次选择新物品时，仅对候选向量执行一次投影扣除操作，而非完整的正交化：</p>
 
-<div class="formula-box">$$ v_{j} \leftarrow v_{j} - (⟨v_{j}, v_{i_{t-1}}⟩ / \|v_{i_{t-1}}\|^{2}) \cdot v_{i_{t-1}} $$</div>
+<div class="formula-box"><img src="formulas/ch07_fno64.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>这种增量式近似虽未实现全局正交，但能有效削弱与最近内容的相似性，契合用户对局部时序多样性的感知。SSD 贪心推理的整体时间复杂度为 O(NTd)，远低于传统 DPP 贪心算法的 O(N²d)，能够满足工业级实时推荐系统对低延迟与高吞吐的严苛要求。</p>
 

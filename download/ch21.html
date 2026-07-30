@@ -88,7 +88,7 @@ window.MathJax = {
 
 <p>对时长取对数后再回归，压缩长尾分布：</p>
 
-<div class="formula-box">$$ L = (log(\hat{y} + 1) - log(y + 1))^{2} $$</div>
+<div class="formula-box"><img src="formulas/ch21_fno132.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>对数变换能够将长尾分布压缩到更均匀的区间，降低极端值的影响。例如原始时长 3 秒和 300 秒的差异为 297，取对数后差异仅为 log(301) - log(4) ≈ 4.3，大幅缩小。这使得模型对不同量级的时长给予更均衡的关注。</p>
 
@@ -100,7 +100,7 @@ window.MathJax = {
 
 <p>Huber Loss 结合了 MSE 和 MAE 的优点：在误差较小时使用 MSE（梯度方向明确），在误差较大时使用 MAE（对异常值鲁棒）：</p>
 
-<div class="formula-box">$$ L = 0.5\cdot(\hat{y}-y)^{2}, if |\hat{y}-y| \leq \delta; \delta\cdot(|\hat{y}-y| - 0.5\cdot\delta), otherwise $$</div>
+<div class="formula-box"><img src="formulas/ch21_fno133.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 δ 为超参数，控制 MSE 和 MAE 的切换点。Huber Loss 在时长预估中比纯 MSE 更稳定。</p>
 
@@ -108,7 +108,7 @@ window.MathJax = {
 
 <p>工业界通常采用分类+回归的混合方案：先预测是否为有效播放（分类），在有效播放条件下预测具体时长（回归）：</p>
 
-<div class="formula-box">$$ \hat{y}_watch = P(valid) \times t_valid $$</div>
+<div class="formula-box"><img src="formulas/ch21_fno134.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 P(valid) 为有效播放概率，t_valid 为在有效播放条件下的时长预估值。这种两阶段方案结合了分类的稳定性和回归的精度：分类模型负责过滤无效曝光，回归模型在有效曝光范围内进行精细预估。</p>
 

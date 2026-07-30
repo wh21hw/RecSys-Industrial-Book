@@ -94,7 +94,7 @@ window.MathJax = {
 
 <p>逆倾向加权（Inverse Propensity Score Weighting, IPS）是因果推断中最经典的纠偏方法。其核心思想是：如果样本 i 被曝光的概率为 p_i（倾向分数），那么对该样本进行 1/p_i 的加权，可以消除曝光偏差。</p>
 
-<div class="formula-box">$$ L_IPS = (1/N) * Sum_{i} [ y_{i} / p_{i} * L(f(x_{i}), y_{i}) ] $$</div>
+<div class="formula-box"><img src="formulas/ch22_fno136.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 p_i 为样本 i 被曝光的倾向分数，y_i 为真实标签，f(x_i) 为模型预测。被低估的样本（低曝光概率）获得更高权重，从而纠正曝光偏差。IPS 的核心假设是倾向分数已知或可估计，但在实际系统中倾向分数往往难以准确估计。</p>
 
@@ -104,7 +104,7 @@ window.MathJax = {
 
 <p>Doubly Robust（双重稳健）估计结合了 IPS 和直接模型两种纠偏方式：</p>
 
-<div class="formula-box">$$ L_DR = (1/N) * Sum_{i} [ f_hat(x_{i}) + (y_{i} - f_hat(x_{i})) / p_{i} ] $$</div>
+<div class="formula-box"><img src="formulas/ch22_fno137.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 f_hat(x_i) 是直接模型的预测值。DR 的核心优势是"双重保险"——只要倾向分数模型或直接模型其中之一正确，DR 就能实现无偏估计。这使得 DR 在理论上优于纯 IPS 方法，因为它对模型误差更鲁棒。</p>
 

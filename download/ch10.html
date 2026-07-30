@@ -97,15 +97,15 @@ window.MathJax = {
 
 <p>ItemCF 通常基于用户-物品交互矩阵进行建模。假设存在用户-物品交互矩阵 R，其中 R<sub>ui</sub> 表示用户 u 对物品 i 的交互行为。ItemCF 首先计算任意两个物品之间的相似度，从而构建整个物品相似度矩阵 S。最常见的相似度计算方式是余弦相似度：</p>
 
-<div class="formula-box">$$ S_{ij} = \frac{\mathbf{R}_i \cdot \mathbf{R}_j}{\|\mathbf{R}_i\| \cdot \|\mathbf{R}_j\|} = \frac{\sum_u R_{ui} \cdot R_{uj}}{\sqrt{\sum_u R^2_{ui}} \cdot \sqrt{\sum_u R^2_{uj}}} $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno76.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>在工业级推荐场景中，大部分 ItemCF 都基于隐式反馈进行学习，因此 R<sub>ui</sub> 通常定义为：R<sub>ui</sub> = 1 如果用户 u 与物品 i 有交互行为，否则为 0。基于此定义，R²<sub>ui</sub> = R<sub>ui</sub>，因此有：</p>
 
-<div class="formula-box">$$ \sum_u R^2_{ui} = \sum_u R_{ui} = |N(i)| $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno77.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 |N(i)| 表示与物品 i 有交互行为的用户数量。因此相似度公式可以简化为：</p>
 
-<div class="formula-box">$$ S_{ij} = \frac{|N(i) \cap N(j)|}{\sqrt{|N(i)| \cdot |N(j)|}} $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno78.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>这表示物品 i 和物品 j 的相似度等于同时喜欢两个物品的用户数，除以两个物品各自用户数的几何平均。这种形式被称为 Jaccard 相似度的变体。</p>
 
@@ -132,7 +132,7 @@ window.MathJax = {
 
 <p>UserCF 的相似度计算公式为：</p>
 
-<div class="formula-box">$$ W_{uv} = \frac{|N(u) \cap N(v)|}{\sqrt{|N(u)| \cdot |N(v)|}} $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno79.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 N(u) 表示用户 u 交互过的物品集合，N(v) 表示用户 v 交互过的物品集合。分子表示两个用户共同交互过的物品数量，分母用于惩罚活跃用户。</p>
 
@@ -165,7 +165,7 @@ window.MathJax = {
 
 <p>Swing 的核心思想是：如果两个物品被同一批用户对（user pair）共同交互过，那么这两个物品更可能真正相似。Swing 相似度公式为：</p>
 
-<div class="formula-box">$$ S_{ij} = \sum_{u \in U(i) \cap U(j)} \sum_{\substack{v \in U(i) \cap U(j) \\ v \neq u}} \frac{1}{\alpha + |N(u) \cap N(v)|} $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno80.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 U(i) 和 U(j) 分别表示交互过物品 i 和 j 的用户集合，α 是平滑系数。该公式的核心思想是：对于每一对共同交互过物品 i 和 j 的用户 (u, v)，如果这两个用户之间的共同兴趣越少（|N(u) ∩ N(v)| 越小），说明物品 i 和 j 的相似性越不可能是由于用户本身的广泛兴趣导致的，因此应该给予更高的权重。</p>
 
@@ -173,19 +173,19 @@ window.MathJax = {
 
 <p>矩阵分解（Matrix Factorization, MF）是将用户-物品交互矩阵分解为低维用户隐向量和物品隐向量的方法。假设用户-物品交互矩阵 R ∈ R<sup>m×n</sup>，矩阵分解将其近似分解为：</p>
 
-<div class="formula-box">$$ \mathbf{R} \approx \mathbf{P} \cdot \mathbf{Q}^T $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno81.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 P ∈ R<sup>m×k</sup> 为用户隐向量矩阵，Q ∈ R<sup>n×k</sup> 为物品隐向量矩阵，k 为隐向量维度（通常为 32~256）。用户 u 对物品 i 的偏好预测为：</p>
 
-<div class="formula-box">$$ \hat{r}_{ui} = \mathbf{p}_u^T \cdot \mathbf{q}_i $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno82.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>训练目标函数通常采用平方损失或交叉熵损失，并加入 L2 正则化项防止过拟合：</p>
 
-<div class="formula-box">$$ \mathcal{L} = \sum_{(u,i) \in \mathcal{R}} \left( r_{ui} - \mathbf{p}_u^T \mathbf{q}_i \right)^2 + \lambda \left( \|\mathbf{p}_u\|^2 + \|\mathbf{q}_i\|^2 \right) $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno83.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>经典的矩阵分解方法包括 SVD、ALS（Alternating Least Squares）和 BPR（Bayesian Personalized Ranking）。其中 BPR 是一种 pairwise 排序损失函数，专门用于隐式反馈场景：</p>
 
-<div class="formula-box">$$ \mathcal{L}_{BPR} = -\sum_{(u,i,j)} \ln \sigma(\hat{p}_{ui} - \hat{p}_{uj}) + \lambda \|\Theta\|^2 $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno84.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 (u, i, j) 表示用户 u 交互过物品 i 但未交互过物品 j，σ 为 sigmoid 函数。</p>
 
@@ -227,7 +227,7 @@ window.MathJax = {
 
 <p>DeepWalk 的目标函数为：</p>
 
-<div class="formula-box">$$ \min_\Phi -\sum_{(v,w) \in \mathcal{D}} \log P(w | \Phi(v)) $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno85.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 Φ 是节点到向量的映射函数，D 是随机游走生成的节点对集合。</p>
 
@@ -248,7 +248,7 @@ window.MathJax = {
 
 <p>EGES 的核心改进是：对于每个物品，不仅学习其基于图结构的 Embedding，还融合其属性特征的 Embedding。通过注意力机制自动学习不同属性特征的权重，生成融合表示：</p>
 
-<div class="formula-box">$$ \mathbf{h}_v = \frac{\sum_{s \in \mathcal{S}} \alpha_{vs} \cdot \mathbf{h}_{vs}}{\sum_{s \in \mathcal{S}} \alpha_{vs}} $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno86.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 H<sub>v</sub><sup>s</sup> 是物品 v 的第 s 个属性特征的 Embedding，a<sub>v</sub><sup>s</sup> 是对应的注意力权重。</p>
 
@@ -258,7 +258,7 @@ window.MathJax = {
 
 <p>图卷积网络（Graph Convolutional Network, GCN）通过图上的谱卷积操作学习节点表示。GCN 的核心传播规则为：</p>
 
-<div class="formula-box">$$ \mathbf{H}^{(l+1)} = \sigma\left( \hat{\mathbf{D}}^{-1/2} \hat{\mathbf{A}} \hat{\mathbf{D}}^{-1/2} \mathbf{H}^{(l)} \mathbf{W}^{(l)} \right) $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno87.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 Â = A + I 是加了自环的邻接矩阵，D̂ 是 Â 的度矩阵，W<sup>(l)</sup> 是第 l 层的可训练参数，σ 是激活函数。GCN 通过逐层聚合邻居节点信息来更新节点表示。</p>
 
@@ -266,7 +266,7 @@ window.MathJax = {
 
 <p>图注意力网络（Graph Attention Network, GAT）在 GCN 基础上引入了注意力机制，为不同邻居节点分配不同权重：</p>
 
-<div class="formula-box">$$ \alpha_{ij} = \text{softmax}_j \left( \text{LeakyReLU} \left( \mathbf{a}^T [\mathbf{W}\mathbf{h}_i \| \mathbf{W}\mathbf{h}_j] \right) \right) $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno88.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>GAT 通过多头注意力机制进一步提升表示能力，在推荐场景中能够更精准地捕捉用户-物品之间的重要交互关系。</p>
 
@@ -274,7 +274,7 @@ window.MathJax = {
 
 <p>GraphSAGE（Inductive Representation Learning on Large Graphs）是一种归纳式图学习方法，能够为未见过的新节点生成 Embedding。与 GCN 不同，GraphSAGE 不是利用全图邻接矩阵进行传播，而是通过采样邻居并聚合其特征来生成节点表示：</p>
 
-<div class="formula-box">$$ \mathbf{h}_v^{(k)} = \sigma\left( \mathbf{W}^{(k)} \cdot \text{AGGREGATE}\left( \{\mathbf{h}_v^{(k-1)}\} \cup \{\mathbf{h}_u^{(k-1)}, \forall u \in \mathcal{N}(v)\} \right) \right) $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno89.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>GraphSAGE 支持多种聚合函数：Mean Aggregator、LSTM Aggregator、Pooling Aggregator。在工业推荐场景中，GraphSAGE 的归纳式学习能力使其能够处理动态变化的图结构，适用于新用户、新物品不断加入的场景。</p>
 
@@ -282,7 +282,7 @@ window.MathJax = {
 
 <p>LightGCN 是 GCN 在推荐场景中的轻量化版本。作者发现传统 GCN 中的特征变换和非线性激活在推荐任务中不仅没有帮助，反而可能损害性能。LightGCN 简化了 GCN 的传播规则，仅保留邻接矩阵归一化和加权求和：</p>
 
-<div class="formula-box">$$ \mathbf{e}_u^{(k+1)} = \frac{1}{|\mathcal{N}(u)|} \sum_{i \in \mathcal{N}(u)} \mathbf{e}_i^{(k)} $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno90.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>最终节点表示为各层表示的加权平均：e<sub>u</sub> = (1/(K+1)) Σ<sub>k=0</sub><sup>K</sup> α<sub>k</sub> e<sub>u</sub><sup>(k)</sup>。LightGCN 参数量极少，训练速度快，在多个推荐数据集上取得了优于 NGCF 等复杂模型的效果。</p>
 
@@ -326,7 +326,7 @@ window.MathJax = {
 
 <p>双塔模型（Two-Tower Model）是工业界向量召回的事实标准。其核心架构为：用户特征和物品特征分别通过各自的 DNN 网络编码为向量，然后通过内积或余弦相似度计算匹配分数。</p>
 
-<div class="formula-box">$$ \text{score}(u, i) = \text{sim}\left( f_{\text{user}}(\mathbf{x}_u), f_{\text{item}}(\mathbf{x}_i) \right) = \cos(\mathbf{e}_u, \mathbf{e}_i) $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno91.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>双塔模型的核心优势在于<strong>解耦性</strong>：用户塔和物品塔可以独立计算，物品向量可以离线预计算并建立 ANN 索引，在线只需计算用户向量后进行检索，满足低延迟要求。</p>
 
@@ -372,7 +372,7 @@ window.MathJax = {
 
 <h4>10.4.1.1 Item2Vec 模型</h4>
 <p>Item2Vec 直接将 Word2Vec 应用于物品序列，通过 SkipGram 目标函数学习物品表示：</p>
-<div class="formula-box">$$ \mathcal{L} = -\sum_{t=1}^{T} \sum_{-c \leq j \leq c, j \neq 0} \log P(w_{t+j} | w_t) $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno92.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <h4>10.4.1.2 List2Vec 召回算法原理</h4>
 <p>List2Vec 在 Item2Vec 基础上引入了更多上下文信息，如时间间隔、行为类型等，通过更丰富的序列建模提升表示质量。</p>
@@ -394,7 +394,7 @@ window.MathJax = {
 
 <p><strong>SASRec（Self-Attentive Sequential Recommendation）</strong> 是 Transformer 序列召回的代表模型，通过因果自注意力机制（Causal Self-Attention）捕捉用户行为序列中的模式：</p>
 
-<div class="formula-box">$$ \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\left( \frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}} \right) \mathbf{V} $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno93.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>SASRec 通过堆叠多层自注意力层，能够自适应地关注序列中不同位置的历史行为，在多个序列推荐基准上取得了优于 GRU4Rec 的效果。</p>
 
@@ -431,14 +431,14 @@ window.MathJax = {
 <h4>10.5.1.1 动态路由机制</h4>
 <p>动态路由借鉴了胶囊网络（Capsule Network）的思想，通过迭代路由过程将底层行为特征分配到不同的兴趣胶囊中：</p>
 
-<div class="formula-box">$$ c_{ij} = \text{softmax}_j(b_{ij}) $$ &nbsp;&nbsp; $$ \mathbf{e}_u = \sum_i c_{ij} \mathbf{e}_i $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno94.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 b<sub>ij</sub> 是行为 i 对兴趣胶囊 j 的路由 logits，通过动态路由迭代更新。</p>
 
 <h4>10.5.1.2 Label-aware Attention 机制</h4>
 <p>在训练阶段，MIND 使用 Label-aware Attention 将多个兴趣胶囊与目标物品进行注意力计算，选择与目标物品最相关的兴趣胶囊进行训练：</p>
 
-<div class="formula-box">$$ a_{ji} = \frac{\exp(\mathbf{e}_{uj}^T \cdot \mathbf{e}_i)}{\sum_{k=1}^{K} \exp(\mathbf{e}_{uk}^T \cdot \mathbf{e}_i)} $$ &nbsp;&nbsp;</div>
+<div class="formula-box"><img src="formulas/ch10_fno95.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <h4>10.5.1.3 MIND 召回工程落地</h4>
 <p>在线服务时，MIND 为每个用户生成 K 个兴趣向量，分别进行 ANN 检索后合并去重，取 Top-K 作为召回结果。</p>

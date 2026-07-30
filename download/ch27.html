@@ -66,7 +66,7 @@ window.MathJax = {
 
 <p>逆倾向加权（IPW）是因果推断中最经典的纠偏方法。其核心思想是：如果样本 i 被曝光（被处理）的概率为 p_i（倾向分数），那么对该样本进行 1/p_i 的加权，可以消除曝光偏差，获得无偏的效果估计。</p>
 
-<div class="formula-box">$$ L_IPS = (1/N) * Sum_{i} [ y_{i} / p_{i} * L(f(x_{i}), y_{i}) ] $$</div>
+<div class="formula-box"><img src="formulas/ch27_fno149.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 p_i 为样本 i 被曝光的倾向分数，y_i 为真实标签，f(x_i) 为模型预测。被低估的样本（低曝光概率）获得更高权重，从而纠正曝光偏差。</p>
 
@@ -81,7 +81,7 @@ window.MathJax = {
 
 <p>Doubly Robust（双重稳健）估计结合了 IPW 和直接模型两种纠偏方式：</p>
 
-<div class="formula-box">$$ L_DR = (1/N) * Sum_{i} [ f_hat(x_{i}) + (y_{i} - f_hat(x_{i})) / p_{i} ] $$</div>
+<div class="formula-box"><img src="formulas/ch27_fno150.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 f_hat(x_i) 是直接模型的预测值。DR 的核心优势是"双重保险"——只要倾向分数模型或直接模型其中之一正确，DR 就能实现无偏估计。</p>
 
@@ -126,7 +126,7 @@ window.MathJax = {
 
 <p>Uplift 模型关注推荐系统对用户行为的<strong>增量效应</strong>（Treatment Effect），而非绝对效果。核心问题是："推荐系统推荐了内容 A，用户点击了。但如果不推荐 A，用户会点击吗？"两者的差值就是 Uplift。</p>
 
-<div class="formula-box">$$ \text{Uplift} = P(y \mid do(\text{recommend})) - P(y \mid do(\text{not recommend})) $$</div>
+<div class="formula-box"><img src="formulas/ch27_fno151.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>Uplift 模型将用户分为四类：</p>
 <ul>

@@ -67,7 +67,7 @@ window.MathJax = {
 
 <p>DeepFM [2] 是工业界应用最广泛的精排模型之一。其核心思想是将 FM 与 DNN 进行联合训练，同时建模低阶和高阶特征交叉：</p>
 
-<div class="formula-box">$$ \hat{y} = sigmoid(y_FM + y_DNN) $$</div>
+<div class="formula-box"><img src="formulas/ch12_fno102.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>FM 部分通过一阶和二阶特征交叉捕捉低阶交互关系，DNN 部分通过多层全连接网络捕捉高阶特征交叉。DeepFM 的优势在于两部分共享相同的 Embedding 层，无需人工特征工程即可自动学习低阶和高阶交叉，且两部分的梯度可以反向传播到共享 Embedding，实现联合优化。</p>
 
@@ -75,7 +75,7 @@ window.MathJax = {
 
 <p>DCN [3] 提出了 Cross Network 来替代传统 DNN 进行高阶特征交叉。Cross Network 的核心操作为：</p>
 
-<div class="formula-box">$$ x_{l+1} = x₀ ⊙ (W_{l} \cdot x_{l} + b_{l}) + x_{l} $$</div>
+<div class="formula-box"><img src="formulas/ch12_fno103.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 x₀ 为输入特征，x_l 为第 l 层的输出，W_l 和 b_l 为可学习参数。Cross Network 通过逐层交叉，能够自动学习任意阶数的特征交互。与 DNN 相比，Cross Network 的参数量更少，且每一层的输出都显式包含了 x₀ 的信息，避免了信息在深层网络中逐渐衰减的问题。</p>
 
@@ -89,7 +89,7 @@ window.MathJax = {
 
 <p>DIN [5] 由阿里巴巴提出，引入了<strong>目标级注意力机制</strong>，根据当前候选物品动态激活用户历史行为中的相关部分：</p>
 
-<div class="formula-box">$$ v_{U} = \sumᵢ a(i) \cdot eᵢ,   a(i) = MLP([eᵢ, e_{a}, eᵢ ⊙ e_{a}]) $$</div>
+<div class="formula-box"><img src="formulas/ch12_fno104.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 eᵢ 为用户第 i 次行为物品的 Embedding，e_a 为候选物品 Embedding，a(i) 为注意力权重。DIN 的核心创新是：对于不同的候选物品，用户的历史行为会被赋予不同的权重，从而实现"因物而异"的兴趣表达。例如，当候选物品是运动鞋时，用户历史中的运动相关行为会获得更高权重；当候选物品是化妆品时，美妆相关行为会获得更高权重。</p>
 
@@ -108,7 +108,7 @@ window.MathJax = {
 
 <p>BST [7] 使用 Transformer 的自注意力机制建模用户行为序列：</p>
 
-<div class="formula-box">$$ H = Transformer([e₁, e₂, ..., e_{n}] + PE) $$</div>
+<div class="formula-box"><img src="formulas/ch12_fno105.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>相比 GRU，Transformer 能够建模序列中任意位置之间的依赖关系，不受距离限制。BST 在阿里巴巴的电商推荐场景中取得了显著效果提升，已成为工业界行为序列建模的主流方案。</p>
 
@@ -122,7 +122,7 @@ window.MathJax = {
 
 <p>MMoE [8] 为每个任务引入独立的门控网络，从多个共享专家网络中动态选择：</p>
 
-<div class="formula-box">$$ y_{t} = \sumᵢ g_{t}(i) \cdot fᵢ(x),   g_{t} = softmax(W_{t} \cdot x) $$</div>
+<div class="formula-box"><img src="formulas/ch12_fno106.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 fᵢ 为第 i 个专家网络，g_t 为任务 t 的门控权重。MMoE 通过软性路由机制让不同任务侧重不同专家，有效缓解负迁移问题。MMoE 已成为工业界多任务学习的基础架构。</p>
 
@@ -134,7 +134,7 @@ window.MathJax = {
 
 <p>ESMM [10] 由阿里巴巴提出，解决了 CVR 建模中的<strong>样本选择偏差</strong>（Sample Selection Bias）问题。传统 CVR 模型只在点击样本上训练，但推理时需要对全部曝光样本预测。ESMM 联合建模 CTR 和 CVR：</p>
 
-<div class="formula-box">$$ pCTCVR = pCTR \times pCVR $$</div>
+<div class="formula-box"><img src="formulas/ch12_fno107.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>模型在全部曝光样本上训练，通过 CTR 任务的监督信号间接学习 CVR，消除分布偏差。ESMM 的后续版本 ESMM2 [11] 进一步引入了点击后行为（如加购、收藏）的中间目标，构建了更细粒度的转化漏斗。</p>
 

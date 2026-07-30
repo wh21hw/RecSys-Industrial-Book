@@ -84,7 +84,7 @@ window.MathJax = {
 
 <p>如图 1.1 所示，为了更直观地理解推荐系统的作用，我们以短视频平台为例进行说明。如今，一个大型短视频平台每天可能拥有数亿活跃用户，同时平台内容库中存储着数十亿甚至上百亿规模的视频内容。对于任何一个用户而言，其每天能够消费的内容数量却极其有限，通常只有几十到数百条视频。这意味着平台必须从海量内容中快速筛选出极少量最有价值的内容呈现给用户。如果不存在推荐系统，那么对于数亿用户和数十亿内容而言，平台需要在用户与内容之间进行近似笛卡尔积规模的匹配计算，其计算复杂度将达到天文数字级别：</p>
 
-<div class="formula-box">$$ O(User \times Item) \tag{1.1} $$</div>
+<div class="formula-box"><img src="formulas/ch01_f1_1.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(1.1)</div></div>
 </div>
 
 <div class="figure-placeholder">
@@ -236,8 +236,7 @@ window.MathJax = {
   <div class="def-label">定义 1.6（CPC）</div>
   <p>CPC 即每次点击成本，是指广告主为每次用户点击广告所支付的费用。具体计算公式为：</p>
   <div class="formula-box">
-    $$ CPC = \frac{\text{广告总花费}}{\text{总点击次数}} $$
-    <div class="formula-num">(1.6)</div>
+    <img src="formulas/ch01_fno5.svg" alt="公式" class="formula-svg" loading="lazy"></div>
   </div>
 </div>
 
@@ -245,8 +244,7 @@ window.MathJax = {
   <div class="def-label">定义 1.7（CPA）</div>
   <p>CPA 即每次转化成本，是指广告主为每次有效转化行为（如下单、注册、提交表单）所支付的费用。具体计算公式为：</p>
   <div class="formula-box">
-    $$ CPA = \frac{\text{广告总花费}}{\text{总转化次数}} $$
-    <div class="formula-num">(1.7)</div>
+    <img src="formulas/ch01_fno6.svg" alt="公式" class="formula-svg" loading="lazy"></div>
   </div>
 </div>
 
@@ -305,16 +303,12 @@ window.MathJax = {
 <p>接下来我们简要介绍一下 CPM、CPC 和 CPA 与广告模型经常需要预估的 CTR 与 CVR 的关系。我们知道：</p>
 
 <div class="formula-box">
-  $$ CTR = \frac{\text{点击数}}{\text{曝光数}} $$<br><br>
-  $$ CVR = \frac{\text{转化数}}{\text{点击数}} $$
-  <div class="formula-num">(1.8)</div>
+  <img src="formulas/ch01_fno7.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 </div>
 
 <p>那么有如下等式成立：</p>
 
-<div class="formula-box">$$ CPC = CPA \times CVR
-  CPM = CPC \times CTR \times 1000
-  CPM = CPA \times CVR \times CTR \times 1000 \tag{1.9} $$</div>
+<div class="formula-box"><img src="formulas/ch01_f1_9.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(1.9)</div></div>
 </div>
 
 <p>从公式 1.9 我们可以看到，要优化的 CPM 这个广告的业务指标，最终会和广告的 CTR、CVR 这些指标联系起来，这两个指标也是广告算法模型持续去优化的指标。</p>
@@ -330,12 +324,12 @@ window.MathJax = {
 
 <p>eCPM 指标通常是指千次广告曝光之后的平台实际收入用来衡量广告的流量价值，而 CPM 是广告主侧使用的指标，通常指广告主愿意为 1000 次曝光付多少钱。这两个指标的衡量视角是有所差异的。在广告推荐系统的竞价排序中，同时会根据预估的 eCPM 进行排序，如果我们采用最简单的 CPC 计费模式，那么预估的 eCPM 为：</p>
 
-<div class="formula-box">$$ eCPM_{预估} = CTR \times bid \times 1000 \tag{1.11} $$</div>
+<div class="formula-box"><img src="formulas/ch01_f1_11.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(1.11)</div></div>
 </div>
 
 <p>其中 bid 是广告主设置单次点击最高愿意出的价格（预想出价），但并不等于最终结算扣费之后的真实广告成本。如果我们采用 CPA 计费模式，那么预估的 eCPM 为：</p>
 
-<div class="formula-box">$$ eCPM_{预估} = CTR \times CVR \times bid \times 1000 \tag{1.12} $$</div>
+<div class="formula-box"><img src="formulas/ch01_f1_12.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(1.12)</div></div>
 </div>
 
 <p>这里的 bid 是广告主设置的单次转化出价（CPA），与 CPC 计费模式下的 bid 含义有所不同。</p>
@@ -391,7 +385,7 @@ window.MathJax = {
 
 <p>因此，从宏观上看，一次完整的推荐请求流程可以表示为：</p>
 
-<div class="formula-box">$$ User \to Client \to Server \to Recommendation System \to Server \to Client \to User \tag{1.13} $$</div>
+<div class="formula-box"><img src="formulas/ch01_f1_13.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(1.13)</div></div>
 </div>
 
 <p>虽然这一流程看起来比较简单，但其背后往往涉及数百台甚至成千上万台服务器协同完成计算，是一个典型的大规模分布式系统工程。需要特别注意的是，对于推荐系统而言，除了推荐结果的准确性之外，响应速度同样至关重要。</p>

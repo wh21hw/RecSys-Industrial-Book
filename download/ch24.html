@@ -72,7 +72,7 @@ window.MathJax = {
 
 <p>加法融合（Additive Fusion）是最简单的融合方式，将多个预估值进行线性加权求和：</p>
 
-<div class="formula-box">$$ \text{score} = \sum_{i=1}^{n} w_i \cdot p_i $$</div>
+<div class="formula-box"><img src="formulas/ch24_fno140.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 pi 为第 i 个目标的预估值（如 pCTR、pCVR 等），wi 为对应的权重。加法融合的核心特性是<strong>补偿性</strong>（Compensatory）：一个目标的高值可以补偿另一个目标的低值。例如，一个高 CTR 但低 CVR 的内容，与一个低 CTR 但高 CVR 的内容，可能获得相同的融合分数。</p>
 
@@ -82,7 +82,7 @@ window.MathJax = {
 
 <p>乘法融合（Multiplicative Fusion）将多个预估值进行乘法组合：</p>
 
-<div class="formula-box">$$ score = Product_{i} (bi + ai*pi)^gi $$</div>
+<div class="formula-box"><img src="formulas/ch24_fno141.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 ai、bi、gi 为可调超参数。乘法融合的核心特性是<strong>短板约束</strong>（Bottleneck-Constrained）：任何一个目标过低都会显著拉低最终得分。例如，如果 pCTR 接近 0，则整体得分接近 0，无论其他目标多高。</p>
 
@@ -110,7 +110,7 @@ window.MathJax = {
 
 <p>从梯度视角可以更直观地理解两种融合方式的差异。对于乘法融合 Score = (b1 + a1*p1)(b2 + a2*p2)，对 p1 求偏导：</p>
 
-<div class="formula-box">$$ \frac{\partial \text{score}}{\partial p_1} = a_1 \cdot (b_2 + a_2 \cdot p_2) $$</div>
+<div class="formula-box"><img src="formulas/ch24_fno143.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>即 p1 的重要性依赖于 p2 的大小——当 p2 较大时，p1 的提升价值更高。这体现了目标之间的<strong>正向协同</strong>（Positive Synergy）：一个目标越优秀，另一个目标的提升价值越高。</p>
 
@@ -138,7 +138,7 @@ window.MathJax = {
 
 <p>值序融合（Hybrid Fusion）同时保留数值信息和序信息：</p>
 
-<div class="formula-box">$$ score = f(pxtr) * g(Rank_pxtr) $$</div>
+<div class="formula-box"><img src="formulas/ch24_fno144.svg" alt="公式" class="formula-svg" loading="lazy"></div>
 
 <p>其中 f() 负责建模 Value 信息，g() 负责建模 Rank 信息。例如 f(pxtr) = log(1 + pxtr)，g(Rank) = 1/Rank^lambda。值序融合既保留了模型输出的细粒度数值差异，又获得了 Rank 融合的鲁棒性，目前大量工业级推荐系统都采用了某种形式的值序混合融合策略。</p>
 

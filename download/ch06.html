@@ -84,7 +84,7 @@ window.MathJax = {
 <p>这些预估值分别对应不同目标，公式 6.1 给出了这些指标：</p>
 
 <div class="formula-box">
-  $$ \hat{y} = f(p_{\text{ctr}}, p_{\text{ltr}}, p_{\text{cmtr}}, p_{\text{ftr}}, p_{\text{cvr}}) $$ &nbsp;&nbsp;&nbsp; (6.1)
+  <img src="formulas/ch06_fno34.svg" alt="公式" class="formula-svg" loading="lazy">
 </div>
 
 <p>除了显式互动行为外，隐式反馈如有效播放率（Effective View Rate）、完整播放率（Finish Rate）、长时观看率（Long View Rate）等也常采用分类方式建模。例如：</p>
@@ -93,7 +93,7 @@ window.MathJax = {
 
 <p>另一类常见任务是回归任务，直接预测连续数值，适用于观看时长、停留时长、消费金额、GMV 等连续型指标：</p>
 
-<div class="formula-box">$$ \hat{y} = f(x) \tag{6.3} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_3.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.3)</div></div>
 
 <h3 class="subsection-title">6.3.1 时长预估</h3>
 
@@ -117,17 +117,17 @@ window.MathJax = {
 
 <p>针对稀疏目标，最常见的方法是样本加权（Sample Weighting）。例如在直播推荐场景中，打赏金额可作为正样本权重：</p>
 
-<div class="formula-box">$$ w_{i} = gift_amount_{i} \tag{6.4} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_4.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.4)</div></div>
 
 <p>对应的加权交叉熵损失为：</p>
 
-<div class="formula-box">$$ L = - \sum_{i} w_{i} (y_{i} log p_{i} + (1 - y_{i}) log(1 - p_{i})) \tag{6.5} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_5.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.5)</div></div>
 
 <h3 class="subsection-title">6.3.4 稠密目标辅助稀疏目标学习</h3>
 
 <p>利用稠密目标辅助稀疏目标学习（Dense-to-Sparse Learning），其基本思想来源于用户行为漏斗关系：</p>
 
-<div class="formula-box">$$ Exposure \to Click \to Purchase \tag{6.6} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_6.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.6)</div></div>
 
 <p>代表性工作包括 CTCVR、ESMM（Entire Space Multi-Task Model）和 ESCM²。</p>
 
@@ -135,8 +135,7 @@ window.MathJax = {
 
 <p>不同互动行为之间存在相关性，例如：</p>
 
-<div class="formula-box">$$ Like \to Comment \to Follow     (6.7)
-  Like \to Favorite \to Follow \tag{6.8} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_8.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.8)</div></div>
 
 <p>美团提出的 AITM（Adaptive Information Transfer Multi-task framework）通过信息传递机制显式建模任务间依赖关系。PLE、MMoE、SNR 等多任务学习框架也在挖掘不同目标间的共享信息和差异化信息。</p>
 
@@ -148,7 +147,7 @@ window.MathJax = {
 
 <p>乘法公式（Multiplicative Formula）的基本形式：</p>
 
-<div class="formula-box">$$ s_{i} = (\beta_{i} + \alpha_{i} p_{i})^{\gamma_{i}} \tag{6.9} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_9.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.9)</div></div>
 
 <p>其中 p<sub>i</sub> 为第 i 个排序因子的原始预估值，α<sub>i</sub> 为乘法系数（Scaling Factor），β<sub>i</sub> 为偏置项（Bias Term），γ<sub>i</sub> 为指数项（Exponent Term）。</p>
 
@@ -161,26 +160,26 @@ window.MathJax = {
 
 <p>当 γ = 1 时：</p>
 
-<div class="formula-box">$$ (\beta_{i} + \alpha_{i} p_{i})^{\gamma_{i}} = \beta_{i} + \alpha_{i} p_{i} \tag{6.10} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_10.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.10)</div></div>
 
 <h3 class="subsection-title">6.4.2 序变换及形状分析</h3>
 
 <p>基于排序位置（Rank）的融合方法不直接利用 pxtr 数值，而是利用排序位置进行融合。五种代表性变换：</p>
 
 <p><strong>(1) 倒数变换</strong></p>
-<div class="formula-box">$$ S_{i} = 1 / Rank_{i} \tag{6.11} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_11.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.11)</div></div>
 
 <p><strong>(2) 平滑倒数变换</strong></p>
-<div class="formula-box">$$ S_{i} = w_{i} / (Rank_{i}^{\lambda} + b) \tag{6.12} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_12.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.12)</div></div>
 
 <p><strong>(3) 归一化幂次变换</strong></p>
-<div class="formula-box">$$ S_{i} = w_{i} \times (1 - (Rank_{i} / N)^{\lambda}) \tag{6.13} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_13.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.13)</div></div>
 
 <p><strong>(4) 指数双曲变换</strong></p>
-<div class="formula-box">$$ S_{i} = w_{i} \times (e^{k(2\cdotRank_{i}/N - 1)} - e^{-k(2\cdotRank_{i}/N - 1)}) \tag{6.14} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_14.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.14)</div></div>
 
 <p><strong>(5) 带偏置归一化变换</strong></p>
-<div class="formula-box">$$ S_{i} = w_{i} \times (1 - ((Rank_{i} / N + b)^{\lambda})) \tag{6.15} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_15.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.15)</div></div>
 
 <p>其中 Rank<sub>i</sub> 表示候选物品在某个排序因子中的位置，N 表示候选集长度，w<sub>i</sub> 表示权重，λ、b 和 k 为控制曲线形状的超参数。</p>
 
@@ -194,7 +193,7 @@ window.MathJax = {
 
 <p>指数双曲变换对应双曲正弦函数：</p>
 
-<div class="formula-box">$$ S_{i} = 2 w_{i} sinh(k(2\cdotRank_{i}/N - 1)) \tag{6.17} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_17.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.17)</div></div>
 
 <h3 class="subsection-title">6.4.3 排序公式超参数寻优</h3>
 
@@ -202,15 +201,15 @@ window.MathJax = {
 
 <p>假设排序公式包含 N 个待优化参数：</p>
 
-<div class="formula-box">$$ \theta = (\theta_{1}, \theta_{2}, \cdot\cdot\cdot, \theta_{N}) \tag{6.18} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_18.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.18)</div></div>
 
 <p>目标是寻找最优参数：</p>
 
-<div class="formula-box">$$ \theta* = arg max_{\theta} R(\theta) \tag{6.19} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_19.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.19)</div></div>
 
 <p>由于线上指标无法直接求导，CEM 不直接搜索最优参数，而是搜索最优参数所在的概率分布。假设参数服从多维高斯分布：</p>
 
-<div class="formula-box">$$ \theta ~ N(\mu, \sum) \tag{6.21} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_21.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.21)</div></div>
 
 <p><strong>采样阶段</strong>：从当前分布中采样 K 组参数，每组对应一套排序公式配置。</p>
 
@@ -218,13 +217,13 @@ window.MathJax = {
 
 <p><strong>分布更新阶段</strong>：</p>
 
-<div class="formula-box">$$ \mu^{(t+1)} = (1/M) \sum_{i=1}^{M} \theta^{(i)} \tag{6.31} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_31.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.31)</div></div>
 
-<div class="formula-box">$$ \sum^{(t+1)} = (1/M) \sum_{i=1}^{M} (\theta^{(i)} - \mu^{(t+1)})(\theta^{(i)} - \mu^{(t+1)})^{T} \tag{6.32} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_32.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.32)</div></div>
 
 <p>随着迭代进行，采样空间不断收缩，最终收敛到局部最优解附近。CEM 的理论基础是最小化 KL Divergence：</p>
 
-<div class="formula-box">$$ D_{KL}(g* ∥ f_{\theta}) \tag{6.34} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_34.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.34)</div></div>
 
 <p><strong>工业界 CEM 应用存在的问题</strong>：</p>
 <ul>
@@ -315,25 +314,23 @@ class TrafficController:
 
 <p>精排流量调控可建模为带约束条件的排序优化问题：</p>
 
-<div class="formula-box">$$ max \sum_{i=1}^{N} Score_{i} \tag{6.43} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_43.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.43)</div></div>
 
 <p>同时满足：</p>
 
-<div class="formula-box">$$ \sum_{i} x_{i}^{new} \geq Q_{new}     (6.44)
-  \sum_{i} x_{i}^{creator} \geq Q_{creator}     (6.45)
-  \sum_{i} x_{i}^{commerce} \geq Q_{commerce} \tag{6.46} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_46.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.46)</div></div>
 
 <p>其中 x<sub>i</sub> ∈ {0, 1} 表示候选物品是否被最终选中，Q 表示对应业务目标要求的最小流量配额。</p>
 
 <p>近年来，一些先进推荐系统开始将流量调控建模为动态决策问题：</p>
 
-<div class="formula-box">$$ Q_{t} = f(S_{t}^{user}, S_{t}^{Content}, S_{t}^{Platform}) \tag{6.47} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_47.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.47)</div></div>
 
 <h3 class="subsection-title">6.5.5 精排保量与强插策略</h3>
 
 <p>保量（Guarantee Delivery）机制关注某一类特定候选集合是否能获得最低限度的曝光机会。保量约束可表示为：</p>
 
-<div class="formula-box">$$ Exposure_{target} \geq Q_{target} \tag{6.48} $$</div>
+<div class="formula-box"><img src="formulas/ch06_f6_48.svg" alt="公式" class="formula-svg" loading="lazy"><div class="formula-num">(6.48)</div></div>
 
 <p>实现方式包括：排序完成后强插（Force Insert）、预留固定坑位、将保量约束融入多目标融合框架等。</p>
 
