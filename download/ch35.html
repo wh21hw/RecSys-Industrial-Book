@@ -265,7 +265,149 @@ window.MathJax = {
 
 <p>（4）<strong>多目标复杂性</strong>：推荐系统通常优化多个目标（CTR、CVR、多样性等），Scaling Law 在多目标场景中更复杂。</p>
 
-<h2 class="section-title" id="sec-35-6">35.6 工业实践</h2>
+<h2 class="section-title" id="sec-35-6">35.6 Scaling Up 推荐模型：工业前沿</h2>
+
+<p>2024-2025 年，推荐系统领域出现了一系列重要的 Scaling Up 工作——将推荐模型参数量从亿级推向百亿甚至千亿，同时通过硬件感知设计将模型 MFU（Model FLOPS Utilization）从不到 5% 提升到 45%+。这些工作代表了推荐系统从"小模型+多模块"向"大模型+统一架构"的范式转变。本节系统介绍 RankMixer、OneTrans、HyFormer、Kunlun、Wukong 等前沿工作。</p>
+
+<h3 class="subsection-title">35.6.1 Wukong：堆叠 FM 的 Scaling Law</h3>
+
+<p>Wukong 由快手于 2024 年提出，是首个在推荐系统领域建立完整 Scaling Law 的工作。Wukong 的核心发现是：推荐模型可以通过堆叠因子分解机（Stacked Factorization Machine）实现有效缩放，而不需要依赖复杂的 Transformer 架构。</p>
+
+<p><strong>架构设计：</strong>Wukong 完全基于堆叠 FM 层构建——每层是一个因子分解机，通过学习特征间的高阶交互来提升模型表达力。与传统 DeepFM/DCN 不同，Wukong 将 FM 层堆叠到 20-100 层，通过深度堆叠实现 Scaling Up。关键创新在于设计了残差连接和层归一化机制，使得深层 FM 也能稳定训练。</p>
+
+<p><strong>Scaling Law 发现：</strong>Wukong 系统性地验证了推荐模型的 Scaling Law——模型效果随参数量、数据量和训练步数按幂律提升。但推荐 Scaling Law 与 LLM 有两个关键差异：（1）One-epoch 现象——推荐模型通常只训练一个 epoch，多 epoch 训练反而过拟合；（2）特征重要性——增加特征数量比增加模型参数更有效。</p>
+
+<p><strong>协同缩放策略：</strong>Wukong 提出了"协同缩放"（Synergistic Upscaling）策略——同时缩放模型深度、特征维度和数据量，三者按最优比例增长。单独缩放任何一个维度都会导致效果饱和，只有协同缩放才能实现持续提升。</p>
+
+<h3 class="subsection-title">35.6.2 Kunlun：MFU 优化与 Scaling Law</h3>
+
+<p>Kunlun 由快手于 2025 年提出，是首个为推荐系统建立完整 Scaling Laws 并系统优化 MFU 的工作。Kunlun 的核心贡献是通过硬件感知的架构设计，将推荐模型的 MFU 从 17% 提升到 37%（在 NVIDIA B200 GPU 上），实现了 2 倍的缩放效率提升。</p>
+
+<p><strong>MFU 瓶颈分析：</strong>Kunlun 首先系统分析了推荐模型的 MFU 瓶颈——传统推荐模型的 Embedding 查表操作导致 GPU 利用率极低（<5%），因为 Embedding 查表是内存密集型而非计算密集型。Kunlun 通过将 Embedding 查表优化为密集矩阵运算，大幅提升了 GPU 计算利用率。</p>
+
+<p><strong>架构创新：</strong>Kunlun 的架构设计围绕硬件感知展开——（1）将稀疏 Embedding 查表转化为密集 Batch 操作；（2）使用 FlashAttention 加速 Transformer 注意力计算；（3）设计混合精度训练策略，Embedding 用 FP32、其他层用 BF16；（4）引入序列并行和数据并行的混合并行策略。</p>
+
+<p><strong>Scaling Laws：</strong>Kunlun 建立了推荐系统的完整 Scaling Laws，包含三个维度：</p>
+
+<ul>
+  <li><strong>模型缩放</strong>：参数量从 1B→10B→100B，效果按幂律提升</li>
+  <li><strong>数据缩放</strong>：训练样本从 10B→100B→1T，效果持续提升但递减</li>
+  <li><strong>序列缩放</strong>：用户行为序列从 512→4096→32768，效果显著提升</li>
+</ul>
+
+<p>三个维度的最优缩放比例为 模型:数据:序列 ≈ 1:10:2，偏离此比例会导致效果饱和。</p>
+
+<h3 class="subsection-title">35.6.3 RankMixer：硬件感知统一架构</h3>
+
+<p>RankMixer 由 2025 年提出（被引 90+ 次），是 Scaling Up 排序模型的标志性工作。RankMixer 的核心创新是硬件感知的统一特征交互架构，将模型 MFU 从 4.5% 提升到 45%——10 倍效率提升，使得排序模型参数量可以扩展到百亿级。</p>
+
+<p><strong>问题动机：</strong>传统排序模型（如 DIN、DIEN、BST）使用多种手工设计的低 MFU 模块——注意力模块、序列建模模块、特征交叉模块等。这些模块各自优化了算法效果，但整体 MFU 极低（<5%），导致 GPU 资源严重浪费。当尝试扩大模型参数时，低 MFU 使得训练成本不可承受。</p>
+
+<p><strong>统一架构：</strong>RankMixer 用统一的 Mixer 架构替代了多种手工模块。Mixer 层通过转置矩阵乘法同时实现特征间交互和特征内变换，计算模式高度规则化，GPU 友好。所有特征交互、序列建模和特征变换都通过堆叠 Mixer 层实现，消除了低 MFU 的手工模块。</p>
+
+<p><strong>硬件感知设计：</strong>RankMixer 的设计以 GPU 计算特性为约束——（1）所有计算都是密集矩阵乘法，无稀疏操作；（2）张量形状对齐 GPU warp 大小（32/64）；（3）层间计算量均衡，避免流水线气泡；（4）支持 Tensor Core 加速。这些设计使 RankMixer 的 MFU 达到 45%，接近理论极限。</p>
+
+<p><strong>缩放效果：</strong>RankMixer 在工业实践中将排序模型参数从亿级扩展到百亿级，在保持延迟不变的前提下，线上 CTR 提升 3-5%。MFU 从 4.5%→45% 意味着相同 GPU 资源可以训练 10 倍大的模型。</p>
+
+<h3 class="subsection-title">35.6.4 OneTrans：统一 Transformer 骨干</h3>
+
+<p>OneTrans 由 2025 年提出（被引 54+ 次），是首个将特征交互和序列建模统一到单一 Transformer 骨干的推荐模型。OneTrans 的核心思想是：用统一的 Transformer 同时处理特征交互和用户行为序列建模，而非传统方案中用不同模块分别处理。</p>
+
+<p><strong>传统方案的局限：</strong>传统排序模型中，特征交互（DCN/FM）和序列建模（DIN/BST）使用不同的架构——特征交互是浅层全连接，序列建模是深层 Transformer。这种分离导致：（1）特征交互和序列建模无法深度交互；（2）两种架构的计算模式不同，MFU 低；（3）系统复杂度高，维护困难。</p>
+
+<p><strong>统一 Transformer：</strong>OneTrans 将所有特征（用户特征、物品特征、上下文特征、行为序列）统一编码为 Token 序列，输入统一 Transformer 骨干进行联合建模。特征交互通过 Transformer 的自注意力自然实现——不同特征的 Token 通过注意力交互。序列建模也通过同一 Transformer 实现——行为序列 Token 通过自注意力建模时序依赖。</p>
+
+<p><strong>Scaling 到十亿参数：</strong>OneTrans 验证了统一 Transformer 骨干可以 Scaling 到十亿参数级别。关键发现是：统一架构的 Scaling Law 比分离架构更优——参数量从 100M→1B→10B，效果持续提升且无饱和迹象。这表明统一架构比分离架构有更好的缩放性质。</p>
+
+<p><strong>LLM 系统优化复用：</strong>OneTrans 的统一 Transformer 架构可以直接复用 LLM 领域的系统优化——FlashAttention、KV Cache、Tensor Parallelism、Pipeline Parallelism 等。这些优化在 LLM 领域已经成熟，OneTrans 将其引入推荐系统，大幅降低了工程成本。</p>
+
+<h3 class="subsection-title">35.6.5 HyFormer：混合 Transformer 架构</h3>
+
+<p>HyFormer 于 2025 年提出，是 OneTrans 的进一步发展。HyFormer 的核心创新是统一混合 Transformer 架构——在单一模型中实现长序列建模和特征交互的双向、层级间交互。</p>
+
+<p><strong>OneTrans 的局限：</strong>OneTrans 虽然统一了特征交互和序列建模，但两者在 Transformer 层内是"并列"的——特征 Token 和序列 Token 在同一层通过自注意力交互，但不同层之间缺乏专门的交互机制。这导致深层网络中特征交互和序列建模可能"解耦"。</p>
+
+<p><strong>HyFormer 的混合架构：</strong>HyFormer 设计了双向层级间交互机制——在每一 Transformer 层中，特征交互分支和序列建模分支通过交叉注意力（Cross-Attention）进行双向交互。特征交互分支为序列建模提供上下文信息（用户画像、物品属性），序列建模分支为特征交互提供行为信号（用户兴趣、时序模式）。</p>
+
+<p><strong>层级间交互：</strong>HyFormer 的层级间交互不仅限于同一层，还通过跨层连接实现跨层交互——浅层的特征交互结果直接传递到深层的序列建模分支，深层的序列建模结果反馈到浅层的特征交互分支。这种跨层交互使得模型可以在不同抽象层次上融合信息。</p>
+
+<p><strong>长序列支持：</strong>HyFormer 通过线性注意力和层次化建模支持超长行为序列（万级+）。线性注意力将复杂度从 O(n²) 降低到 O(n)，层次化建模通过分层聚合进一步降低计算量。这使得 HyFormer 可以在统一架构中同时处理特征交互和万级长序列建模。</p>
+
+<h3 class="subsection-title">35.6.6 Scaling Up 方法对比</h3>
+
+<p>下表对比了各 Scaling Up 方法的关键特性：</p>
+
+<div class="formula-box" style="text-align: left; font-size: 0.9rem; background: var(--formula-bg); border: 1px solid var(--border); padding: 16px; border-radius: 8px; overflow-x: auto;">
+<table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+<tr style="border-bottom: 2px solid var(--gold);">
+  <th style="padding: 8px; text-align: left;">方法</th>
+  <th style="padding: 8px;">年份</th>
+  <th style="padding: 8px;">核心创新</th>
+  <th style="padding: 8px;">MFU</th>
+  <th style="padding: 8px;">最大参数</th>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px;">HSTU</td>
+  <td style="padding: 8px;">2024</td>
+  <td style="padding: 8px;">生成式推荐 Transformer</td>
+  <td style="padding: 8px;">~15%</td>
+  <td style="padding: 8px;">1.5T</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px;">Wukong</td>
+  <td style="padding: 8px;">2024</td>
+  <td style="padding: 8px;">堆叠 FM + Scaling Law</td>
+  <td style="padding: 8px;">~20%</td>
+  <td style="padding: 8px;">~100B</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px;">Kunlun</td>
+  <td style="padding: 8px;">2025</td>
+  <td style="padding: 8px;">硬件感知 + Scaling Laws</td>
+  <td style="padding: 8px;">37%</td>
+  <td style="padding: 8px;">~100B</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px;">RankMixer</td>
+  <td style="padding: 8px;">2025</td>
+  <td style="padding: 8px;">统一 Mixer 架构</td>
+  <td style="padding: 8px;">45%</td>
+  <td style="padding: 8px;">~10B+</td>
+</tr>
+<tr style="border-bottom: 1px solid var(--border);">
+  <td style="padding: 8px;">OneTrans</td>
+  <td style="padding: 8px;">2025</td>
+  <td style="padding: 8px;">统一 Transformer 骨干</td>
+  <td style="padding: 8px;">~40%</td>
+  <td style="padding: 8px;">~10B</td>
+</tr>
+<tr>
+  <td style="padding: 8px;">HyFormer</td>
+  <td style="padding: 8px;">2025</td>
+  <td style="padding: 8px;">混合 Transformer + 交叉注意力</td>
+  <td style="padding: 8px;">~40%</td>
+  <td style="padding: 8px;">~10B</td>
+</tr>
+</table>
+</div>
+
+<h3 class="subsection-title">35.6.7 技术趋势分析</h3>
+
+<p>Scaling Up 推荐模型的演进呈现以下核心趋势：</p>
+
+<p><strong>（1）从分离架构到统一架构。</strong>传统推荐模型用不同模块分别处理特征交互、序列建模、多任务——DCN 做特征交叉、DIN 做序列建模、MMoE 做多任务。OneTrans/HyFormer 将这些功能统一到单一 Transformer 骨干，消除了模块间的割裂，同时大幅提升 MFU。</p>
+
+<p><strong>（2）从算法优化到硬件感知。</strong>RankMixer/Kunlun 的核心创新不是新算法，而是硬件感知设计——将计算模式对齐 GPU 特性，消除稀疏操作，使用密集矩阵乘法。这代表了推荐系统从"算法驱动"到"系统驱动"的范式转变。</p>
+
+<p><strong>（3）从手工模块到堆叠骨干。</strong>传统推荐模型依赖大量手工设计的模块（DIN 注意力、DIEN GRU、BST Transformer）。Wukong/RankMixer 证明，通过堆叠简单但高效的骨干层（FM/Mixer），可以达到甚至超越手工模块的效果，同时大幅提升 MFU。</p>
+
+<p><strong>（4）从推荐专用到 LLM 复用。</strong>OneTrans 的统一 Transformer 架构可以直接复用 LLM 领域的系统优化——FlashAttention、KV Cache、Tensor Parallelism。这意味着推荐系统可以"站在 LLM 的肩膀上"，复用其成熟的训练和推理基础设施。</p>
+
+<p><strong>（5）Scaling Law 的建立。</strong>Wukong 和 Kunlun 首次为推荐系统建立了完整的 Scaling Laws，量化了模型参数、数据量、序列长度的缩放规律。这为工业界选择最优模型规模提供了理论依据——不再是"越大越好"，而是根据 Scaling Law 找到效果-成本的最优平衡点。</p>
+
+<p><strong>（6）MFU 成为核心指标。</strong>传统推荐系统以 AUC/CTR 作为核心指标。Scaling Up 时代，MFU 成为与效果同等重要的指标——低 MFU 意味着 GPU 资源浪费，即使效果好的模型也无法大规模部署。RankMixer 将 MFU 从 4.5% 提升到 45%，这比任何算法创新的影响都大。</p>
+
+<h2 class="section-title" id="sec-35-7">35.7 工业实践</h2>
 
 <h3 class="subsection-title">35.6.1 阿里 LLM 推荐</h3>
 
@@ -307,7 +449,7 @@ window.MathJax = {
 
 <p><strong>效果评估：</strong>LLM 推荐的效果评估需要新指标——除了 CTR/CVR，还需评估推荐理由质量、用户满意度、对话轮次等。</p>
 
-<h2 class="section-title" id="sec-35-7">35.7 本章小结</h2>
+<h2 class="section-title" id="sec-35-8">35.8 本章小结</h2>
 
 <p>大模型正在深刻影响推荐系统的技术路线。本章从 LLM 作为特征增强、LLM 作为推荐引擎、推荐领域基础模型、推荐 Scaling Law 四个维度系统介绍了 LLM 与推荐系统的结合。</p>
 
