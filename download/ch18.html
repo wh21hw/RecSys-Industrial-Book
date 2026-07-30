@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第18章 用户兴趣建模 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣 · 补充版</div>
+</div>
+<div class="chapter-num">第五部分 推荐系统进阶 · 第 18 章</div>
+<h1 class="chapter-title">用户兴趣建模</h1>
+<p>用户兴趣建模是推荐系统精排模型的核心能力之一。如何从用户海量历史行为中提取有效的兴趣表示，直接决定了推荐结果的个性化程度。本章将系统介绍从静态兴趣表示到动态兴趣演化建模的完整技术脉络，涵盖 DIN、DIEN、BST、MIND、SIM 等工业界里程碑式工作。</p>
+
+<h2 class="section-title">18.1 静态兴趣表示的局限</h2>
+
+<p>早期推荐系统采用静态向量表示用户兴趣。最简单的方法是将用户历史交互物品的 Embedding 进行求和或均值池化，得到固定维度的兴趣向量。矩阵分解（MF）方法通过学习用户隐向量直接作为兴趣表示。Word2Vec 思想则将用户行为序列视为"句子"，通过 Skip-gram 或 CBOW 学习物品 Embedding。</p>
+
+<p>然而，静态表示存在三个核心局限：</p>
+<ul>
+<li><strong>无法捕捉兴趣的动态变化</strong>：用户的兴趣是随时间演化的，昨天喜欢的内容和今天可能完全不同。静态表示将所有历史行为等权对待，无法区分近期行为和远期行为的重要性差异。</li>
+<li><strong>无法表达多方面兴趣</strong>：用户兴趣通常是多方面的（如同时喜欢美食、旅行、科技），单一向量难以表达多维兴趣结构。将不同维度的兴趣压缩到一个向量中，不可避免地造成信息损失。</li>
+<li><strong>无法根据候选物品调整兴趣表达</strong>：对于不同的候选物品，用户历史行为中相关的部分是不同的。静态表示对所有候选物品使用相同的兴趣向量，无法实现"因物而异"的精准匹配。</li>
+</ul>
+
+<p>这些局限促使了注意力机制和序列建模方法的引入，催生了 DIN、DIEN、BST 等一系列里程碑工作。</p>
+
+<h2 class="section-title">18.2 DIN：目标级注意力建模</h2>
+
+<p>DIN（Deep Interest Network）[1] 由阿里巴巴于 2018 年提出，是用户兴趣建模领域的里程碑工作。DIN 的核心创新是引入了<strong>目标级注意力机制</strong>（Target-level Attention），根据当前候选物品动态激活用户历史行为中的相关部分。</p>
+
+<h3 class="subsection-title">18.2.1 设计动机</h3>
+
+<p>在电商推荐场景中，阿里巴巴团队发现：用户的历史行为中，只有一部分与当前候选物品相关。例如，当候选物品是运动鞋时，用户历史中的"篮球""跑步"相关行为应该获得更高权重，而"美食""音乐"相关行为应该获得较低权重。如果对所有候选物品使用相同的兴趣向量，就无法实现这种"因物而异"的精准匹配。</p>
+
+<h3 class="subsection-title">18.2.2 注意力机制</h3>
+
+<p>DIN 通过注意力网络计算用户历史行为与当前候选物品的相关性：</p>
+
+<div class="formula-box">v_U = Σᵢ a(i) · eᵢ</div>
+
+<p>其中 eᵢ 为用户第 i 次行为物品的 Embedding，a(i) 为注意力权重。注意力权重的计算方式为：</p>
+
+<div class="formula-box">a(i) = MLP([eᵢ, e_a, eᵢ ⊙ e_a])</div>
+
+<p>其中 e_a 为候选物品 Embedding，⊙ 为 Hadamard 积（逐元素乘积）。MLP 接收三个输入的拼接：用户行为 Embedding、候选物品 Embedding、以及它们的逐元素积。逐元素积 eᵢ ⊙ e_a 能够捕捉用户行为与候选物品之间的交互信息，是注意力权重的关键特征。</p>
+
+<h3 class="subsection-title">18.2.3 Dice 激活函数</h3>
+
+<p>DIN 还提出了 Dice（Data adaptive Activation Function）激活函数，作为 PReLU 的改进版本。Dice 根据输入数据的分布自适应调整激活函数的形状，而非使用固定的参数。这使得模型能够更好地适应不同场景下的数据分布差异。</p>
+
+<h3 class="subsection-title">18.2.4 工业实践</h3>
+
+<p>DIN 在阿里巴巴的电商推荐中取得了显著效果提升，CTR 离线 AUC 提升 2%+。DIN 的核心思想——"对于不同的候选物品，用户的历史行为应被赋予不同的权重"——已成为工业界用户兴趣建模的基石思想，后续的 DIEN、BST、SIM 等工作均在此基础上发展。</p>
+
+<h2 class="section-title">18.3 DIEN：兴趣演化建模</h2>
+
+<p>DIEN（Deep Interest Evolution Network）[2] 由阿里巴巴于 2019 年提出，在 DIN 基础上引入了<strong>兴趣演化层</strong>，建模用户兴趣随时间的动态变化。</p>
+
+<h3 class="subsection-title">18.3.1 三层架构</h3>
+
+<p>DIEN 包含三个关键层：</p>
+<ul>
+<li><strong>行为序列层</strong>：将用户行为序列输入 GRU（Gated Recurrent Unit），提取行为之间的时序依赖关系。GRU 的隐藏状态 h_t 可以理解为用户在时刻 t 的兴趣表示。</li>
+<li><strong>兴趣抽取层</strong>：通过注意力机制从 GRU 隐藏状态中提取与当前候选物品相关的兴趣。注意力权重的计算方式与 DIN 类似，但作用于 GRU 的隐藏状态序列而非原始行为 Embedding。</li>
+<li><strong>兴趣演化层</strong>：使用 AUGRU（Attention Update GRU）将注意力权重融入 GRU 更新过程，建模兴趣的演化轨迹。AUGRU 的核心创新是将注意力权重作为 GRU 更新门的缩放因子，使得与当前候选物品相关的行为对兴趣演化产生更大影响。</li>
+</ul>
+
+<h3 class="subsection-title">18.3.2 辅助损失</h3>
+
+<p>DIEN 引入了辅助损失（Auxiliary Loss），利用真实点击行为监督兴趣提取过程。辅助损失通过预测用户下一步行为来约束 GRU 隐藏状态的语义表达：对于时刻 t 的隐藏状态 h_t，预测用户在时刻 t+1 是否会点击物品 i。这种监督信号使 GRU 的隐藏状态更准确地反映用户兴趣，而非仅仅学习到序列中的统计模式。</p>
+
+<h3 class="subsection-title">18.3.3 效果</h3>
+
+<p>DIEN 在阿里巴巴的电商推荐中相比 DIN 进一步提升了 CTR AUC 约 0.5%。辅助损失的引入使得兴趣表示更加准确，AUGRU 的引入使得兴趣演化轨迹更加平滑和连贯。</p>
+
+<h2 class="section-title">18.4 BST：Transformer 序列建模</h2>
+
+<p>BST（Behavior Sequence Transformer）[3] 由阿里巴巴于 2019 年提出，使用 Transformer 的自注意力机制建模用户行为序列。相比 GRU，Transformer 能够建模序列中任意位置之间的依赖关系，不受距离限制。</p>
+
+<h3 class="subsection-title">18.4.1 模型架构</h3>
+
+<p>BST 将用户行为序列 [e₁, e₂, ..., eₙ] 加上位置编码 PE 后输入 Transformer 编码器：</p>
+
+<div class="formula-box">H = TransformerEncoder([e₁, e₂, ..., eₙ] + PE)</div>
+
+<p>Transformer 的核心是多头自注意力机制（Multi-Head Self-Attention），通过多个注意力头从不同子空间捕捉用户行为序列中的兴趣模式。每个注意力头可以关注不同的兴趣维度：一部分头可能关注用户长期兴趣偏好，另一部分可能关注用户最近的兴趣变化。</p>
+
+<h3 class="subsection-title">18.4.2 位置编码</h3>
+
+<p>位置编码 PE 向模型注入序列位置信息，使 Transformer 能够区分行为的先后顺序。BST 使用可学习的位置编码而非正弦位置编码，因为推荐场景中行为的位置语义与 NLP 中的不同——推荐中越近期的行为通常越重要。</p>
+
+<h3 class="subsection-title">18.4.3 工业实践</h3>
+
+<p>BST 在阿里巴巴的电商推荐中取得了显著效果提升，已成为工业界行为序列建模的主流方案。Transformer 的并行计算特性也使得 BST 比 GRU 更适合 GPU 加速。</p>
+
+<h2 class="section-title">18.5 MIND：多兴趣建模</h2>
+
+<p>MIND（Multi-Interest Network with Dynamic Routing）[4] 由阿里巴巴于 2019 年提出，解决了用户多方面兴趣的表示问题。DIN 和 DIEN 虽然能根据候选物品动态调整兴趣，但仍然输出单一兴趣向量，难以表达用户的多维兴趣结构。</p>
+
+<h3 class="subsection-title">18.5.1 动态路由机制</h3>
+
+<p>MIND 借鉴了胶囊网络（Capsule Network）的思想，使用动态路由（Dynamic Routing）机制将用户行为聚类为多个兴趣胶囊。每个兴趣胶囊对应一个兴趣向量，能够表达用户的一个兴趣维度。</p>
+
+<p>动态路由的迭代过程为：对于每个用户行为 eᵢ 和每个兴趣胶囊 cⱼ，计算路由权重 bᵢⱼ，然后更新胶囊表示：</p>
+
+<div class="formula-box">cⱼ = Σᵢ wᵢⱼ · eᵢ, &nbsp; wᵢⱼ = softmax(bᵢⱼ)</div>
+
+<p>路由权重 bᵢⱼ 通过"一致性度量"（Agreement Measure）迭代更新：如果行为 eᵢ 与胶囊 cⱼ 的相似度高，则增加路由权重 bᵢⱼ，使得 eᵢ 更多地贡献给胶囊 cⱼ。经过 T 次迭代后，每个胶囊收敛到一个稳定的兴趣表示。</p>
+
+<h3 class="subsection-title">18.5.2 多兴趣召回</h3>
+
+<p>在线推理时，MIND 输出 K 个兴趣向量，分别进行 ANN 检索，最终合并 K 路召回结果。这种多兴趣召回策略能够显著提升候选集的覆盖率和多样性。例如，用户同时喜欢美食和科技，MIND 会生成两个兴趣向量，分别召回美食和科技相关内容。</p>
+
+<h3 class="subsection-title">18.5.3 标签感知注意力</h3>
+
+<p>在训练阶段，MIND 引入了标签感知注意力（Label-aware Attention）层：对于每个训练标签（候选物品），从 K 个兴趣胶囊中选择最相关的一个参与预测。这种机制确保每个兴趣胶囊学习到不同的兴趣维度，避免所有胶囊退化为相同表示。</p>
+
+<h2 class="section-title">18.6 ComiRec：多兴趣选择</h2>
+
+<p>ComiRec（Controllable Multi-Interest Framework）[5] 由阿里巴巴于 2020 年提出，在 MIND 基础上引入了注意力机制进行兴趣选择。ComiRec 同样生成多个兴趣向量，但在线推理时根据候选物品动态选择最相关的兴趣向量参与排序，实现了更精准的兴趣匹配。ComiRec 还引入了多样性约束，确保多兴趣表示的多样性。</p>
+
+<h2 class="section-title">18.7 SIM：长序列建模</h2>
+
+<p>SIM（Search-based Interest Model）[6] 由阿里巴巴于 2020 年提出，解决了长序列建模的计算瓶颈。对于高活跃用户，行为序列可能长达数千条，传统 Transformer 的 O(n²) 复杂度难以处理。</p>
+
+<h3 class="subsection-title">18.7.1 两阶段策略</h3>
+
+<p>SIM 采用两阶段策略处理长序列：</p>
+<ul>
+<li><strong>GSU（General Search Unit）</strong>：从长序列中通过简单规则筛选出与当前候选物品相关的子序列。筛选规则可以是类目匹配（硬规则）或 Embedding 相似度（软规则）。GSU 的计算复杂度为 O(n)，能够快速将数千条行为压缩到数百条。</li>
+<li><strong>ESU（Exact Search Unit）</strong>：对筛选后的短序列使用 Transformer 进行精确建模。ESU 的计算复杂度为 O(k²)，其中 k 为筛选后的序列长度（通常为 100-200）。</li>
+</ul>
+
+<h3 class="subsection-title">18.7.2 终身行为序列</h3>
+
+<p>SIM 的关键创新在于通过两阶段方案突破了长序列的计算瓶颈，使得模型能够利用用户的终身行为序列（Lifelong Sequential Behavior Data）。实验表明，使用更长的行为序列能够显著提升推荐效果，特别是对于高活跃用户。</p>
+
+<h3 class="subsection-title">18.7.3 软硬搜索</h3>
+
+<p>SIM 有两种变体：SIM-Hard（使用类目匹配等硬规则进行 GSU 筛选）和 SIM-Soft（使用 Embedding 相似度进行 GSU 筛选）。SIM-Soft 效果更好但计算开销更大，工业界通常根据算力预算选择合适的变体。</p>
+
+<h2 class="section-title">18.8 ETA：端到端长序列</h2>
+
+<p>ETA（End-to-end Target Attention）[7] 由阿里巴巴于 2022 年提出，使用局部敏感哈希（LSH）对行为序列进行降维和加速。ETA 通过 SimHash 将行为 Embedding 压缩为二进制串，通过 Hamming 距离快速检索相关行为，避免了 SIM 中两阶段策略的信息损失，实现了端到端的长序列建模。</p>
+
+<h2 class="section-title">18.9 技术演进总结</h2>
+
+<p>用户兴趣建模经历了以下演进过程：</p>
+<ul>
+<li><strong>从静态到动态</strong>：DIN 引入注意力实现因物而异的兴趣表达，DIEN 通过 GRU 建模兴趣演化轨迹</li>
+<li><strong>从单一到多兴趣</strong>：MIND 通过动态路由实现多兴趣表示，ComiRec 引入注意力选择</li>
+<li><strong>从短序列到长序列</strong>：SIM 通过两阶段策略处理数千条行为，ETA 使用 LSH 实现端到端加速</li>
+<li><strong>从 GRU 到 Transformer</strong>：BST 使用自注意力机制建模任意位置依赖关系</li>
+</ul>
+
+<p>这些技术共同构成了现代推荐系统用户兴趣建模的完整技术栈。在实际工业系统中，通常会组合使用多种技术：例如用 MIND 进行多兴趣召回，用 BST/DIEN 进行精排序列建模，用 SIM 处理长序列。</p>
+
+<h2 class="section-title">参考文献</h2>
+<p>[1] Zhou, G. et al. "Deep Interest Network for Click-Through Rate Prediction". KDD 2018.</p>
+<p>[2] Zhou, G. et al. "Deep Interest Evolution Network for Click-Through Rate Prediction". KDD 2019.</p>
+<p>[3] Chen, X. et al. "Behavior Sequence Transformer for E-commerce Recommendation". 2019.</p>
+<p>[4] Li, C. et al. "Multi-Interest Network with Dynamic Routing for Recommendation at Tmall". CIKM 2019.</p>
+<p>[5] Cen, B. et al. "Controllable Multi-Interest Framework for Recommendation". RecSys 2020.</p>
+<p>[6] Pi, Q. et al. "Search-based User Interest Modeling with Lifelong Sequential Behavior Data". SIGIR 2020.</p>
+<p>[7] Chen, M. et al. "ETA: End-to-end Target Attention for Long Sequence Modeling". KDD 2022.</p>
+
+
+<div class="nav-bar">
+  <a href="ch17.html">← 上一章</a>
+  <a href="ch19.html">下一章 →</a>
+</div>
+</body>
+</html>

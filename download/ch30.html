@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第30章 RL多目标融合 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第六部分 RL推荐 · 第 30 章</div>
+
+<h1 class="chapter-title">RL 多目标融合</h1>
+
+<p>现代推荐系统需要同时优化多个目标——点击率、转化率、停留时长、多样性、长期留存等。多目标融合是推荐系统的核心挑战之一。传统方法使用加权求和或帕累托优化，但这些方法难以处理目标的长期依赖和动态权衡。强化学习提供了一种自然的框架来处理多目标融合问题——通过长期累积奖励和动态策略调整实现多目标最优。本章将系统介绍 RL 在多目标融合中的应用。</p>
+
+<div class="toc-box">
+  <h3>本章目录</h3>
+  <ul>
+    <li><a href="#sec-30-1">30.1 多目标推荐问题</a> — 目标定义 / 目标冲突 / 权衡策略</li>
+    <li><a href="#sec-30-2">30.2 传统多目标融合</a> — 加权求和 / 帕累托 / 多任务学习</li>
+    <li><a href="#sec-30-3">30.3 RL 多目标融合</a> — 奖励设计 / 策略学习 / 动态权衡</li>
+    <li><a href="#sec-30-4">30.4 长期价值优化</a> — 折扣累积 / 留存优化 / LTV</li>
+    <li><a href="#sec-30-5">30.5 工业实践</a> — 阿里/抖音多目标融合</li>
+    <li><a href="#sec-30-6">30.6 本章小结</a></li>
+  </ul>
+</div>
+
+<h2 class="section-title" id="sec-30-1">30.1 多目标推荐问题</h2>
+
+<h3 class="subsection-title">30.1.1 目标定义</h3>
+
+<p>推荐系统通常需要优化以下目标：</p>
+
+<p><strong>即时效果目标：</strong></p>
+<ul>
+  <li>点击率（CTR）：用户点击概率，反映内容吸引力</li>
+  <li>转化率（CVR）：用户购买/注册概率，反映商业价值</li>
+  <li>停留时长（Dwell Time）：用户在内容上的停留时间，反映内容质量</li>
+  <li>互动率：点赞/评论/分享概率，反映用户参与度</li>
+</ul>
+
+<p><strong>长期价值目标：</strong></p>
+<ul>
+  <li>用户留存（Retention）：用户次日/七日留存率，反映用户长期满意度</li>
+  <li>用户生命周期价值（LTV）：用户在生命周期内的总贡献</li>
+  <li>GMV：平台交易总额，反映商业变现</li>
+</ul>
+
+<p><strong>生态目标：</strong></p>
+<ul>
+  <li>多样性：推荐内容的类目/风格多样性</li>
+  <li>公平性：不同创作者/类目的流量分配公平性</li>
+  <li>新颖性：推荐新内容/长尾内容的能力</li>
+</ul>
+
+<h3 class="subsection-title">30.1.2 目标冲突</h3>
+
+<p>多目标之间存在冲突——优化一个目标可能损害另一个目标：</p>
+
+<p><strong>CTR vs CVR：</strong>高 CTR 的物品可能 CVR 低（标题党吸引用户点击但购买意愿低）。优化 CTR 可能引入低质量内容，损害 CVR。</p>
+
+<p><strong>CTR vs 留存：</strong>短期高 CTR 可能导致用户疲劳，降低长期留存。例如，连续推荐刺激性内容短期 CTR 高，但用户可能流失。</p>
+
+<p><strong>CTR vs 多样性：</strong>纯 CTR 优化倾向于推荐头部热门内容，导致推荐同质化，降低多样性。</p>
+
+<p><strong>短期 vs 长期：</strong>短期目标（CTR/CVR）和长期目标（留存/LTV）的优化方向可能不同。短期最优不等于长期最优。</p>
+
+<h3 class="subsection-title">30.1.3 权衡策略</h3>
+
+<p>多目标权衡需要考虑以下因素：</p>
+
+<p><strong>业务优先级：</strong>不同业务场景的目标优先级不同。电商优先 GMV，信息流优先停留时长，广告优先 eCPM。</p>
+
+<p><strong>用户分层：</strong>不同用户群体的目标偏好不同。新用户更看重多样性（发现兴趣），老用户更看重精准度（满足需求）。</p>
+
+<p><strong>时间动态：</strong>同一用户在不同时段的目标偏好不同。早晨偏好新闻类内容，晚上偏好娱乐类内容。</p>
+
+<p><strong>长期影响：</strong>当前推荐影响用户未来行为。需要在短期奖励和长期价值之间权衡。</p>
+
+<h2 class="section-title" id="sec-30-2">30.2 传统多目标融合</h2>
+
+<h3 class="subsection-title">30.2.1 加权求和</h3>
+
+<p>最简单的多目标融合方法——将各目标分数加权求和：</p>
+
+<div class="formula-box">
+  score = w₁·CTR + w₂·CVR + w₃·DwellTime + w₄·Diversity &nbsp;&nbsp;(30.1)
+</div>
+
+<p>权重 wᵢ 通过人工调参或离线搜索确定。</p>
+
+<p><strong>优势：</strong>简单、高效、可解释。</p>
+
+<p><strong>局限：</strong>权重固定，不能根据用户和场景动态调整。目标间的尺度不一致需要归一化。无法考虑目标间的非线性关系。</p>
+
+<h3 class="subsection-title">30.2.2 帕累托优化</h3>
+
+<p>帕累托优化寻找不被任何其他解支配的解集——帕累托前沿。在帕累托前沿上，任何目标的提升必然导致另一个目标下降。</p>
+
+<p><strong>多目标进化算法（MOEA）：</strong>使用进化算法搜索帕累托前沿。适合离线优化，但计算开销大。</p>
+
+<p><strong>梯度方法：</strong>使用梯度下降在帕累托前沿上搜索。适合可微目标，但可能陷入局部最优。</p>
+
+<p><strong>局限：</strong>帕累托前沿上的选择仍需要人工决策。在线场景难以实时求解。</p>
+
+<h3 class="subsection-title">30.2.3 多任务学习</h3>
+
+<p>多任务学习（MTL）同时优化多个目标，通过参数共享提升泛化：</p>
+
+<p><strong>Shared-Bottom：</strong>底层共享特征表示，上层各目标独立输出。简单但可能负迁移——目标差异大时共享反而有害。</p>
+
+<p><strong>MMoE：</strong>多个专家网络 + 门控加权。门控根据输入动态分配专家，缓解负迁移。推荐系统多目标融合的标配方法。</p>
+
+<p><strong>PLE：</strong>渐进式 MMoE，增加任务特定专家。比 MMoE 效果更好，尤其当目标差异大时。</p>
+
+<p><strong>局限：</strong>MTL 优化的是各目标的损失加权和，仍然需要人工设定权重。MTL 关注模型结构，不涉及长期价值。</p>
+
+<h2 class="section-title" id="sec-30-3">30.3 RL 多目标融合</h2>
+
+<h3 class="subsection-title">30.3.1 奖励设计</h3>
+
+<p>RL 将多目标融合转化为奖励设计问题：</p>
+
+<div class="formula-box">
+  rₜ = w₁·r_click + w₂·r_buy + w₃·r_dwell + w₄·r_diversity &nbsp;&nbsp;(30.2)
+</div>
+
+<p>与传统加权求和不同，RL 的奖励是序列累积的：</p>
+
+<div class="formula-box">
+  R = Σₜ γᵗ · rₜ &nbsp;&nbsp;(30.3)
+</div>
+
+<p>这使得 RL 可以优化长期累积奖励，而非单次奖励。长期累积奖励自然包含了留存、LTV 等长期目标。</p>
+
+<p><strong>奖励归一化：</strong>不同目标的尺度不一致，需要归一化。CTR 是 0-1 的概率，GMV 可能是 0-1000 的金额。使用 z-score 或 min-max 归一化。</p>
+
+<p><strong>奖励延迟：</strong>有些奖励是延迟的——用户今天推荐的商品可能一周后才购买。RL 通过折扣因子 γ 处理延迟奖励，但延迟过长时折扣过大，信号弱。</p>
+
+<h3 class="subsection-title">30.3.2 策略学习</h3>
+
+<p><strong>策略梯度：</strong>直接优化策略 π(a|s) 的期望累积奖励。适合连续动作空间或大动作空间。</p>
+
+<p><strong>Actor-Critic：</strong>Actor 学习策略，Critic 评估值函数。Critic 提供基线减少方差。推荐系统 RL 最常用的框架。</p>
+
+<p><strong>离线 RL：</strong>从历史日志中学习策略。使用 CQL 或 BCQ 约束策略在历史数据范围内，避免外推误差。</p>
+
+<h3 class="subsection-title">30.3.3 动态权衡</h3>
+
+<p>RL 的优势在于可以动态调整目标权重：</p>
+
+<p><strong>条件策略：</strong>将目标权重作为策略输入，策略根据权重动态调整推荐行为。π(a|s, w) 中 w 是目标权重向量。</p>
+
+<p><strong>元学习：</strong>学习一个元策略，根据用户特征和场景动态生成目标权重。元策略可以用 MAML 或 Reptile 训练。</p>
+
+<p><strong>多目标 RL：</strong>使用多目标 RL 框架，同时学习帕累托前沿上的多个策略。根据当前需求选择策略。如 Pareto Conditioned Network 可以根据偏好向量生成不同策略。</p>
+
+<h2 class="section-title" id="sec-30-4">30.4 长期价值优化</h2>
+
+<h3 class="subsection-title">30.4.1 折扣累积奖励</h3>
+
+<p>RL 的核心优势是优化长期累积奖励。折扣因子 γ 控制长期视野：</p>
+
+<div class="formula-box">
+  R = Σₜ₌₀^∞ γᵗ · rₜ = r₀ + γ·r₁ + γ²·r₂ + ... &nbsp;&nbsp;(30.4)
+</div>
+
+<p>γ 越大越重视长期，γ 越小越重视短期。推荐系统通常设 γ = 0.9-0.99，表示重视未来 10-100 步的奖励。</p>
+
+<p><strong>γ 的选择：</strong>γ 过大导致信用分配困难（远期奖励与当前动作的因果关系弱），γ 过小退化为短期优化。需要根据场景调优。</p>
+
+<h3 class="subsection-title">30.4.2 留存优化</h3>
+
+<p>用户留存是推荐系统最重要的长期目标。RL 可以直接优化留存：</p>
+
+<p><strong>留存奖励：</strong>用户次日留存设为 +1，流失设为 -1。RL 学习最大化留存奖励的策略。</p>
+
+<p><strong>留存预测：</strong>使用留存预测模型估计当前推荐对用户留存的影响。将留存预测作为 RL 的奖励信号。</p>
+
+<p><strong>挑战：</strong>留存信号稀疏（每天一个信号），信用分配困难——用户流失是多次推荐累积影响的结果，难以归因到单次推荐。</p>
+
+<h3 class="subsection-title">30.4.3 LTV 优化</h3>
+
+<p>用户生命周期价值（LTV）是长期商业目标。RL 可以优化 LTV：</p>
+
+<p><strong>LTV 建模：</strong>LTV = Σₜ₌₀^∞ γᵗ · gₜ，其中 gₜ 是用户在第 t 天的 GMV 贡献。RL 学习最大化 LTV 的推荐策略。</p>
+
+<p><strong>LTV 预测：</strong>使用 LTV 预测模型估计用户的长期价值。将 LTV 预测作为 RL 的值函数。</p>
+
+<p><strong>挑战：</strong>LTV 预测本身是困难问题，预测误差会影响 RL 策略。需要结合因果推断减少偏差。</p>
+
+<h2 class="section-title" id="sec-30-5">30.5 工业实践</h2>
+
+<h3 class="subsection-title">30.5.1 阿里多目标融合</h3>
+
+<p>阿里在淘宝推荐中使用 RL 进行多目标融合：</p>
+
+<p><strong>多目标奖励：</strong>r = w₁·CTR + w₂·CVR + w₃·GMV + w₄·Diversity。权重 w 通过离线优化确定，不同场景使用不同权重。</p>
+
+<p><strong>长期价值：</strong>使用 Actor-Critic 优化用户长期留存。状态是用户兴趣序列，动作是推荐物品，奖励包含即时效果和留存信号。</p>
+
+<p><strong>离线 RL：</strong>使用 CQL 从历史日志中学习策略，避免在线探索风险。学习到的策略与传统模型融合使用。</p>
+
+<h3 class="subsection-title">30.5.2 抖音多目标融合</h3>
+
+<p>抖音推荐系统的多目标融合以完播率和互动率为核心：</p>
+
+<p><strong>完播率优化：</strong>完播率是短视频推荐的核心指标。使用 RL 优化长期完播率，避免短期高 CTR但低完播的内容。</p>
+
+<p><strong>多目标奖励：</strong>r = w₁·完播率 + w₂·互动率 + w₃·停留时长 + w₄·多样性。权重根据用户群体动态调整。</p>
+
+<p><strong>留存优化：</strong>使用 RL 直接优化用户留存。留存信号通过留存预测模型提供，解决留存信号稀疏问题。</p>
+
+<h3 class="subsection-title">30.5.3 Meta 长期价值优化</h3>
+
+<p>Meta 在 Instagram 推荐中使用 RL 优化长期价值：</p>
+
+<p><strong>REINFORCE：</strong>使用 REINFORCE 优化用户长期参与度。状态是用户历史行为，动作是推荐内容，奖励是用户参与度。</p>
+
+<p><strong>离线训练：</strong>从历史日志中离线训练 RL 策略，然后在线微调。降低在线探索风险。</p>
+
+<p><strong>多目标：</strong>同时优化用户参与度、内容多样性和创作者公平性。使用条件策略根据当前需求动态调整目标权重。</p>
+
+<h2 class="section-title" id="sec-30-6">30.6 本章小结</h2>
+
+<p>多目标融合是推荐系统的核心挑战。本章介绍了多目标推荐的问题定义（目标冲突/权衡策略）、传统方法（加权求和/帕累托/MTL）、RL 方法（奖励设计/策略学习/动态权衡）和长期价值优化（折扣累积/留存/LTV）。</p>
+
+<p>RL 在多目标融合中的优势在于：（1）优化长期累积奖励，而非单次奖励；（2）动态调整目标权重，适应不同用户和场景；（3）直接优化留存和 LTV 等长期目标。</p>
+
+<p>然而，RL 也面临挑战：信用分配困难、奖励信号稀疏、离线学习偏差、在线探索风险。在实践中，RL 通常与传统 MTL 方法结合使用——MTL 负责多目标预测，RL 负责长期价值优化和动态权衡。这种混合策略既保证了短期效果，又兼顾了长期价值。</p>
+
+</body>
+</html>

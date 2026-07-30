@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第23章 个性化参数 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣 · 补充版</div>
+</div>
+<div class="chapter-num">第五部分 推荐系统进阶 · 第 23 章</div>
+<h1 class="chapter-title">个性化参数</h1>
+
+<p>推荐系统中的排序公式参数（如多目标融合权重、Quota 配额等）通常采用全局统一配置。然而不同用户群体对各类目标的偏好存在显著差异，全局参数难以实现最优效果。个性化参数（Personalized Parameters）旨在为不同用户或用户群体定制差异化的排序策略，是推荐系统从"一刀切"走向"千人千面"的关键环节。本章将系统介绍个性化参数的动机、方法和工业实践。</p>
+
+<h2 class="section-title">23.1 全局参数的局限</h2>
+
+<p>传统推荐系统使用全局统一的排序公式参数。例如，多目标融合公式中的权重 w1, w2, ..., wn 对所有用户相同：</p>
+
+<div class="formula-box">score = w1 * pCTR + w2 * pCVR + w3 * pWatchTime + ... + wn * pn</div>
+
+<p>这种"一刀切"的参数配置存在明显局限：不同用户群体对点击、转化、时长等目标的偏好差异很大。例如，重度内容消费者更关注内容质量和观看时长，新用户更关注点击引导和内容发现，商业化高价值用户更关注转化和 GMV。全局参数无法兼顾这些差异——一组参数在某类用户上效果好，在另一类用户上可能效果差。</p>
+
+<p>更具体地说，全局参数的局限体现在以下几个方面：</p>
+<ul>
+<li><strong>用户偏好差异</strong>：不同年龄段、活跃度、消费深度的用户对各类目标的权重偏好不同</li>
+<li><strong>场景差异</strong>：早晨通勤场景和晚间休闲场景的最优参数配置不同</li>
+<li><strong>业务目标动态变化</strong>：产品增长期关注用户活跃度，商业化期关注 GMV，不同阶段需要不同参数</li>
+<li><strong>探索 vs 利用</strong>：新用户需要更多探索（低 CTR 权重），老用户需要更多利用（高 CTR 权重）</li>
+</ul>
+
+<h2 class="section-title">23.2 分群参数</h2>
+
+<p>最简单的个性化方案是按用户特征分群，为每个群体配置独立参数。常见的分群维度包括：</p>
+<ul>
+<li><strong>新老用户</strong>：新用户侧重内容发现和探索（降低 CTR 权重，增加多样性权重），老用户侧重精准推荐（提高 CTR 权重）</li>
+<li><strong>活跃度</strong>：高活用户关注内容深度（提高时长权重），低活用户关注点击引导（提高 CTR 权重）</li>
+<li><strong>消费偏好</strong>：内容型用户（提高时长和完播率权重）、社交型用户（提高互动率权重）、交易型用户（提高 CVR 权重）</li>
+<li><strong>地域/时段</strong>：不同地域和时段的用户行为模式不同，需要差异化参数</li>
+</ul>
+
+<p>分群方案的优点是实现简单、可解释性强、调试方便。但缺点也很明显：粒度粗（只有几个到十几个群体）、无法捕捉细粒度的个性化需求、群体边界硬性划分（一个用户要么属于 A 群要么属于 B 群，无法混合）。</p>
+
+<h2 class="section-title">23.3 模型驱动的个性化</h2>
+
+<p>更先进的方案是使用模型预测个性化参数。核心思想是：用一个轻量级参数预测网络，根据用户特征动态输出对应的排序权重：</p>
+
+<div class="formula-box">w = g(UserFeatures)</div>
+
+<p>其中 g() 是一个小型神经网络（通常 1-2 层 MLP），输入用户特征（年龄、活跃度、兴趣标签等），输出对应的排序权重向量 w = (w1, w2, ..., wn)。这种方案实现了细粒度的参数个性化——每个用户都有自己独特的权重配置。</p>
+
+<h3 class="subsection-title">23.3.1 网络结构</h3>
+
+<p>参数预测网络通常采用以下结构：用户特征 → Embedding 层 → 1-2 层 MLP → Sigmoid 输出 → 权重向量。Sigmoid 激活确保输出在 [0, 1] 范围内，可以直接作为融合公式的权重。网络参数通过推荐系统的整体损失反向传播学习。</p>
+
+<h3 class="subsection-title">23.3.2 训练方式</h3>
+
+<p>参数预测网络可以与主模型联合训练，也可以分阶段训练。联合训练时，参数预测网络的梯度来自主任务的损失（如 CTR 交叉熵），网络自动学习"什么样的用户需要什么样的权重"。分阶段训练时，先用贝叶斯优化搜索不同用户群体的最优参数，再用这些参数作为标签训练参数预测网络。</p>
+
+<h3 class="subsection-title">23.3.3 工程挑战</h3>
+
+<p>模型驱动的个性化方案面临以下工程挑战：</p>
+<ul>
+<li><strong>训练稳定性</strong>：参数预测网络的输出直接影响排序分数，训练过程可能不稳定</li>
+<li><strong>冷启动</strong>：新用户缺乏特征，参数预测可能不准</li>
+<li><strong>可解释性</strong>：模型预测的权重缺乏直观解释，难以调试</li>
+<li><strong>A/B 实验设计</strong>：个性化参数使得 A/B 实验的对照组设计更复杂</li>
+</ul>
+
+<h2 class="section-title">23.4 自动化参数优化</h2>
+
+<p>结合贝叶斯优化（Bayesian Optimization）或交叉熵方法（Cross-Entropy Method, CEM），可以实现参数的自动搜索与更新。系统周期性收集历史实验结果 (wi, rewardi)，利用优化算法搜索更优的参数配置，将新参数下发到线上系统进行验证。</p>
+
+<h3 class="subsection-title">23.4.1 贝叶斯优化</h3>
+
+<p>贝叶斯优化使用高斯过程（Gaussian Process）或 TPE（Tree-structured Parzen Estimator）作为代理模型，通过采集函数（EI、UCB 等）指导参数搜索。适合低维参数空间（<20 维）。贝叶斯优化的核心优势是样本效率高——用尽可能少的实验次数找到尽可能优的参数。</p>
+
+<h3 class="subsection-title">23.4.2 CEM</h3>
+
+<p>CEM 通过维护参数分布并迭代更新，逐步向高收益区域收敛。每轮采样多组参数，在线上分配流量实验，根据收益筛选精英样本（Elite Samples），用精英样本更新采样分布。CEM 适合中等维度参数空间（20-50 维），在工业界推荐系统中广泛应用。</p>
+
+<h3 class="subsection-title">23.4.3 强化学习</h3>
+
+<p>将参数选择建模为序列决策问题，通过 RL 策略学习最优融合方案。RL 的优势在于能够优化长期收益而非即时效果，但面临训练不稳定和线上探索风险等挑战。</p>
+
+<h2 class="section-title">23.5 个性化参数的工业实践</h2>
+
+<p>在工业实践中，个性化参数通常采用分层方案：</p>
+<ul>
+<li><strong>全局层</strong>：通过贝叶斯优化/CEM 搜索全局最优参数作为 Base</li>
+<li><strong>分群层</strong>：在新老用户、活跃度等维度上配置差异化参数</li>
+<li><strong>个性化层</strong>：用模型预测网络为每个用户生成细粒度权重</li>
+<li><strong>实时层</strong>：根据用户当前 Session 的实时行为动态调整参数</li>
+</ul>
+
+<p>这种分层方案兼顾了效率（全局层快速迭代）、精度（个性化层细粒度）和实时性（实时层响应用户即时兴趣变化）。</p>
+
+<h2 class="section-title">23.6 前沿方法：上下文老虎机与元学习</h2>
+
+<h3 class="subsection-title">23.6.1 上下文老虎机参数优化</h3>
+
+<p>将参数选择建模为上下文老虎机（Contextual Bandit）问题：上下文是用户特征，动作是参数配置，奖励是推荐效果。与贝叶斯优化相比，上下文老虎机可以在线学习，实时适应用户偏好变化。</p>
+
+<p><strong>LinUCB 参数优化：</strong>将参数空间离散化为若干候选配置，使用 LinUCB 根据用户特征选择参数配置。LinUCB 的上置信界保证探索效率，线性模型保证计算效率。</p>
+
+<p><strong>Thompson Sampling 参数优化：</strong>维护参数配置效果的后验分布，每次请求时从后验分布采样参数配置。Thompson Sampling 在参数优化中表现优异，尤其适合非平稳环境。</p>
+
+<p><strong>神经网络上下文老虎机：</strong>使用神经网络替代线性模型，可以捕捉用户特征与参数效果之间的非线性关系。结合 NeuralUCB 或 Neural Thompson 算法，在探索效率和表达能力之间取得平衡。</p>
+
+<h3 class="subsection-title">23.6.2 元学习个性化</h3>
+
+<p>元学习（Meta-Learning）为个性化参数提供了新思路——通过元学习学习"如何快速适配新用户的参数偏好"：</p>
+
+<p><strong>MAML 参数适配：</strong>使用 Model-Agnostic Meta-Learning (MAML) 学习参数预测网络的初始化，使其可以通过少量样本快速适配新用户。元训练阶段在多用户数据上学习通用初始化，元测试阶段用少量交互数据微调到具体用户。</p>
+
+<p><strong>条件网络：</strong>使用条件网络（Conditional Network），将用户特征作为条件输入，动态生成参数预测网络的权重。这种方案实现了"网络的网络"——外层网络根据用户特征生成内层网络的参数。</p>
+
+<h3 class="subsection-title">23.6.3 LLM 驱动的参数优化</h3>
+
+<p>2024-2025 年的最新探索是使用 LLM 进行参数优化：将用户特征、历史效果和候选参数编码为自然语言 prompt，输入 LLM 生成推荐参数配置。LLM 的推理能力可以理解用户偏好与参数效果之间的复杂关系，尤其适合冷启动用户（缺乏历史数据时，LLM 可以基于用户描述推理合适的参数）。</p>
+
+<h2 class="section-title">23.7 工业实践</h2>
+
+<p>在工业实践中，个性化参数通常采用分层方案：</p>
+
+<ul>
+  <li><strong>全局层</strong>：通过贝叶斯优化/CEM 搜索全局最优参数作为 Base</li>
+  <li><strong>分群层</strong>：在新老用户、活跃度等维度上配置差异化参数</li>
+  <li><strong>个性化层</strong>：用模型预测网络为每个用户生成细粒度权重</li>
+  <li><strong>实时层</strong>：根据用户当前 Session 的实时行为动态调整参数</li>
+</ul>
+
+<p>这种分层方案兼顾了效率（全局层快速迭代）、精度（个性化层细粒度）和实时性（实时层响应用户即时兴趣变化）。</p>
+
+<p><strong>快手实践：</strong>快手短视频推荐使用 CEM 进行多目标融合参数搜索。每天收集线上 A/B 实验数据，用 CEM 搜索更优参数配置。同时使用分群参数——新用户侧重完播率（内容发现），老用户侧重互动率（深度参与）。</p>
+
+<p><strong>淘宝实践：</strong>淘宝推荐使用模型驱动的个性化参数。参数预测网络根据用户特征（活跃度/消费偏好/场景）输出多目标融合权重。同时使用实时层——根据用户当前 Session 的点击和停留行为动态调整参数。</p>
+
+<h2 class="section-title">23.8 本章小结</h2>
+
+<p>个性化参数是提升推荐效果的重要方向。从全局参数到分群参数再到模型驱动的个性化参数，粒度逐渐精细。结合贝叶斯优化、CEM、上下文老虎机和元学习等自动化方法，推荐系统能够为不同用户群体提供差异化的排序策略。工业实践通常采用分层方案，在全局、分群、个性化和实时四个层面协同优化参数配置。</p>
+
+<p>随着 LLM 技术的发展，LLM 驱动的参数优化成为新方向——LLM 的推理能力可以理解用户偏好与参数效果之间的复杂关系，为冷启动用户提供更智能的参数配置。未来，个性化参数将更加智能化和自动化，从"人工调参"走向"AI 调参"。</p>
+
+<h2 class="section-title">参考文献</h2>
+<p>[1] 快手. "多目标排序在快手短视频推荐中的实践". InfoQ 2021.</p>
+<p>[2] "推荐系统：精排多目标融合与超参数学习方法". 博客园 2024.</p>
+<p>[3] "多目标推荐离线搜参全流程". 知乎 2025.</p>
+<p>[4] Li, L., et al. "A contextual-bandit approach to personalized news article recommendation." WWW 2010.</p>
+<p>[5] Finn, C., et al. "Model-agnostic meta-learning for fast adaptation of deep networks." ICML 2017.</p>
+
+<div class="chapter-end">* * *</div>
+<div class="nav-bar">
+  <a href="ch22.html">← 上一章：第22章 推荐系统偏差</a>
+  <a href="ch24.html">下一章：第24章 多任务融合 →</a>
+</div>
+</body>
+</html>

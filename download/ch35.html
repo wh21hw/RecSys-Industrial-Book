@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第35章 推荐大模型 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第八部分 前沿趋势 · 第 35 章</div>
+
+<h1 class="chapter-title">推荐大模型</h1>
+
+<p>大语言模型（LLM）的崛起深刻改变了人工智能的技术格局。从 GPT-3 到 GPT-4、从 LLaMA 到 Qwen，大模型在自然语言理解、生成、推理方面展现出前所未有的能力。推荐系统作为 AI 最重要的落地场景之一，自然也受到大模型浪潮的深刻影响。本章将系统介绍大模型在推荐系统中的应用——从 LLM 作为特征增强到 LLM 作为推荐引擎，再到推荐领域的基础模型和 Scaling Law。</p>
+
+<div class="toc-box">
+  <h3>本章目录</h3>
+  <ul>
+    <li><a href="#sec-35-1">35.1 LLM 与推荐系统的交汇</a> — 范式演进 / 技术路线 / 挑战</li>
+    <li><a href="#sec-35-2">35.2 LLM 作为特征增强</a> — embedding 注入 / 知识增强 / 推理特征</li>
+    <li><a href="#sec-35-3">35.3 LLM 作为推荐引擎</a> — prompt 推荐 / in-context learning / 指令微调</li>
+    <li><a href="#sec-35-4">35.4 推荐领域基础模型</a> — 推荐大模型预训练 / 领域适配</li>
+    <li><a href="#sec-35-5">35.5 推荐系统的 Scaling Law</a> — 数据缩放 / 模型缩放 / 特征缩放</li>
+    <li><a href="#sec-35-6">35.6 工业实践</a> — 阿里/百度/Meta/Google 的 LLM 推荐</li>
+    <li><a href="#sec-35-7">35.7 本章小结</a></li>
+  </ul>
+</div>
+
+<h2 class="section-title" id="sec-35-1">35.1 LLM 与推荐系统的交汇</h2>
+
+<h3 class="subsection-title">35.1.1 范式演进</h3>
+
+<p>大模型在推荐系统中的应用经历了三个阶段的演进：</p>
+
+<p><strong>阶段一：LLM 作为特征增强器（2022-2023）。</strong>使用 LLM 的 embedding 或生成能力为传统推荐模型提供增强特征。例如，使用 LLM 生成物品描述、提取用户兴趣标签、编码文本语义。这种方式不改推荐架构，只是用 LLM 替代传统 NLP 模块。优势是兼容性好、风险低，劣势是未充分利用 LLM 的推理能力。</p>
+
+<p><strong>阶段二：LLM 作为推荐引擎（2023-2024）。</strong>直接使用 LLM 进行推荐推理。将用户历史和候选物品编码为 prompt，输入 LLM 生成推荐结果。这种方式利用了 LLM 的推理和泛化能力，但面临推理延迟高、候选集受限等挑战。代表工作：P5、NIRRTU、LLMRank。</p>
+
+<p><strong>阶段三：推荐领域基础模型（2024-2025）。</strong>构建推荐领域的"基础模型"——在大规模推荐数据上预训练，具备通用推荐能力，可适配多种下游推荐任务。这种思路借鉴了 LLM 的预训练-微调范式。代表工作：Meta 的 HSTU 可以看作推荐基础模型的雏形。</p>
+
+<h3 class="subsection-title">35.1.2 技术路线</h3>
+
+<p>LLM 与推荐系统结合的技术路线可以分为以下几类：</p>
+
+<p><strong>路线一：LLM Embedding 注入。</strong>使用 LLM 的 embedding 层输出作为物品或用户的特征表示，注入传统推荐模型。这种方式利用了 LLM 预训练获得的丰富语义知识，且不改变推荐架构。</p>
+
+<p><strong>路线二：LLM 生成式推荐。</strong>将推荐问题转化为 LLM 的生成任务。通过 prompt engineering 或指令微调，让 LLM 直接输出推荐结果。</p>
+
+<p><strong>路线三：LLM + Agent 推荐。</strong>将 LLM 作为推荐 Agent 的大脑，通过工具调用（Tool Calling）和检索增强生成（RAG）实现复杂推荐流程。Agent 可以调用召回模型、排序模型、知识库等工具，实现超越单一模型的推荐能力。</p>
+
+<p><strong>路线四：推荐领域大模型预训练。</strong>在推荐数据上从头预训练大模型，学习推荐领域的通用知识和模式，然后适配到具体场景。</p>
+
+<h3 class="subsection-title">35.1.3 核心挑战</h3>
+
+<p><strong>推理延迟：</strong>LLM 的推理延迟（通常 100ms-1s）远超传统推荐模型（< 10ms），难以满足实时推荐的要求。解决方案包括：模型蒸馏、量化、speculative decoding、将 LLM 用于离线而非在线。</p>
+
+<p><strong>候选集限制：</strong>LLM 的上下文窗口有限（通常 4K-32K token），无法在 prompt 中列出全部候选物品（百万级）。解决方案包括：RAG 检索增强、分层推荐（先召回再 LLM 排序）、物品 ID 压缩。</p>
+
+<p><strong>幻觉问题：</strong>LLM 可能推荐不存在的物品或生成不准确的信息。解决方案包括：constrained decoding、后处理验证、grounding 检索增强。</p>
+
+<p><strong>成本：</strong>LLM 的训练和推理成本远高于传统推荐模型。需要权衡效果提升与成本增加。</p>
+
+<p><strong>评估挑战：</strong>LLM 推荐的效果评估比传统模型复杂——除了准确率指标，还需要评估推理质量、可解释性、安全性等。</p>
+
+<h2 class="section-title" id="sec-35-2">35.2 LLM 作为特征增强</h2>
+
+<h3 class="subsection-title">35.2.1 LLM Embedding 注入</h3>
+
+<p>使用 LLM 的 embedding 作为推荐模型的特征是最简单直接的 LLM 增强方式。具体做法：</p>
+
+<p>（1）<strong>物品 embedding</strong>：将物品标题、描述、评论等文本拼接后输入 LLM，取倒数第二层的平均 pooling 作为物品的文本表示。该向量可以作为推荐模型的辅助特征。</p>
+
+<p>（2）<strong>用户 embedding</strong>：将用户的历史行为序列描述为自然语言（如"用户最近浏览了：连衣裙、凉鞋、太阳帽"），输入 LLM 获取用户兴趣表示。</p>
+
+<p>（3）<strong>融合方式</strong>：LLM embedding 可以与 ID embedding 拼接、加权融合或通过交叉注意力交互。实践中，拼接 + MLP 是最常用的方式。</p>
+
+<p><strong>效果：</strong>多个工业实践表明，LLM embedding 注入可以使推荐模型 CTR 提升 1-3%，尤其对冷启动物品和长尾物品效果显著（提升 5-10%）。因为 LLM embedding 携带了丰富的语义知识，弥补了 ID embedding 对新物品的不足。</p>
+
+<h3 class="subsection-title">35.2.2 LLM 知识增强</h3>
+
+<p>LLM 蕴含了丰富的世界知识，可以用于推荐系统的知识增强：</p>
+
+<p><strong>物品知识生成：</strong>使用 LLM 为物品生成结构化知识——属性标签、类别、风格、适用场景等。例如，给定一个商品标题"红色碎花连衣裙"，LLM 可以生成：类别=连衣裙、颜色=红色、图案=碎花、风格=甜美、季节=夏季、场景=约会/度假。这些结构化标签作为推荐模型的离散特征。</p>
+
+<p><strong>用户兴趣画像</strong>：使用 LLM 分析用户行为序列，生成自然语言兴趣画像。例如，"该用户对户外运动和摄影感兴趣，偏好高性价比产品，近期关注露营装备"。这种画像可以用于召回策略选择和推荐理由生成。</p>
+
+<p><strong>知识图谱增强</strong>：使用 LLM 补充推荐知识图谱中的缺失关系。例如，LLM 可以推断"登山鞋"与"户外运动"的从属关系、"防晒霜"与"夏季"的季节关联等。</p>
+
+<h3 class="subsection-title">35.2.3 LLM 推理特征</h3>
+
+<p>LLM 的推理能力可以生成传统方法难以提取的高阶特征：</p>
+
+<p><strong>搭配推荐特征</strong>：LLM 可以推理物品间的搭配关系——"这条牛仔裤搭配什么上衣合适？"LLM 生成搭配建议，作为推荐模型的交叉特征。</p>
+
+<p><strong>场景推理特征</strong>：LLM 推理用户当前场景——"用户最近浏览了帐篷、睡袋、登山杖，推断正在准备露营活动"。这种场景推理特征可以用于推荐场景化物品组。</p>
+
+<p><strong>意图理解特征</strong>：LLM 理解用户搜索意图——"夏季显瘦"不仅匹配单品，还理解"显瘦"的视觉效果需求。这种深层意图理解可以提升搜索推荐的相关性。</p>
+
+<h2 class="section-title" id="sec-35-3">35.3 LLM 作为推荐引擎</h2>
+
+<h3 class="subsection-title">35.3.1 Prompt-based 推荐</h3>
+
+<p>直接使用 LLM 的 in-context learning 能力进行推荐。将用户历史和候选物品编码为自然语言 prompt，输入 LLM 输出推荐结果。</p>
+
+<p><strong>基础 prompt 模板：</strong></p>
+
+<div class="formula-box">
+  "用户历史行为：{item1}, {item2}, ..., {itemN}<br>
+   候选物品：{cand1}, {cand2}, ..., {candM}<br>
+   请从候选物品中选择用户最可能感兴趣的 Top-K。" &nbsp;&nbsp;(35.1)
+</div>
+
+<p><strong>效果：</strong>研究表明，GPT-4 在零样本推荐场景中可以取得接近传统推荐模型的效果，尤其在用户历史丰富、候选集较小的情况下。但在大规模工业场景中，由于候选集限制和推理延迟，纯 prompt 推荐尚不实用。</p>
+
+<p><strong>优化策略：</strong></p>
+
+<p>（1）<strong>few-shot prompting</strong>：在 prompt 中加入几个推荐示例，引导 LLM 理解推荐任务格式。</p>
+
+<p>（2）<strong>chain-of-thought 推荐</strong>：让 LLM 先推理用户兴趣，再给出推荐结果。"先分析用户可能感兴趣的方向，然后从候选中选择最匹配的物品。"</p>
+
+<p>（3）<strong>结构化 prompt</strong>：使用 JSON 或 YAML 格式组织 prompt，提高 LLM 理解效率。</p>
+
+<h3 class="subsection-title">35.3.2 指令微调推荐</h3>
+
+<p>通过在推荐数据上对 LLM 进行指令微调（instruction tuning），使其获得专门的推荐能力。代表工作 P5（Pretrain, Personalized Prompt, Predict Paradigm）：</p>
+
+<p><strong>P5 框架：</strong>将多种推荐任务统一为文本到文本的生成任务：</p>
+
+<p>（1）<strong>评分预测</strong>："给定用户和物品，预测评分（1-5）。"</p>
+
+<p>（2）<strong>序列推荐</strong>："给定用户历史 {item1, ..., itemN}，预测下一个物品。"</p>
+
+<p>（3）<strong>推荐解释</strong>："解释为什么向该用户推荐该物品。"</p>
+
+<p>（4）<strong>对话推荐</strong>：多轮对话理解用户需求并推荐。</p>
+
+<p>（5）<strong>评论摘要</strong>：生成物品评论摘要辅助推荐。</p>
+
+<p>通过在多个推荐任务上联合微调，P5 获得了通用的推荐能力，在多个任务上达到或超过传统专用模型。</p>
+
+<h3 class="subsection-title">35.3.3 NIRRTU 与 LLMRank</h3>
+
+<p><strong>NIRRTU（Navigating Item Retrieval with LLMs）：</strong>使用 LLM 进行物品检索。将推荐召回重新定义为 LLM 的生成任务——给定用户历史，LLM 生成可能感兴趣的物品描述，然后通过描述检索物品。</p>
+
+<p><strong>LLMRank：</strong>使用 LLM 对候选物品进行排序。将候选物品列表输入 LLM，让 LLM 输出排序后的列表。研究表明，LLM 排序在候选集较小时（< 20）效果接近传统精排模型，但在大规模场景中不实用。</p>
+
+<h2 class="section-title" id="sec-35-4">35.4 推荐领域基础模型</h2>
+
+<h3 class="subsection-title">35.4.1 推荐大模型预训练</h3>
+
+<p>借鉴 LLM 的预训练范式，在推荐数据上预训练大模型是当前的前沿方向。核心思路是：在海量推荐数据（用户行为日志、物品内容、评论等）上预训练一个大规模 Transformer 模型，使其获得通用的推荐能力，然后适配到具体场景。</p>
+
+<p><strong>预训练数据：</strong></p>
+
+<p>（1）用户行为序列：从历史日志中提取用户-物品交互序列，作为主要的预训练数据。</p>
+
+<p>（2）物品内容：物品标题、描述、图片、视频等多模态信息。</p>
+
+<p>（3）用户评论：评论文本提供了丰富的偏好信号。</p>
+
+<p>（4）知识图谱：物品间的语义关系和属性信息。</p>
+
+<p><strong>预训练任务：</strong></p>
+
+<p>（1）<strong>掩码物品预测（Masked Item Prediction）</strong>：随机遮盖用户序列中的部分物品，让模型预测被遮盖的物品。类似 BERT 的 MLM 任务。</p>
+
+<p>（2）<strong>下一物品预测（Next Item Prediction）</strong>：给定前 n-1 个物品，预测第 n 个物品。类似 GPT 的自回归预测。</p>
+
+<p>（3）<strong>对比学习</strong>：拉近同一用户的不同行为序列，推远不同用户的序列。</p>
+
+<p>（4）<strong>多任务预训练</strong>：同时优化评分预测、序列推荐、评论生成等多个任务。</p>
+
+<h3 class="subsection-title">35.4.2 领域适配</h3>
+
+<p>预训练的推荐大模型需要适配到具体场景：</p>
+
+<p><strong>指令微调：</strong>在目标场景的小规模数据上进行指令微调，使模型适配特定场景的推荐格式和偏好。</p>
+
+<p><strong>RLHF/DPO 对齐：</strong>使用用户反馈（点击、购买、评分）作为偏好信号，通过 RLHF 或 DPO 对齐模型，使其更符合用户真实偏好。</p>
+
+<p><strong>场景适配层：</strong>在预训练模型上添加场景特定的适配层（adapter），用少量场景数据微调适配层而非全量参数。</p>
+
+<h3 class="subsection-title">35.4.3 推荐基础模型的挑战</h3>
+
+<p><strong>数据规模与质量：</strong>推荐预训练需要海量高质量行为数据。与 LLM 可以利用互联网文本不同，推荐数据通常是平台私有的，数据获取和跨平台共享受限。</p>
+
+<p><strong>评估标准缺失：</strong>推荐基础模型缺乏统一的评估基准。不同平台的数据分布、物品集、用户群体差异大，难以建立通用 benchmark。</p>
+
+<p><strong>计算成本：</strong>推荐大模型的预训练需要大量 GPU 资源。如何平衡模型规模、数据量和效果是关键问题。</p>
+
+<p><strong>领域知识 vs 通用知识：</strong>推荐场景的领域知识（如用户偏好、物品关系）与 LLM 的通用世界知识不同。如何在 LLM 通用知识基础上注入推荐领域知识是核心挑战。</p>
+
+<h2 class="section-title" id="sec-35-5">35.5 推荐系统的 Scaling Law</h2>
+
+<p>Scaling Law 是大模型时代的核心发现之一——模型效果随参数量、数据量和计算量按幂律提升。推荐系统是否也存在类似的 Scaling Law？这是当前推荐领域的热点研究方向。</p>
+
+<h3 class="subsection-title">35.5.1 数据缩放</h3>
+
+<p><strong>行为数据缩放：</strong>研究表明，推荐模型的效果随训练数据量按幂律提升，但存在饱和点。与传统 LLM 不同的是，推荐数据的"质量"比"数量"更重要——高质量的用户行为（点击 + 购买）比低质量行为（曝光 + 点击）对模型提升更大。</p>
+
+<p><strong>序列长度缩放：</strong>HSTU 的研究表明，用户行为序列长度从 200 扩展到 8192 时，效果持续提升。这表明推荐模型从更长历史中受益，但计算开销也线性增长。</p>
+
+<p><strong>物品数量缩放：</strong>物品库规模对模型效果的影响是非线性的——当物品数从万级扩展到百万级时效果显著提升，但从百万到亿级的提升幅度减小（因为长尾物品数据不足）。</p>
+
+<h3 class="subsection-title">35.5.2 模型缩放</h3>
+
+<p><strong>参数量缩放：</strong>推荐模型的参数量从百万级（早期 DNN）扩展到十亿级（HSTU），效果按幂律提升。但推荐模型的 Scaling Law 与 LLM 有差异——推荐模型的效果饱和点可能比 LLM 更早出现，因为推荐任务比语言建模更简单。</p>
+
+<p><strong>特征维度缩放：</strong>特征维度（embedding size、隐藏层维度）的缩放效果在推荐场景中呈现递减效应——从 32 维到 128 维提升显著，但从 512 到 1024 的提升较小。</p>
+
+<p><strong>训练步数缩放：</strong>推荐模型通常训练 1-2 个 epoch（one-epoch principle），与 LLM 的多 epoch 训练不同。研究表明，推荐模型在 1 epoch 后继续训练可能过拟合，这与推荐数据的特性有关。</p>
+
+<h3 class="subsection-title">35.5.3 特征缩放与推荐 Scaling Law 的特殊性</h3>
+
+<p><strong>特征数量缩放：</strong>推荐模型的特征数量（从几十到几千）对效果的影响比模型参数更大。增加新特征（如多模态特征、上下文特征）的效果往往超过增加模型参数。</p>
+
+<p><strong>推荐 Scaling Law 的特殊性：</strong></p>
+
+<p>（1）<strong>One-epoch 现象</strong>：推荐模型通常只训练一个 epoch，这与 LLM 的多 epoch 训练不同。原因是推荐数据中每个样本只出现一次，多次 epoch 会导致过拟合。</p>
+
+<p>（2）<strong>特征重要性</strong>：推荐模型的效果更多取决于特征工程而非模型规模。这与 LLM 主要靠参数规模不同。</p>
+
+<p>（3）<strong>数据分布漂移</strong>：推荐数据的分布随时间快速变化（新物品、新用户、趋势变化），模型需要持续更新而非一次训练。</p>
+
+<p>（4）<strong>多目标复杂性</strong>：推荐系统通常优化多个目标（CTR、CVR、多样性等），Scaling Law 在多目标场景中更复杂。</p>
+
+<h2 class="section-title" id="sec-35-6">35.6 工业实践</h2>
+
+<h3 class="subsection-title">35.6.1 阿里 LLM 推荐</h3>
+
+<p>阿里在 LLM 推荐方面有多项实践：</p>
+
+<p><strong>通义千问推荐增强：</strong>使用通义千问大模型为淘宝推荐提供特征增强——生成物品描述、提取用户兴趣画像、推理搭配关系。LLM 特征使推荐 CTR 提升 2-3%。</p>
+
+<p><strong>LLM 推荐理由生成：</strong>使用 LLM 为推荐结果生成自然语言解释，提升推荐可解释性和用户信任度。在淘宝"猜你喜欢"场景中，推荐理由展示使 CTR 提升 5-8%。</p>
+
+<p><strong>对话式推荐</strong>：淘宝的对话式推荐功能允许用户通过自然语言描述需求，LLM 理解意图后调用推荐模型返回结果。这种交互式推荐在复杂需求场景中效果优异。</p>
+
+<h3 class="subsection-title">35.6.2 百度文心推荐</h3>
+
+<p>百度使用文心大模型增强搜索推荐：</p>
+
+<p><strong>语义理解增强</strong>：使用文心大模型编码搜索词和物品文本，获取深层语义表示。相比传统 BERT，文心的语义理解能力更强，尤其在长尾查询上提升显著。</p>
+
+<p><strong>知识图谱融合</strong>：文心大模型与百度知识图谱结合，为推荐提供知识增强。例如，推理"防晒霜"与"夏季户外"的关联，推荐场景化物品。</p>
+
+<h3 class="subsection-title">35.6.3 Meta 和 Google 的 LLM 推荐</h3>
+
+<p><strong>Meta：</strong>HSTU 虽然不是传统 LLM，但其大规模 Transformer 架构借鉴了 LLM 的设计理念。Meta 还探索使用 LLaMA 进行推荐理由生成和对话推荐。</p>
+
+<p><strong>Google：</strong>Google 使用 PaLM/Gemini 增强搜索推荐。YouTube 推荐系统引入 LLM 理解视频内容和用户评论，提升推荐质量。Google 还探索了生成式召回（Generative Retrieval）在大规模推荐中的应用。</p>
+
+<h3 class="subsection-title">35.6.4 LLM 推荐的工程挑战</h3>
+
+<p><strong>推理延迟优化：</strong>LLM 推理延迟是工业部署的最大挑战。常用优化手段：</p>
+
+<p>（1）模型蒸馏：将 LLM 蒸馏为小模型用于在线推理，LLM 用于离线特征生成。</p>
+
+<p>（2）量化：INT8/INT4 量化降低推理延迟和显存占用。</p>
+
+<p>（3）异步推理：LLM 推理异步化，不阻塞推荐主链路。LLM 结果缓存后用于后续请求。</p>
+
+<p>（4）分级使用：粗排不用 LLM，精排可选使用 LLM 特征，重排使用 LLM 生成推荐理由。</p>
+
+<p><strong>成本控制：</strong>LLM 的推理成本远高于传统模型。需要精细化的成本控制策略——对高价值用户使用 LLM 增强，对普通用户使用传统模型。</p>
+
+<p><strong>效果评估：</strong>LLM 推荐的效果评估需要新指标——除了 CTR/CVR，还需评估推荐理由质量、用户满意度、对话轮次等。</p>
+
+<h2 class="section-title" id="sec-35-7">35.7 本章小结</h2>
+
+<p>大模型正在深刻影响推荐系统的技术路线。本章从 LLM 作为特征增强、LLM 作为推荐引擎、推荐领域基础模型、推荐 Scaling Law 四个维度系统介绍了 LLM 与推荐系统的结合。</p>
+
+<p>当前阶段，LLM 在推荐中的应用以特征增强和推荐理由生成为主，这些应用方式风险低、效果稳定。LLM 作为推荐引擎的探索面临推理延迟和候选集限制等挑战，但在对话推荐和可解释推荐等场景中展现了独特价值。推荐领域基础模型和 Scaling Law 研究处于早期阶段，但代表了推荐系统的重要发展方向。</p>
+
+<p>展望未来，LLM 与推荐系统的融合将更加深入：推荐基础模型可能成为推荐系统的"底座"，各种推荐任务在其上微调实现；LLM Agent 将推荐从被动响应转变为主动交互；多模态大模型将实现真正的多模态推荐。随着大模型技术的快速进步和推理成本的持续下降，LLM 驱动的推荐系统有望成为主流范式。</p>
+
+</body>
+</html>

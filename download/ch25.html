@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第25章 长期价值 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣 · 补充版</div>
+</div>
+<div class="chapter-num">第五部分 推荐系统进阶 · 第 25 章</div>
+<h1 class="chapter-title">长期价值</h1>
+
+<p>传统推荐系统主要优化即时反馈（如点击率、观看时长），但即时指标的提升不一定带来用户留存和长期价值的增长。例如，过度追求 CTR 可能导致标题党内容泛滥，短期 CTR 提升但长期用户信任下降；过度推荐高时长内容可能导致内容同质化，用户审美疲劳后流失。长期价值（Long-Term Value）建模关注推荐系统对用户长期行为的影响，是推荐系统从短期优化走向长期运营的关键。本章将系统介绍 LTV 建模、用户留存优化和强化学习方法。</p>
+
+<h2 class="section-title">25.1 短期 vs 长期的张力</h2>
+
+<p>短期指标（CTR、Watch Time、GMV）与长期指标（留存率、LTV、用户满意度）之间存在天然张力：</p>
+<ul>
+<li><strong>CTR vs 留存</strong>：过度追求 CTR 可能导致标题党、低质内容泛滥，短期 CTR 提升但用户信任下降，长期留存受损</li>
+<li><strong>时长 vs 多样性</strong>：过度推荐高时长内容（如长视频）可能导致内容同质化，用户审美疲劳后流失</li>
+<li><strong>商业化 vs 体验</strong>：商业化内容（广告、电商）提升短期收入，但过多商业化内容损害用户体验，降低长期留存</li>
+<li><strong>利用 vs 推索</strong>：过度利用已有偏好导致信息茧房，用户兴趣逐渐收窄后流失；探索新内容短期效果不确定，但长期可能拓展用户兴趣边界</li>
+</ul>
+
+<p>这种张力使得仅优化短期指标的推荐系统容易陷入"局部最优"——短期指标持续提升，但用户留存和平台 DAU 增长停滞甚至下降。因此，长期价值建模成为推荐系统从"短期优化"走向"长期运营"的关键。</p>
+
+<h2 class="section-title">25.2 LTV 建模</h2>
+
+<p>用户生命周期价值（Lifetime Value, LTV）是衡量用户长期贡献的核心指标。LTV 建模的目标是预测用户在未来 N 天（或永久）内为平台创造的累计价值，包括观看时长、GMV、互动数等。</p>
+
+<h3 class="subsection-title">25.2.1 回归方法</h3>
+
+<p>最直接的方法是将 LTV 建模为回归问题：预测用户未来 N 天的累计价值。例如，预测用户未来 7 天的累计观看时长、未来 30 天的 GMV 等。回归方法简单直接，但面临长尾分布（少数高价值用户贡献大部分价值）和延迟反馈（部分价值尚未实现）等挑战。</p>
+
+<h3 class="subsection-title">25.2.2 存活分析</h3>
+
+<p>存活分析（Survival Analysis）借鉴医学中的生存分析方法，建模用户流失概率和剩余生命周期。存活分析能够自然处理"右删失"（Right Censoring）问题——即部分用户尚未流失，但未来可能流失，我们无法观察到他们的完整生命周期。</p>
+
+<p>常用模型包括：</p>
+<ul>
+<li><strong>Cox 比例风险模型</strong>：假设用户流失风险函数与特征呈比例关系，h(t|x) = h0(t) * exp(w^T * x)，其中 h0(t) 为基准风险函数，x 为用户特征</li>
+<li><strong>Kaplan-Meier 估计器</strong>：非参数方法，直接从观测数据估计存活函数 S(t) = Product_{ti < t} (1 - di/ni)，其中 di 为时刻 ti 的流失数，ni 为时刻 ti 的存活数</li>
+<li><strong>深度存活模型</strong>：用神经网络替代 Cox 模型中的线性部分，学习更复杂的特征交互</li>
+</ul>
+
+<h3 class="subsection-title">25.2.3 强化学习</h3>
+
+<p>将长期价值建模为强化学习中的累计回报：</p>
+
+<div class="formula-box">R = Sum_{t=0}^{T} gamma^t * r_t</div>
+
+<p>其中 r_t 为时刻 t 的即时奖励，gamma 为折扣因子，T 为时间跨度。RL 通过学习最优策略 pi(a|s) 最大化累计回报，能够直接优化长期目标而非短期指标。RL 的核心优势在于能够建模"当前推荐如何影响用户未来行为"的因果关系。</p>
+
+<h2 class="section-title">25.3 RLUR：强化学习提升用户留存</h2>
+
+<p>RLUR（Reinforcement Learning for User Retention）[1] 由快手于 WWW 2023 提出，是强化学习在推荐系统长期价值优化方面的里程碑工作。RLUR 直接优化用户留存指标（次日留存、七日留存），已在快手全量应用。</p>
+
+<h3 class="subsection-title">25.3.1 核心挑战</h3>
+
+<p>RLUR 解决了将 RL 应用于推荐系统的三大挑战：</p>
+<ul>
+<li><strong>信号延迟</strong>：留存信号（用户次日是否回来）需要等待 1 天甚至 7 天才能观测到，使得 RL 的奖励信号严重延迟</li>
+<li><strong>奖励稀疏</strong>：大部分推荐请求不会直接影响用户留存决策，留存信号非常稀疏</li>
+<li><strong>偏差问题</strong>：观测到的留存数据受到推荐系统自身策略的影响，存在曝光偏差</li>
+</ul>
+
+<h3 class="subsection-title">25.3.2 方法</h3>
+
+<p>RLUR 通过以下方式解决上述挑战：</p>
+<ul>
+<li>使用离线策略评估（OPE）估计留存奖励，避免在线探索的风险</li>
+<li>引入辅助任务（如短期 CTR、时长）提供密集的训练信号，缓解奖励稀疏</li>
+<li>使用因果推断方法消除曝光偏差</li>
+<li>采用 Actor-Critic 架构，结合策略梯度和价值函数估计</li>
+</ul>
+
+<h2 class="section-title">25.4 长期价值预测框架</h2>
+
+<p>除了 RL 方法，工业界还发展了多种长期价值预测框架。这些框架通常在精排阶段引入长期价值预估头，与短期目标（CTR、CVR）联合训练，在排序时综合考虑短期和长期价值。</p>
+
+<p>长期价值预测面临的核心挑战包括：</p>
+<ul>
+<li><strong>位置偏差</strong>：长期价值标签受历史推荐位置影响，需要进行位置偏差纠偏</li>
+<li><strong>归因模糊</strong>：用户留存变化难以归因到具体某次推荐，长期价值的监督信号模糊</li>
+<li><strong>时间跨度</strong>：长期价值需要数天甚至数周才能准确评估，训练数据更新滞后</li>
+</ul>
+
+<h2 class="section-title">25.5 用户留存优化策略</h2>
+
+<p>除了模型层面的优化，推荐系统还可以通过以下策略提升用户留存：</p>
+<ul>
+<li><strong>内容多样性</strong>：在推荐结果中保持内容类型、创作者、类目的多样性，避免信息茧房。多样性不仅提升单次体验，更重要的是保持用户长期兴趣的活跃度</li>
+<li><strong>探索策略</strong>：定期引入新内容、新创作者、新类目，拓展用户兴趣边界。探索虽然短期效果不确定，但长期来看能够防止用户兴趣收窄</li>
+<li><strong>体验一致性</strong>：保持推荐质量的稳定性，避免大幅波动。用户对推荐系统的信任建立在长期稳定的质量基础上</li>
+<li><strong>长期奖励建模</strong>：在排序公式中引入长期价值预估，使推荐决策不仅考虑即时效果，还考虑对用户长期行为的影响</li>
+<li><strong>新用户冷启动</strong>：新用户的首次体验对留存影响最大，需要特殊的冷启动策略确保首次推荐质量</li>
+</ul>
+
+<h2 class="section-title">25.6 本章小结</h2>
+
+<p>长期价值建模是推荐系统从短期优化走向长期运营的关键。LTV 建模可通过回归、存活分析和强化学习等方法实现。RLUR（快手 WWW 2023）是 RL 优化用户留存的里程碑工作，通过 OPE、辅助任务和因果纠偏解决了信号延迟、奖励稀疏和偏差问题。用户留存优化需要从内容多样性、探索策略、体验一致性和长期奖励建模等多维度协同推进。长期价值与短期指标之间的平衡是推荐系统策略设计的核心挑战——不是在短期和长期之间二选一，而是在两者之间找到最优的平衡点。</p>
+
+<h2 class="section-title">参考文献</h2>
+<p>[1] 快手. "RLUR: Reinforcement Learning for User Retention". WWW 2023.</p>
+<p>[2] "A Long-term Value Prediction Framework in Recommendation". 2024.</p>
+<p>[3] "强化学习优化推荐系统长期收益". 知乎 2021.</p>
+<p>[4] "Customer Lifetime Value Prediction Using Survival Analysis". 2024.</p>
+
+<div class="chapter-end">* * *</div>
+<div class="nav-bar">
+  <a href="ch24.html">← 上一章：第24章 多任务融合</a>
+  <a href="ch26.html">下一章：第26章 探索与利用 →</a>
+</div>
+</body>
+</html>

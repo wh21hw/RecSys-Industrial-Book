@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第33章 多模态推荐 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第七部分 多模态/生成式 · 第 33 章</div>
+
+<h1 class="chapter-title">多模态推荐</h1>
+
+<p>随着互联网内容形式的多样化，推荐系统所面临的物品不再局限于单一的文本或数值特征，而是涵盖了图像、视频、文本、音频等多种模态。多模态推荐系统（Multimodal Recommendation System）旨在融合来自不同模态的信息，为用户提供更精准、更丰富的个性化推荐。本章将从多模态推荐的动机与挑战出发，系统性地介绍模态编码、跨模态融合、工业实践以及最新研究进展。</p>
+
+<div class="toc-box">
+  <h3>本章目录</h3>
+  <ul>
+    <li><a href="#sec-33-1">33.1 多模态推荐的动机与挑战</a> — 内容异构性 / 冷启动 / 跨模态语义对齐</li>
+    <li><a href="#sec-33-2">33.2 模态编码器</a> — 文本编码 / 图像编码 / 视频编码 / 音频编码</li>
+    <li><a href="#sec-33-3">33.3 跨模态融合方法</a> — 早期融合 / 晚期融合 / 混合融合 / 注意力融合</li>
+    <li><a href="#sec-33-4">33.4 经典多模态推荐模型</a> — ACF / MMGCN / LATTICE / BM3 / VLIF</li>
+    <li><a href="#sec-33-5">33.5 大视觉语言模型与多模态推荐</a> — CLIP / BLIP / LLaVA / 多模态LLM推荐</li>
+    <li><a href="#sec-33-6">33.6 工业实践</a> — 淘宝/抖音/小红书/Pinterest多模态实践</li>
+    <li><a href="#sec-33-7">33.7 本章小结</a></li>
+  </ul>
+</div>
+
+<h2 class="section-title" id="sec-33-1">33.1 多模态推荐的动机与挑战</h2>
+
+<h3 class="subsection-title">33.1.1 为什么需要多模态</h3>
+
+<p>传统推荐系统主要依赖协同过滤（CF）信号——即用户-物品交互矩阵——进行推荐。然而，在以下场景中，纯 CF 方法面临严重瓶颈：</p>
+
+<p><strong>（1）内容异构性。</strong>以短视频平台为例，一个物品（视频）同时包含封面图、标题文本、音频轨道、视频帧序列、用户评论等多模态信息。仅依赖 ID embedding 或文本特征无法充分捕捉物品的全貌。研究表明，在抖音和快手等短视频平台中，封面图质量对点击率的影响可达 30% 以上，而音频特征对完播率的贡献超过 20%。</p>
+
+<p><strong>（2）冷启动与长尾问题。</strong>新物品缺乏交互数据，纯 CF 方法无法有效推荐。多模态特征可以通过内容理解弥补交互数据的不足。例如，一张新上架的连衣裙图片，通过视觉特征可以自动关联到"碎花裙""夏季穿搭"等语义类别，从而推荐给对这类风格感兴趣的用户。Pinterest 的研究表明，对于交互次数 < 10 的长尾物品，多模态特征可以使召回率提升 15-25%。</p>
+
+<p><strong>（3）语义理解需求。</strong>用户搜索"适合海边穿的度假裙"时，需要系统理解文本语义并将其与商品图片的视觉特征进行匹配。这种跨模态语义对齐是纯 CF 方法无法实现的。</p>
+
+<p><strong>（4）内容安全与质量。</strong>多模态特征可以辅助识别低质量、不相关或违规内容。例如，通过图像识别检测封面图与标题不符的"标题党"内容，通过音频分析识别低质量视频。</p>
+
+<h3 class="subsection-title">33.1.2 核心挑战</h3>
+
+<p>多模态推荐面临几个关键挑战：</p>
+
+<p><strong>挑战一：模态异构性。</strong>不同模态的数据分布差异巨大——文本是离散的 token 序列，图像是连续的像素矩阵，视频是时空信号，音频是时频信号。如何将异构模态映射到统一的语义空间是一个核心问题。</p>
+
+<p><strong>挑战二：模态对齐。</strong>同一语义概念在不同模态中的表现形式不同。例如，"红色连衣裙"这个文本概念在图像中对应特定的像素分布。跨模态对齐需要学习不同模态之间的语义对应关系。</p>
+
+<p><strong>挑战三：模态缺失与噪声。</strong>在实际场景中，部分物品可能缺少某些模态（如无标题文本、无封面图），或者模态数据质量低（如模糊图片、无意义标题）。系统需要具备鲁棒处理模态缺失的能力。</p>
+
+<p><strong>挑战四：计算效率。</strong>多模态特征提取（尤其是视频和音频）需要大量计算资源。在工业级推荐系统中，需要在特征表达力和推理效率之间取得平衡。</p>
+
+<p><strong>挑战五：模态冲突。</strong>不同模态可能传递矛盾的信号。例如，一个视频的标题可能是"搞笑合集"，但封面图可能是一个严肃的场景。如何处理模态间的冲突信息是一个开放问题。</p>
+
+<h2 class="section-title" id="sec-33-2">33.2 模态编码器</h2>
+
+<p>多模态推荐的第一步是将不同模态的原始数据编码为统一的向量表示。本节介绍各模态的编码方法。</p>
+
+<h3 class="subsection-title">33.2.1 文本编码</h3>
+
+<p>文本是多模态推荐中最基础的模态之一，涵盖物品标题、描述、评论、搜索词等。文本编码经历了从传统方法到预训练模型的演进：</p>
+
+<p><strong>传统方法：</strong>TF-IDF、LDA、Word2Vec、FastText 等。这些方法简单高效，在工业界仍有广泛应用，尤其是作为召回侧的轻量级方案。淘宝的早期推荐系统大量使用 FastText 进行商品标题编码。</p>
+
+<p><strong>预训练语言模型：</strong>BERT、RoBERTa、SimCSE、E5 等。这些模型通过大规模预训练获得丰富的语义表示能力。在推荐场景中，通常取 [CLS] token 的输出作为文本的向量表示。SimCSE 通过对比学习进一步提升了句向量的质量，在召回任务中表现优异。</p>
+
+<p><strong>大语言模型编码：</strong>随着 LLM 的发展，使用 LLaMA、Qwen、ChatGLM 等大模型的 embedding 层输出作为文本特征表示成为一种新趋势。LLM 的 embedding 空间蕴含了更丰富的世界知识和语义理解。实践中，通常使用 LLM 倒数第二层的平均 pooling 作为文本表示。</p>
+
+<p><strong>工业实践建议：</strong>对于实时性要求高的召回场景，使用 FastText 或 distilled BERT；对于精排场景，使用完整的 BERT 或 LLM embedding。注意做向量归一化（L2 normalization），以便后续与其它模态向量进行余弦相似度计算。</p>
+
+<h3 class="subsection-title">33.2.2 图像编码</h3>
+
+<p>图像编码在电商推荐（商品图片）、内容推荐（视频封面）、社交推荐（用户头像）等场景中至关重要。图像编码器经历了从 CNN 到 ViT 的演进：</p>
+
+<p><strong>CNN 时代：</strong>ResNet、EfficientNet、MobileNet 等。ResNet-50 在工业界长期作为标准图像编码器，输出 2048 维全局特征。对于需要细粒度特征的场景（如服饰推荐），通常使用 FPN 或 ROI Pooling 提取局部区域特征。淘宝的图像推荐系统在 2020 年前主要使用 ResNet-50 + FPN 的方案。</p>
+
+<p><strong>ViT 时代：</strong>ViT（Vision Transformer）将 Transformer 架构引入图像领域，通过 patch embedding + self-attention 实现全局建模。ViT-B/16 输出 768 维特征，在 ImageNet 分类上超越 ResNet-50。Swin Transformer 通过窗口注意力机制降低了计算复杂度，更适合工业部署。</p>
+
+<p><strong>CLIP 图像编码器：</strong>CLIP 的图像编码器（ViT-B/16 或 ViT-L/14）通过对比学习在 4 亿图文对上训练，获得了强大的跨模态语义表示能力。CLIP 图像特征可以直接用于推荐系统的召回和排序。Pinterest 的 PinSage 系统在 2022 年后开始引入 CLIP 特征，显著提升了图文匹配的准确率。</p>
+
+<p><strong>多粒度图像特征：</strong>工业实践中，通常同时提取全局和局部图像特征。全局特征用于粗粒度召回，局部特征（如物体检测特征、OCR 特征）用于细粒度排序。例如，在服饰推荐中，全局特征捕捉整体风格，局部特征关注领口、袖型、图案等细节。</p>
+
+<h3 class="subsection-title">33.2.3 视频编码</h3>
+
+<p>视频是短视频平台（抖音、快手）和长视频平台（Netflix、YouTube）的核心物品形态。视频编码需要同时处理空间（帧内）和时间（帧间）两个维度。</p>
+
+<p><strong>2D CNN + 时序聚合：</strong>使用 2D CNN（如 ResNet）逐帧提取特征，然后通过时序聚合（mean pooling、LSTM、Transformer）得到视频级表示。这种方法简单但计算量大，适合离线特征提取。</p>
+
+<p><strong>3D CNN：</strong>I3D、SlowFast、X3D 等直接处理视频立方体，同时捕捉时空特征。SlowFast 包含快慢两个通路：慢通路低帧率高语义，快通路高帧率低语义，在动作识别和视频推荐中表现优异。</p>
+
+<p><strong>Video Swin Transformer：</strong>将 Swin Transformer 扩展到 3D，通过窗口注意力机制高效处理视频。在 Kinetics-400 上达到 SOTA，且计算效率优于 3D CNN。</p>
+
+<p><strong>VideoMAE / VIOLET：</strong>基于掩码自编码器的视频预训练方法，通过随机遮盖视频 patch 并重建来学习视频表示。VideoMAE 在多个视频理解基准上达到 SOTA。</p>
+
+<p><strong>工业实践建议：</strong>视频特征提取成本高，通常离线预计算并缓存。对于实时性要求高的场景，可以只使用封面图 + 标题文本作为轻量级表示，在精排阶段再引入完整视频特征。抖音的推荐系统采用多级视频特征方案：粗排使用封面图特征，精排使用关键帧特征，重排使用完整视频特征。</p>
+
+<h3 class="subsection-title">33.2.4 音频编码</h3>
+
+<p>音频特征在音乐推荐、短视频推荐（背景音乐、配音）和播客推荐中具有重要作用。音频编码方法包括：</p>
+
+<p><strong>声学特征：</strong>MFCC（Mel-Frequency Cepstral Coefficients）、mel-spectrogram 等手工特征，在音乐推荐中长期使用。Spotify 的早期推荐系统大量使用 MFCC 特征。</p>
+
+<p><strong>音频预训练模型：</strong>Audio-MAE、Wav2Vec2.0、HuBERT、WavLM 等。Audio-MAE 通过掩码重建学习音频表示，在音频分类任务上表现优异。Wav2Vec2.0 通过对比学习在无标注音频上预训练，获得了强大的音频表示能力。</p>
+
+<p><strong>多模态音频模型：</strong>CLAP（Contrastive Language-Audio Pretraining）通过对比学习对齐音频和文本模态，实现了文本到音频的跨模态检索。在短视频推荐中，CLAP 可以用于理解视频配音的语义内容。</p>
+
+<h2 class="section-title" id="sec-33-3">33.3 跨模态融合方法</h2>
+
+<p>获取各模态的向量表示后，需要通过融合方法将多模态信息整合为统一的物品表示。跨模态融合是多模态推荐的核心环节，直接影响模型性能。</p>
+
+<h3 class="subsection-title">33.3.1 融合策略分类</h3>
+
+<p>根据融合发生的阶段，跨模态融合策略可以分为三类：</p>
+
+<p><strong>（1）早期融合（Early Fusion）。</strong>在特征层面进行融合，将不同模态的向量拼接或加权组合后输入下游模型。优势是让下游模型充分接触原始模态信息，劣势是维度高、计算量大。典型方法：向量拼接（concatenation）、逐元素加法（element-wise addition）、门控融合（gated fusion）。</p>
+
+<p><strong>（2）晚期融合（Late Fusion）。</strong>在决策层面进行融合，各模态独立训练子模型，最终通过加权或投票方式整合预测结果。优势是模块化设计、易于增量扩展，劣势是忽略了模态间的交互信息。典型方法：集成学习、Stacking。</p>
+
+<p><strong>（3）混合融合（Hybrid Fusion）。</strong>结合早期和晚期融合的优点，在中间层进行模态交互，在输出层进行决策融合。这是工业界最常用的策略。</p>
+
+<h3 class="subsection-title">33.3.2 注意力融合机制</h3>
+
+<p>注意力机制是当前多模态融合的主流方法，能够自适应地分配不同模态的权重：</p>
+
+<p><strong>自注意力融合：</strong>将各模态向量作为 token 输入 Transformer，通过 self-attention 学习模态间的交互关系。这种方法灵活且效果好，但计算开销较大。形式化地，给定文本向量 t、图像向量 v、视频向量 g，将它们拼接为序列 [t; v; g]，输入多层 Transformer 编码器：</p>
+
+<div class="formula-box">
+  H = TransformerEncoder([t; v; g]) &nbsp;&nbsp;(33.1)
+</div>
+
+<p>取 H 的 [CLS] 位置输出或平均 pooling 作为融合后的物品表示。</p>
+
+<p><strong>交叉注意力融合（Cross-Attention）：</strong>使用一个模态作为 query，另一个模态作为 key 和 value，实现跨模态信息检索。例如，以文本 query 检索图像中的相关区域：</p>
+
+<div class="formula-box">
+  Cross-Attn(Q=text, K=image_regions, V=image_regions) &nbsp;&nbsp;(33.2)
+</div>
+
+<p>这种方法在细粒度图文匹配中表现优异，如时尚推荐中根据文本描述定位服饰区域。</p>
+
+<p><strong>门控融合（Gated Fusion）：</strong>通过门控机制自适应地选择各模态的贡献度：</p>
+
+<div class="formula-box">
+  g = σ(W<sub>t</sub>·t + W<sub>v</sub>·v + b) &nbsp;&nbsp;(33.3)<br>
+  fused = g ⊙ t + (1-g) ⊙ v
+</div>
+
+<p>其中 σ 为 sigmoid 函数，⊙ 为逐元素乘法。门控融合可以学习到不同场景下各模态的重要性，例如对于标题党内容降低文本权重、对于高质量封面图提高图像权重。</p>
+
+<p><strong>MoE 融合：</strong>使用 Mixture-of-Experts 架构，不同专家处理不同模态组合，通过路由网络动态选择。MMoE（Multi-gate Mixture-of-Experts）在多模态推荐中天然适配——不同模态对应不同专家，门控网络学习场景化的模态权重分配。</p>
+
+<h3 class="subsection-title">33.3.3 对比学习对齐</h3>
+
+<p>对比学习是跨模态对齐的重要方法，通过拉近语义相关的跨模态样本、推远不相关的样本来学习统一的跨模态表示空间：</p>
+
+<p><strong>CLIP 范式：</strong>在图文对数据上，最大化匹配图文对的余弦相似度，最小化不匹配对的相似度。InfoNCE 损失：</p>
+
+<div class="formula-box">
+  L<sub>CLIP</sub> = -log[exp(sim(t,v)<sup>+</sup>/τ) / Σ exp(sim(t,v)<sub>i</sub>/τ)] &nbsp;&nbsp;(33.4)
+</div>
+
+<p>其中 τ 为温度超参。CLIP 对齐后的空间中，文本"红色连衣裙"的向量与红色连衣裙图片的向量距离接近，可以直接用于跨模态召回。</p>
+
+<p><strong>推荐场景的对比学习：</strong>在推荐系统中，对比学习可以结合协同过滤信号。例如，将用户交互过的物品的图文对作为正样本，随机采样的图文对作为负样本，同时优化 CF 损失和对比损失：</p>
+
+<div class="formula-box">
+  L = L<sub>CF</sub> + λ · L<sub>contrastive</sub> &nbsp;&nbsp;(33.5)
+</div>
+
+<p>这种方法在 BM3（Bootstrap Multi-Modal Model）中被提出，通过自蒸馏进一步提升了多模态表示质量。</p>
+
+<h2 class="section-title" id="sec-33-4">33.4 经典多模态推荐模型</h2>
+
+<h3 class="subsection-title">33.4.1 ACF：注意力协同过滤</h3>
+
+<p>ACF（Attentive Collaborative Filtering，SIGIR 2017）是最早将注意力机制引入多模态推荐的模型之一。它通过注意力机制自适应地聚合用户历史物品的多模态特征（图像 + 文本），生成用户表示。ACF 的核心创新是引入了项目级和特征级双重注意力：</p>
+
+<div class="formula-box">
+  α<sub>i</sub> = softmax(a<sub>u</sub><sup>T</sup> tanh(W<sub>p</sub> p<sub>i</sub> + W<sub>u</sub> u + b)) &nbsp;&nbsp;(33.6)<br>
+  u<sub>repr</sub> = Σ α<sub>i</sub> · p<sub>i</sub>
+</div>
+
+<p>其中 p<sub>i</sub> 是物品 i 的多模态融合特征。ACF 在 Pinterest 场景上验证了多模态注意力机制的有效性。</p>
+
+<h3 class="subsection-title">33.4.2 MMGCN：多模态图卷积</h3>
+
+<p>MMGCN（Multi-Modal Graph Convolutional Network，MM 2019）将多模态信息引入图卷积推荐框架。核心思想是为每个模态构建独立的用户-物品二部图，在各自的图上进行 GCN 消息传递，最后融合多模态表示：</p>
+
+<p>对于模态 m，在用户-物品图上进行 L 层图卷积：</p>
+
+<div class="formula-box">
+  e<sub>u</sub><sup>(l+1,m)</sup> = AGG({e<sub>i</sub><sup>(l,m)</sup> : i ∈ N(u)}) &nbsp;&nbsp;(33.7)<br>
+  e<sub>i</sub><sup>(l+1,m)</sup> = AGG({e<sub>u</sub><sup>(l,m)</sup> : u ∈ N(i)})
+</div>
+
+<p>最终用户表示为各模态表示的拼接：u = [u<sup>image</sup>; u<sup>text</sup>; u<sup>video</sup>]。MMGCN 在 MicroLens 数据集上相比单模态 GCN 提升 8-15%。</p>
+
+<h3 class="subsection-title">33.4.3 LATTICE：模态间结构建模</h3>
+
+<p>LATTICE（Latent Structure Mining with Modalities，MM 2021）的核心创新是建模模态间物品的潜在结构关系。具体地，对于每个模态 m，计算物品间的相似度矩阵 S<sup>m</sup>，然后通过图卷积在模态特定的物品-物品图上进行消息传递：</p>
+
+<div class="formula-box">
+  H<sup>m</sup> = softmax(D<sup>-1/2</sup> S<sup>m</sup> D<sup>-1/2</sup> H<sup>m</sup> W<sup>m</sup>) &nbsp;&nbsp;(33.8)
+</div>
+
+<p>然后通过模态融合门控将多模态物品表示融合为最终表示。LATTICE 在 BabyGraph、Clothing、Sports 三个数据集上均显著优于 MMGCN。</p>
+
+<h3 class="subsection-title">33.4.4 BM3：自蒸馏多模态推荐</h3>
+
+<p>BM3（Bootstrap Multi-Modal Model，KDD 2022）提出了一种简洁高效的多模态推荐框架。其核心思想包括：</p>
+
+<p>（1）模态特定编码器：使用预训练的 BERT 和 ViT 分别编码文本和图像。</p>
+
+<p>（2）模态内对比学习：在单模态空间内进行对比学习，拉近用户与其交互物品的表示。</p>
+
+<p>（3）跨模态对比学习：在跨模态空间内对齐图文对。</p>
+
+<p>（4）自蒸馏：使用模态融合后的表示作为教师，指导单模态学生网络，实现知识蒸馏。</p>
+
+<p>BM3 的优势在于即使只有 ID embedding 而没有预训练模型，也能通过自蒸馏获得不错的多模态推荐效果，这使其在资源受限场景中具有实用价值。</p>
+
+<h3 class="subsection-title">33.4.5 VLIF：视觉-语言信息论融合</h3>
+
+<p>VLIF（Vision-Language and Information-Theoretic Fusion，2024）是一个较新的多模态推荐框架，其核心创新是引入信息论方法来优化多模态融合：</p>
+
+<p>（1）视觉-语言融合模块：通过交叉注意力实现图文细粒度交互。</p>
+
+<p>（2）信息瓶颈约束：通过信息论正则化，压缩冗余的模态信息，保留与推荐目标相关的判别性信息。</p>
+
+<p>（3）模态特定降噪：通过变分推断对每个模态的表示进行降噪，提升融合质量。</p>
+
+<p>VLIF 在多模态推荐基准上相比 BM3 提升 5-10%，且对模态缺失具有更好的鲁棒性。</p>
+
+<h2 class="section-title" id="sec-33-5">33.5 大视觉语言模型与多模态推荐</h2>
+
+<h3 class="subsection-title">33.5.1 CLIP 与推荐</h3>
+
+<p>CLIP（Contrastive Language-Image Pre-training，ICML 2021）通过在 4 亿图文对上进行对比学习，训练了一个统一的图文表示空间。CLIP 对推荐系统的影响是深远的：</p>
+
+<p><strong>零样本召回：</strong>使用 CLIP 文本编码器编码用户搜索词或兴趣描述，使用 CLIP 图像编码器编码物品图片，直接在 CLIP 空间中进行余弦相似度召回。这种方法无需任何推荐训练数据，即可实现不错的图文匹配召回。Pinterest 的 PinSage 系统在引入 CLIP 后，零样本召回的准确率提升了 18%。</p>
+
+<p><strong>特征增强：</strong>将 CLIP 的图文特征作为辅助特征注入推荐模型，增强模型对内容语义的理解。通常将 CLIP 特征与 ID embedding 拼接或加权融合后输入排序模型。</p>
+
+<p><strong>跨模态对齐：</strong>CLIP 的预训练空间天然对齐了图文模态，可以作为多模态推荐的初始化空间，加速模型收敛。</p>
+
+<h3 class="subsection-title">33.5.2 BLIP-2 与多模态理解</h3>
+
+<p>BLIP-2（Bootstrapping Language-Image Pre-training，ICML 2023）通过 Q-Former 模块桥冻结的视觉编码器和冻结的 LLM，实现了高效的多模态理解。BLIP-2 的优势在于：</p>
+
+<p>（1）参数高效：只训练 Q-Former（相对较小的模块），大幅降低训练成本。</p>
+
+<p>（2）多模态推理：可以执行图文问答、图文描述等复杂多模态推理任务。</p>
+
+<p>在推荐场景中，BLIP-2 可以用于：自动生成物品描述、理解用户评论中的图文信息、生成多模态推荐理由。</p>
+
+<h3 class="subsection-title">33.5.3 LLaVA 与多模态推荐</h3>
+
+<p>LLaVA（Large Language and Vision Assistant，NeurIPS 2023）通过视觉指令微调将 LLM 扩展为多模态大模型。LLaVA 可以理解图像内容并生成自然语言描述，在推荐场景中有多种应用：</p>
+
+<p><strong>多模态推荐理由生成：</strong>给定用户历史和候选物品，LLaVA 可以生成自然语言推荐理由："根据您最近浏览的户外装备，推荐这款登山鞋，因为它具有防滑大底和防水功能。"这种可解释推荐提升了用户信任度。</p>
+
+<p><strong>视觉对话推荐：</strong>用户可以上传图片并提问"帮我找类似的但价格更低的产品"，LLaVA 理解图片内容并生成推荐结果。</p>
+
+<p><strong>内容理解增强：</strong>LLaVA 可以深入理解物品图片的细节（如服饰的款式、颜色、材质），生成结构化标签，作为推荐模型的辅助特征。</p>
+
+<h3 class="subsection-title">33.5.4 大视觉语言模型在序列推荐中的应用</h3>
+
+<p>2024-2025 年的最新研究开始探索将大视觉语言模型（LVLM）引入序列推荐。代表性工作包括：</p>
+
+<p><strong>LVLM4MSR（2024）：</strong>探索将 LVLM 集成到多模态序列推荐系统中。核心思路是使用 LVLM 生成物品的多模态描述文本（如"这是一件红色碎花连衣裙，适合夏季"），然后将这些描述作为辅助特征输入序列推荐模型。这种方法的优势是利用了 LVLM 的丰富世界知识来增强物品理解，尤其有利于冷启动物品。</p>
+
+<p><strong>MLLM 驱动的推荐（Nature, 2024）：</strong>利用多模态大语言模型（MLLM）的跨模态理解能力，统一处理推荐场景中的多模态信息。该方法将用户历史行为（包括交互物品的图文信息）组织为多模态 prompt，输入 MLLM 生成推荐结果。这种方法在零样本和少样本场景中表现优异。</p>
+
+<p><strong>MM-LLM 推荐框架：</strong>将多模态 LLM 作为推荐系统的核心引擎，通过 prompt engineering 实现个性化推荐。挑战在于如何高效地将用户历史和候选物品编码为 prompt，以及如何处理 LLM 推理延迟高的问题。当前研究方向包括：使用蒸馏加速推理、将 LLM 推荐作为召回阶段的辅助而非精排主模型。</p>
+
+<h2 class="section-title" id="sec-33-6">33.6 工业实践</h2>
+
+<h3 class="subsection-title">33.6.1 淘宝多模态推荐</h3>
+
+<p>淘宝作为中国最大的电商平台，其推荐系统大量使用多模态特征。淘宝的多模态推荐架构包括：</p>
+
+<p><strong>离线特征提取层：</strong>使用 ResNet/FPN 提取商品图片的视觉特征（全局特征 2048 维 + 局部区域特征），使用 BERT 提取标题和描述的文本特征，使用 OCR 提取图片中的文字信息。所有特征离线计算并存储在特征服务中。</p>
+
+<p><strong>多模态召回层：</strong>使用双塔模型，用户塔融合用户历史物品的多模态特征（注意力聚合），物品塔融合候选物品的多模态特征。在 CLIP 对齐空间中进行向量召回。</p>
+
+<p><strong>多模态精排层：</strong>在精排模型中引入多模态特征作为辅助特征，与 ID 特征、统计特征拼接后输入 DNN。同时使用 DIN/DIEN 注意力机制对用户历史物品的多模态特征进行聚合。</p>
+
+<p><strong>效果：</strong>多模态特征的引入使淘宝推荐的 CTR 提升 3-5%，尤其对服饰、家居等视觉导向类目提升达 8-10%。</p>
+
+<h3 class="subsection-title">33.6.2 抖音多模态推荐</h3>
+
+<p>抖音作为短视频平台，其物品（视频）天然是多模态的。抖音的多模态推荐实践包括：</p>
+
+<p><strong>多级视频特征：</strong>粗排使用封面图 + 标题特征（轻量级），精排使用关键帧特征（中等），重排使用完整视频特征（重量级）。这种分级策略平衡了效果和效率。</p>
+
+<p><strong>音频特征：</strong>抖音大量使用音频特征——背景音乐、配音内容、音效等。通过 Wav2Vec2.0 提取音频表示，用于理解视频内容（如搞笑视频的笑声音效、舞蹈视频的音乐节奏）。</p>
+
+<p><strong>多模态内容理解：</strong>使用视频-文本-音频三模态融合模型，全面理解视频内容。例如，一个视频可能有标题"搞笑合集"、封面图是一个搞笑场景、音频中有人笑声——三模态融合可以更准确地判断视频类型和用户兴趣。</p>
+
+<p><strong>视觉质量评估：</strong>使用多模态模型评估视频的视觉质量（清晰度、构图、美观度），将低质量视频降权或过滤。</p>
+
+<h3 class="subsection-title">33.6.3 小红书社区推荐</h3>
+
+<p>小红书作为生活方式社区，其内容以图文笔记和短视频为主，多模态推荐具有独特特点：</p>
+
+<p><strong>UGC 内容理解：</strong>小红书的内容由用户生成，质量参差不齐。多模态模型需要理解笔记的图文匹配度、内容质量、风格调性等。使用 CLIP 评估图文匹配度，使用美学评分模型评估图片质量。</p>
+
+<p><strong>社区风格推荐：</strong>小红书的推荐不仅关注物品本身，还关注内容风格（如"ins风""日系""复古"）。多模态模型通过视觉风格特征实现风格化推荐。</p>
+
+<p><strong>多模态搜索推荐融合：</strong>用户搜索"夏季穿搭 显瘦"时，系统需要同时理解文本查询和图片内容，返回图文匹配的笔记。使用 CLIP 进行跨模态召回，然后使用多模态精排模型排序。</p>
+
+<h3 class="subsection-title">33.6.4 Pinterest 视觉推荐</h3>
+
+<p>Pinterest 是全球最大的视觉发现平台，其推荐系统几乎完全依赖视觉特征：</p>
+
+<p><strong>PinSage：</strong>Pinterest 的标志性图卷积推荐系统，通过随机游走 + 图卷积学习 Pin 的视觉表示。PinSage 在 Pinterest 的 20 亿 Pin 上运行，是图推荐系统的工业级标杆。</p>
+
+<p><strong>CLIP 特征引入：</strong>Pinterest 在 2022 年后大规模引入 CLIP 特征，用于增强 Pin 的视觉表示。CLIP 特征使跨语言视觉推荐成为可能——用户可以用任何语言搜索视觉内容。</p>
+
+<p><strong>多模态排序：</strong>在排序阶段融合 Pin 的视觉特征、文本描述、板（Board）信息和用户行为特征，实现个性化推荐。</p>
+
+<h2 class="section-title" id="sec-33-7">33.7 本章小结</h2>
+
+<p>本章系统介绍了多模态推荐的核心内容。多模态推荐通过融合文本、图像、视频、音频等多种模态的信息，有效解决了传统 CF 方法在内容异构性、冷启动和语义理解方面的不足。</p>
+
+<p>在技术层面，多模态推荐经历了三个阶段：（1）传统多模态融合（ACF、MMGCN），使用简单注意力或图卷积融合模态特征；（2）对比学习对齐（BM3、CLIP），通过对比学习对齐跨模态表示空间；（3）大模型时代（LLaVA、MLLM），利用多模态大语言模型实现端到端的多模态推荐。</p>
+
+<p>在工业层面，多模态推荐已在淘宝、抖音、小红书、Pinterest 等平台得到广泛应用。核心实践包括：离线预计算多模态特征、分级特征使用（粗排轻量级、精排重量级）、CLIP 特征作为跨模态对齐基础、多模态注意力融合机制。</p>
+
+<p>展望未来，多模态推荐的发展趋势包括：（1）多模态大模型作为推荐系统的核心引擎，实现端到端的自然语言推荐；（2）多模态生成式推荐，不仅推荐已有物品，还能生成新物品（如 AI 生成服饰图片）；（3）多模态 Agent 推荐，通过多模态对话理解用户需求并主动推荐；（4）隐私保护的多模态推荐，在保护用户隐私的前提下利用多模态信息。随着多模态大模型技术的快速进步，多模态推荐将迎来更广阔的发展空间。</p>
+
+</body>
+</html>

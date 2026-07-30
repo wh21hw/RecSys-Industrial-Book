@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第15章 离线服务 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第四部分 工程实践 · 第 15 章</div>
+
+<h1 class="chapter-title">离线服务</h1>
+
+<p>推荐系统的离线服务是整个推荐链路的基础设施——负责数据处理、特征计算、模型训练和离线评估。离线服务的质量和效率直接决定了在线推荐的效果和迭代速度。本章将系统介绍推荐系统离线服务的核心组件——数据管道、特征计算、模型训练和离线评估。</p>
+
+<div class="toc-box">
+  <h3>本章目录</h3>
+  <ul>
+    <li><a href="#sec-15-1">15.1 数据管道</a> — 数据采集 / 数据清洗 / 数据存储</li>
+    <li><a href="#sec-15-2">15.2 特征计算</a> — 批处理特征 / 流处理特征 / 特征服务</li>
+    <li><a href="#sec-15-3">15.3 模型训练</a> — 分布式训练 / 增量训练 / 在线学习</li>
+    <li><a href="#sec-15-4">15.4 离线评估</a> — 评估指标 / 评估方法 / 评估陷阱</li>
+    <li><a href="#sec-15-5">15.5 工业实践</a> — 淘宝/抖音离线架构</li>
+    <li><a href="#sec-15-6">15.6 本章小结</a></li>
+  </ul>
+</div>
+
+<h2 class="section-title" id="sec-15-1">15.1 数据管道</h2>
+
+<h3 class="subsection-title">15.1.1 数据采集</h3>
+
+<p>推荐系统的数据采集是整个数据管道的起点，需要采集以下几类数据：</p>
+
+<p><strong>行为日志：</strong>用户的点击、浏览、购买、收藏、分享等行为记录。行为日志通常通过埋点采集，包含用户 ID、物品 ID、行为类型、时间戳、场景信息。行为日志是推荐系统最核心的数据。</p>
+
+<p><strong>物品数据：</strong>物品的属性信息，包括标题、描述、图片、类目、品牌、价格等。物品数据通常从商品数据库或内容管理系统同步。</p>
+
+<p><strong>用户数据：</strong>用户的属性信息，包括人口统计学信息、设备信息、会员信息。用户数据通常从用户中心同步。</p>
+
+<p><strong>上下文数据：</strong>请求上下文信息，包括请求时间、地理位置、网络状况、场景信息。上下文数据通过请求日志采集。</p>
+
+<p><strong>反馈数据：</strong>用户的显式反馈，包括评分、评论、举报、不感兴趣。反馈数据量少但价值高。</p>
+
+<h3 class="subsection-title">15.1.2 数据清洗</h3>
+
+<p>原始数据通常包含噪声和异常，需要清洗后才能使用：</p>
+
+<p><strong>异常过滤：</strong>过滤爬虫流量、刷量行为、异常高频点击。异常检测可以使用规则（频率阈值）或模型（孤立森林）。</p>
+
+<p><strong>去重处理：</strong>同一用户在同一秒对同一物品的多次点击只保留一次。去重避免行为权重被人为放大。</p>
+
+<p><strong>时间对齐：</strong>不同数据源的时间戳可能存在偏差，需要对齐到统一的时间基准。例如，行为日志和曝光日志的时间戳需要精确对齐才能计算 CTR。</p>
+
+<p><strong>数据校验：</strong>检查数据完整性（是否有缺失字段）、合法性（ID 是否在有效范围）、一致性（同一字段在不同表中的值是否一致）。</p>
+
+<h3 class="subsection-title">15.1.3 数据存储</h3>
+
+<p>推荐系统的数据存储通常采用分层架构：</p>
+
+<p><strong>原始层（Raw Layer）：</strong>存储原始日志数据，通常使用 HDFS 或对象存储（OSS/S3）。数据按日期分区，保留 30-90 天。</p>
+
+<p><strong>明细层（Detail Layer）：</strong>清洗后的明细数据，存储在 Hive 表或 Parquet/ORC 文件中。按用户 ID 或物品 ID 分区，方便按主体查询。</p>
+
+<p><strong>汇总层（Summary Layer）：</strong>预计算的统计特征和聚合数据。如用户 CTR 统计、物品热度统计。存储在 OLAP 引擎（如 ClickHouse、Doris）中，支持快速查询。</p>
+
+<p><strong>特征层（Feature Layer）：</strong>最终用于模型训练和在线推理的特征数据。存储在特征存储（Feature Store）中，如 Feast、Tecton。</p>
+
+<h2 class="section-title" id="sec-15-2">15.2 特征计算</h2>
+
+<h3 class="subsection-title">15.2.1 批处理特征</h3>
+
+<p>批处理特征是离线计算的统计特征，通常每天或每小时更新一次：</p>
+
+<p><strong>用户统计特征：</strong>近 7/30 天的点击数、购买数、活跃天数、品类偏好分布。使用 Spark 或 Flink 批处理计算。</p>
+
+<p><strong>物品统计特征：</strong>近 7/30 天的曝光数、点击数、购买数、CTR、CVR。使用 Spark groupBy + 聚合函数计算。</p>
+
+<p><strong>交叉统计特征：</strong>用户-类目交叉 CTR、物品-时段交叉 CTR。交叉特征的数量可能很大，需要选择性计算高价值的交叉。</p>
+
+<p><strong>序列特征：</strong>用户最近 N 次行为的物品 ID 序列。序列特征需要按时间排序并截断，通常在 Spark 中使用 window 函数构建。</p>
+
+<h3 class="subsection-title">15.2.2 流处理特征</h3>
+
+<p>流处理特征是实时计算的统计特征，延迟在秒级到分钟级：</p>
+
+<p><strong>实时用户行为：</strong>用户最近 5 分钟/1 小时的点击序列、浏览时长。使用 Flink 流处理计算，写入 Redis 或在线特征服务。</p>
+
+<p><strong>实时物品热度：</strong>物品最近 1 小时的曝光数、点击数、CTR。实时热度用于捕捉突发热点（如热搜事件相关物品）。</p>
+
+<p><strong>实时交叉特征：</strong>用户当前 session 内的点击序列、当前时段的 CTR。实时交叉特征对短视频和新闻推荐至关重要。</p>
+
+<p><strong>流批一致性：</strong>流处理和批处理计算同一特征时，结果应该一致。实现流批一致需要使用相同的计算逻辑和数据源。Flink 的流批一体 API 可以帮助实现这一点。</p>
+
+<h3 class="subsection-title">15.2.3 特征服务</h3>
+
+<p>特征服务将计算好的特征提供给在线推理使用：</p>
+
+<p><strong>特征存储（Feature Store）：</strong>统一管理离线和在线特征，保证训练和推理时使用一致的特征定义。开源方案有 Feast、Tecton。</p>
+
+<p><strong>在线特征读取：</strong>在线推理时从 Redis 或内存特征服务读取特征。要求低延迟（<5ms）和高 QPS。</p>
+
+<p><strong>特征版本管理：</strong>管理特征的不同版本，支持回滚和 A/B 实验。特征版本与模型版本对齐，确保一致性。</p>
+
+<p><strong>特征预热：</strong>新模型上线前，提前将新特征写入特征存储，避免上线时特征缺失。</p>
+
+<h2 class="section-title" id="sec-15-3">15.3 模型训练</h2>
+
+<h3 class="subsection-title">15.3.1 分布式训练</h3>
+
+<p>推荐模型的训练数据通常达到 TB 级，需要分布式训练：</p>
+
+<p><strong>数据并行：</strong>将训练数据分片到多个 worker，每个 worker 训练完整模型副本。梯度通过 all-reduce 同步。适合模型不大但数据量大的场景。</p>
+
+<p><strong>模型并行：</strong>将模型参数分布到多个 worker。适合模型极大（如 HSTU 百亿参数）的场景。Megatron-LM 和 DeepSpeed 是常用框架。</p>
+
+<p><strong>混合并行：</strong>数据并行 + 模型并行。外层数据并行，内层模型并行。适合超大规模模型训练。</p>
+
+<p><strong>Embedding 分片：</strong>推荐模型的 Embedding 表通常占 90%+ 的参数量。将 Embedding 表按 ID 分片到多个 Parameter Server，是推荐系统分布式训练的标准做法。</p>
+
+<h3 class="subsection-title">15.3.2 增量训练</h3>
+
+<p>推荐模型需要定期更新以适应数据分布变化。增量训练是高效更新方式：</p>
+
+<p><strong>全量训练 vs 增量训练：</strong>全量训练从零开始训练模型，效果最好但耗时长。增量训练从上一版本模型继续训练，速度快但可能累积偏差。</p>
+
+<p><strong>增量训练策略：</strong></p>
+
+<ul>
+  <li>每天增量：使用当天新数据增量训练，学习率适当衰减</li>
+  <li>每周全量：每周做一次全量训练，消除增量偏差</li>
+  <li>Fine-tuning：新数据上 fine-tune 几个 epoch，避免过拟合</li>
+</ul>
+
+<p><strong>Embedding 更新：</strong>增量训练时，新物品的 Embedding 从随机初始化开始学习，已有物品的 Embedding 从上一版本继续更新。新物品 Embedding 学习不充分是冷启动问题的重要原因。</p>
+
+<h3 class="subsection-title">15.3.3 在线学习</h3>
+
+<p>在线学习（Online Learning）使模型可以实时学习最新数据：</p>
+
+<p><strong>FTRL（Follow The Regularized Leader）：</strong>在线学习的经典优化算法。适合大规模稀疏特征的在线学习。Google 在 YouTube 推荐中使用 FTRL 进行在线更新。</p>
+
+<p><strong>流式训练：</strong>使用 Flink 等流处理框架实时处理行为数据，生成训练样本，实时更新模型。流式训练的延迟在分钟级。</p>
+
+<p><strong>多模型协同更新：</strong>不同模型使用不同更新策略——精排模型每天增量更新，召回模型每周全量更新，实时特征模型在线学习。</p>
+
+<p><strong>在线学习的挑战：</strong></p>
+
+<ul>
+  <li>概念漂移：用户兴趣和物品热度随时间变化，模型需要持续适应</li>
+  <li>延迟反馈：购买行为的延迟反馈导致在线学习标签不准确</li>
+  <li>稳定性：在线学习可能出现训练不稳定，需要监控和回滚机制</li>
+</ul>
+
+<h2 class="section-title" id="sec-15-4">15.4 离线评估</h2>
+
+<h3 class="subsection-title">15.4.1 评估指标</h3>
+
+<p>推荐系统的离线评估指标可以分为以下几类：</p>
+
+<p><strong>分类指标：</strong></p>
+
+<ul>
+  <li>AUC（Area Under ROC）：最常用的排序模型评估指标。AUC 不受正负样本比例影响，适合评估排序能力。</li>
+  <li>LogLoss：交叉熵损失。对预测概率的准确性敏感，比 AUC 更严格。</li>
+  <li>NDCG（Normalized Discounted Cumulative Gain）：考虑位置折扣的排序质量指标。NDCG 对头部位置更敏感。</li>
+</ul>
+
+<p><strong>排序指标：</strong></p>
+
+<ul>
+  <li>Hit Rate@K：Top-K 推荐中命中正样本的比例</li>
+  <li>Precision@K / Recall@K：Top-K 的准确率和召回率</li>
+  <li>MAP（Mean Average Precision）：平均精度均值</li>
+</ul>
+
+<p><strong>多目标指标：</strong></p>
+
+<ul>
+  <li>多目标加权得分：w1·CTR + w2·CVR + w3·时长</li>
+  <li>帕累托前沿：多目标的帕累托最优解集</li>
+</ul>
+
+<p><strong>多样性指标：</strong></p>
+
+<ul>
+  <li>类目多样性：推荐列表的类目分布熵</li>
+  <li>embedding 多样性：推荐列表的 embedding 距离</li>
+  <li>覆盖率（Coverage）：推荐物品占全库的比例</li>
+</ul>
+
+<h3 class="subsection-title">15.4.2 评估方法</h3>
+
+<p><strong>时间切分：</strong>训练集用历史数据，测试集用未来数据。严格按时间切分，避免特征穿越。常见做法：训练集用 D-30 到 D-1 的数据，测试集用 D 天的数据。</p>
+
+<p><strong>用户切分：</strong>按用户分桶，一部分用户训练，另一部分用户测试。适合评估模型的泛化能力。</p>
+
+<p><strong>留一法（Leave-One-Out）：</strong>每个用户留最后一个正样本作为测试，其余作为训练。适合序列推荐评估。</p>
+
+<p><strong>负采样策略：</strong>评估时需要负采样时，使用与训练时相同的负采样策略，避免评估偏差。</p>
+
+<h3 class="subsection-title">15.4.3 评估陷阱</h3>
+
+<p><strong>离线-在线不一致：</strong>离线指标提升但线上效果不提升。原因可能是：离线评估未考虑延迟、特征穿越、位置偏差等因素。</p>
+
+<p><strong>选择偏差：</strong>评估数据只包含曝光过的物品，未曝光物品的效果无法评估。可以使用逆倾向得分（IPS）进行无偏评估。</p>
+
+<p><strong>过拟合评估：</strong>在测试集上反复调参，实质上是在测试集上过拟合。应该使用独立的验证集调参，测试集只用于最终评估。</p>
+
+<p><strong>指标与目标不对齐：</strong>优化 AUC 但实际目标是 GMV。需要确保评估指标与业务目标对齐。</p>
+
+<h2 class="section-title" id="sec-15-5">15.5 工业实践</h2>
+
+<h3 class="subsection-title">15.5.1 淘宝离线架构</h3>
+
+<p>淘宝推荐系统的离线架构是工业级标杆：</p>
+
+<p><strong>数据层：</strong>HDFS 存储原始日志，Hive 存储明细数据，iStream（阿里内部 OLAP）存储汇总数据。</p>
+
+<p><strong>计算层：</strong>Blink（Flink 阿里版）做流处理，Spark 做批处理。特征计算使用自研的特征平台，支持流批一体。</p>
+
+<p><strong>训练层：</strong>使用 PAI（阿里云机器学习平台）进行分布式训练。支持数据并行和模型并行。Embedding 分片在 Parameter Server。</p>
+
+<p><strong>评估层：</strong>离线评估平台支持多种指标和评估方法。A/B 实验平台支持在线评估。</p>
+
+<h3 class="subsection-title">15.5.2 抖音离线架构</h3>
+
+<p>抖音推荐系统的离线架构以实时性为特色：</p>
+
+<p><strong>实时特征：</strong>使用 PSM（自研流处理引擎）实时计算用户行为序列和物品热度。实时特征延迟在秒级。</p>
+
+<p><strong>在线学习：</strong>使用 FTRL 进行精排模型的在线学习。模型每 5 分钟更新一次，快速适应新趋势。</p>
+
+<p><strong>多模态特征：</strong>使用 GPU 集群离线计算视频 embedding（CLIP + 3D-CNN）。embedding 每天全量更新。</p>
+
+<h2 class="section-title" id="sec-15-6">15.6 本章小结</h2>
+
+<p>离线服务是推荐系统的基础设施，决定了推荐效果的上限和迭代速度。本章介绍了离线服务的核心组件——数据管道（采集/清洗/存储）、特征计算（批处理/流处理/特征服务）、模型训练（分布式/增量/在线学习）和离线评估（指标/方法/陷阱）。</p>
+
+<p>离线服务的核心设计原则是：<strong>流批一体、特征一致、快速迭代</strong>。流批一体保证实时和离线特征的一致性；特征一致保证训练和推理使用相同的特征定义；快速迭代保证模型可以快速响应数据变化。</p>
+
+<p>随着实时计算技术的发展，离线与在线的边界正在模糊——越来越多的特征和模型可以实时更新。但离线服务仍然是推荐系统的"大后方"，负责数据处理、模型训练和效果评估的"重活"。</p>
+
+</body>
+</html>

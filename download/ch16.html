@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第16章 在线服务 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第四部分 工程实践 · 第 16 章</div>
+
+<h1 class="chapter-title">在线服务</h1>
+
+<p>在线服务是推荐系统面向用户的"门面"——负责接收请求、执行召回、运行模型、返回推荐结果。在线服务的延迟和稳定性直接决定用户体验。在工业实践中，推荐系统的在线服务需要在 50-100ms 内完成全链路推理，同时支撑百万级 QPS。本章将系统介绍推荐系统在线服务的核心组件——服务架构、模型推理、缓存策略和监控告警。</p>
+
+<div class="toc-box">
+  <h3>本章目录</h3>
+  <ul>
+    <li><a href="#sec-16-1">16.1 服务架构</a> — 请求路由 / 微服务化 / 级联架构</li>
+    <li><a href="#sec-16-2">16.2 模型推理</a> — 推理引擎 / 批处理 / 模型压缩</li>
+    <li><a href="#sec-16-3">16.3 缓存策略</a> — 多级缓存 / 缓存更新 / 缓存穿透</li>
+    <li><a href="#sec-16-4">16.4 降级与容错</a> — 降级策略 / 熔断 / 限流</li>
+    <li><a href="#sec-16-5">16.5 监控与告警</a> — 延迟监控 / 效果监控 / 异常检测</li>
+    <li><a href="#sec-16-6">16.6 工业实践</a> — 淘宝/抖音在线架构</li>
+    <li><a href="#sec-16-7">16.7 本章小结</a></li>
+  </ul>
+</div>
+
+<h2 class="section-title" id="sec-16-1">16.1 服务架构</h2>
+
+<h3 class="subsection-title">16.1.1 请求路由</h3>
+
+<p>推荐系统的在线服务从接收用户请求开始。请求路由负责将请求分发到正确的推荐场景和策略：</p>
+
+<p><strong>场景路由：</strong>根据请求来源（首页/搜索/详情页/购物车）路由到不同的推荐策略。不同场景的推荐目标和方法不同——首页推荐重发现，详情页推荐重相似，购物车推荐重搭配。</p>
+
+<p><strong>用户分流：</strong>根据用户 ID 哈希将用户分配到不同的实验组。A/B 实验通过用户分流实现，不同实验组使用不同的推荐策略。</p>
+
+<p><strong>流量调度：</strong>根据系统负载动态调度流量。高峰期可以关闭部分计算密集型策略（如重排），低谷期全量开启。</p>
+
+<h3 class="subsection-title">16.1.2 微服务化</h3>
+
+<p>推荐系统的在线服务通常采用微服务架构，每个环节独立部署：</p>
+
+<p><strong>召回服务：</strong>多路召回并行执行。每路召回独立部署，互不影响。召回服务返回候选物品列表。</p>
+
+<p><strong>粗排服务：</strong>接收多路召回结果，使用轻量级模型快速过滤。粗排服务要求低延迟（<10ms）。</p>
+
+<p><strong>精排服务：</strong>对粗排结果进行精细排序。精排服务使用复杂模型（DIN/MMoE），延迟在 20-50ms。</p>
+
+<p><strong>重排服务：</strong>对精排结果进行多样性、公平性调整。重排服务延迟在 5-10ms。</p>
+
+<p><strong>特征服务：</strong>提供实时特征查询。特征服务需要支撑高 QPS 和低延迟。</p>
+
+<p><strong>微服务化的优势：</strong>独立扩缩容、独立部署、故障隔离。但微服务化也增加了网络开销和调试复杂度。</p>
+
+<h3 class="subsection-title">16.1.3 级联架构</h3>
+
+<p>推荐系统的级联架构是在线服务的核心设计：</p>
+
+<div class="formula-box">
+  召回(万→千) → 粗排(千→百) → 精排(百→十) → 重排(十→最终) &nbsp;&nbsp;(16.1)
+</div>
+
+<p>每一级的候选集逐级缩小，模型复杂度逐级增加。这种漏斗式架构平衡了效果和效率：</p>
+
+<p><strong>召回层：</strong>从全库百万/亿级物品中召回千级候选。使用简单模型（双塔）或规则（热门/类目）快速召回。延迟 <10ms。</p>
+
+<p><strong>粗排层：</strong>从千级候选过滤到百级。使用轻量级模型（双塔/DSSM）快速打分。延迟 <10ms。</p>
+
+<p><strong>精排层：</strong>对百级候选精细排序。使用复杂模型（DIN/MMoE）和多目标打分。延迟 20-50ms。</p>
+
+<p><strong>重排层：</strong>对精排结果进行多样性、公平性调整。使用 MMR/DPP/规则重排。延迟 5-10ms。</p>
+
+<p><strong>总延迟控制：</strong>全链路延迟控制在 50-100ms。通过并行化（多路召回并行）、批处理（精排批量推理）和缓存（特征/结果缓存）实现。</p>
+
+<h2 class="section-title" id="sec-16-2">16.2 模型推理</h2>
+
+<h3 class="subsection-title">16.2.1 推理引擎</h3>
+
+<p>模型推理引擎是在线服务的核心，负责加载模型和执行推理：</p>
+
+<p><strong>TensorFlow Serving：</strong>Google 开源的模型推理引擎，支持 TF 模型。优点是生态成熟、支持模型版本管理。缺点是对推荐模型的优化不够。</p>
+
+<p><strong>NVIDIA Triton：</strong>NVIDIA 的推理引擎，支持多框架（TF/PyTorch/ONNX）。GPU 推理性能优秀，支持动态 batching。</p>
+
+<p><strong>自研推理引擎：</strong>大厂通常自研推理引擎。阿里用 xnnpack + 自研推理框架，字节用自研 ByteNN。自研引擎可以针对推荐模型特点（大 Embedding + 小 MLP）做深度优化。</p>
+
+<p><strong>Embedding 查询优化：</strong>推荐模型 90%+ 的计算是 Embedding 查询。优化 Embedding 查询是在线推理的关键。使用内存 Embedding 表 + SIMD 查询可以将 Embedding 查询延迟降到毫秒级。</p>
+
+<h3 class="subsection-title">16.2.2 批处理推理</h3>
+
+<p>批处理（Batching）是提高推理吞吐量的关键：</p>
+
+<p><strong>请求合并：</strong>将多个请求的候选物品合并为一个 batch，一次性推理。GPU 推理尤其受益于 batching。</p>
+
+<p><strong>动态 batching：</strong>在请求量波动时动态调整 batch size。高峰期增大 batch 提高吞吐，低谷期减小 batch 降低延迟。</p>
+
+<p><strong>超时控制：</strong>等待 batching 的最长时间。超时后即使 batch 不满也立即推理，避免延迟过高。通常设为 5-10ms。</p>
+
+<p><strong>精排 batching：</strong>精排通常对 100-200 个候选物品打分。将 100-200 个物品的 embedding 拼接为一个大 batch，一次推理完成所有打分。</p>
+
+<h3 class="subsection-title">16.2.3 模型压缩</h3>
+
+<p>模型压缩是在线推理优化的重要手段：</p>
+
+<p><strong>量化（Quantization）：</strong>将模型参数从 FP32 量化为 INT8/FP16。INT8 量化可以将推理速度提升 2-4 倍，精度损失通常 <1%。推荐模型对量化友好，因为大部分计算是 Embedding 查询（量化后查询更快）。</p>
+
+<p><strong>剪枝（Pruning）：</strong>移除不重要的神经元或权重。推荐模型的 MLP 部分可以剪枝 30-50%，精度损失很小。</p>
+
+<p><strong>蒸馏（Distillation）：</strong>用大模型（teacher）蒸馏小模型（student）。精排大模型蒸馏为粗排小模型是常见做法。</p>
+
+<p><strong>算子融合（Operator Fusion）：</strong>将多个小算子融合为一个大算子，减少内存访问开销。TensorRT 和 XLA 是常用的算子融合工具。</p>
+
+<h2 class="section-title" id="sec-16-3">16.3 缓存策略</h2>
+
+<h3 class="subsection-title">16.3.1 多级缓存</h3>
+
+<p>推荐系统的在线服务使用多级缓存降低延迟和减轻后端压力：</p>
+
+<p><strong>结果缓存：</strong>缓存推荐结果。同一用户短时间内（如 5 分钟）的请求返回相同推荐结果。结果缓存命中率通常 30-50%，大幅降低后端负载。</p>
+
+<p><strong>模型缓存：</strong>模型参数缓存在推理引擎内存中，避免每次推理都加载模型。Embedding 表缓存在内存中，支持快速查询。</p>
+
+<p><strong>特征缓存：</strong>用户特征和物品特征缓存在 Redis 中。特征缓存命中率通常 80-90%，减少特征服务查询。</p>
+
+<p><strong>Embedding 缓存：</strong>高频物品的 Embedding 缓存在推理引擎内存中。避免每次推理都查询 Embedding 表。</p>
+
+<h3 class="subsection-title">16.3.2 缓存更新</h3>
+
+<p><strong>定时更新：</strong>推荐结果每 N 分钟更新一次。用户短时间内看到相同推荐，但 N 分钟后刷新。</p>
+
+<p><strong>事件触发更新：</strong>用户有新行为（点击/购买）时触发推荐结果更新。实时响应用户行为变化。</p>
+
+<p><strong>主动失效：</strong>物品下架或价格变化时主动使相关缓存失效。避免推荐已下架物品。</p>
+
+<h3 class="subsection-title">16.3.3 缓存穿透</h3>
+
+<p><strong>空值穿透：</strong>查询不存在的物品 ID 导致缓存未命中，请求穿透到后端。解决方案：缓存空值或使用布隆过滤器。</p>
+
+<p><strong>热点穿透：</strong>热点物品缓存过期时大量请求同时穿透。解决方案：缓存永不过期 + 异步更新，或使用缓存锁。</p>
+
+<p><strong>雪崩：</strong>大量缓存同时过期导致后端压力骤增。解决方案：缓存过期时间加随机抖动，或分级过期。</p>
+
+<h2 class="section-title" id="sec-16-4">16.4 降级与容错</h2>
+
+<h3 class="subsection-title">16.4.1 降级策略</h3>
+
+<p>当系统压力过大或部分服务故障时，降级策略保证基本可用：</p>
+
+<p><strong>模型降级：</strong>精排模型故障时降级为粗排结果或热门推荐。保证推荐不中断，虽然效果下降。</p>
+
+<p><strong>召回降级：</strong>多路召回部分故障时，使用剩余召回路的结果。如向量召回故障，使用热门和类目召回。</p>
+
+<p><strong>特征降级：</strong>实时特征服务故障时，使用离线特征或默认值。保证推理不中断。</p>
+
+<p><strong>重排降级：</strong>重排服务故障时直接返回精排结果。重排是"锦上添花"，可以跳过。</p>
+
+<h3 class="subsection-title">16.4.2 熔断与限流</h3>
+
+<p><strong>熔断（Circuit Breaker）：</strong>下游服务错误率过高时自动熔断，直接返回降级结果。防止故障传播。Hystrix 和 Resilience4j 是常用熔断框架。</p>
+
+<p><strong>限流（Rate Limiting）：</strong>限制请求速率，防止过载。推荐系统通常使用令牌桶或漏桶算法限流。高峰期限流保护系统，低谷期放开限制。</p>
+
+<p><strong>队列控制：</strong>请求队列长度限制。队列过长时拒绝新请求，防止延迟雪崩。</p>
+
+<h2 class="section-title" id="sec-16-5">16.5 监控与告警</h2>
+
+<h3 class="subsection-title">16.5.1 延迟监控</h3>
+
+<p><strong>全链路延迟：</strong>从请求到响应的端到端延迟。通常要求 P99 < 100ms。使用直方图或分位数监控。</p>
+
+<p><strong>各环节延迟：</strong>召回/粗排/精排/重排各环节的延迟分布。定位瓶颈环节。</p>
+
+<p><strong>延迟异常告警：</strong>延迟突增时告警。可能原因：流量激增、模型变更、缓存失效。</p>
+
+<h3 class="subsection-title">16.5.2 效果监控</h3>
+
+<p><strong>实时 CTR/CVR：</strong>实时监控推荐效果。CTR 突降可能表示模型故障或数据异常。</p>
+
+<p><strong>多样性监控：</strong>推荐列表的类目分布和覆盖率。多样性下降可能导致用户体验下降。</p>
+
+<p><strong>冷启动监控：</strong>新物品的曝光比例和点击率。过低的新物品曝光比例表示推荐系统缺乏发现能力。</p>
+
+<h3 class="subsection-title">16.5.3 异常检测</h3>
+
+<p><strong>数据异常：</strong>特征缺失率突增、行为日志量异常。可能表示数据管道故障。</p>
+
+<p><strong>模型异常：</strong>预测分数分布异常、输出方差过大。可能表示模型 bug 或特征穿越。</p>
+
+<p><strong>系统异常：</strong>CPU/内存/网络异常。通过基础设施监控发现。</p>
+
+<h2 class="section-title" id="sec-16-6">16.6 工业实践</h2>
+
+<h3 class="subsection-title">16.6.1 淘宝在线架构</h3>
+
+<p>淘宝推荐系统的在线架构是工业级标杆：</p>
+
+<p><strong>接入层：</strong>API Gateway 负责请求路由和用户分流。支持 A/B 实验和灰度发布。</p>
+
+<p><strong>召回层：</strong>多路召回并行执行，包括向量召回（FAISS）、图召回、热门召回、类目召回。总延迟 <10ms。</p>
+
+<p><strong>排序层：</strong>粗排（双塔）+ 精排（DIN/MMoE）+ 重排（DPP）。精排使用 GPU 推理，延迟 30-50ms。</p>
+
+<p><strong>特征层：</strong>实时特征服务（基于 Redis + 自研特征服务），延迟 <5ms。</p>
+
+<p><strong>总延迟：</strong>P99 < 80ms，支撑千万级 DAU。</p>
+
+<h3 class="subsection-title">16.6.2 抖音在线架构</h3>
+
+<p>抖音推荐系统的在线架构以实时性和高 QPS 为特色：</p>
+
+<p><strong>实时特征：</strong>用户最近 5 分钟的行为序列实时更新。实时特征延迟 <1s。</p>
+
+<p><strong>在线学习：</strong>精排模型每 5 分钟在线更新。快速适应新趋势。</p>
+
+<p><strong>GPU 推理：</strong>精排使用 GPU 推理，支撑百万级 QPS。动态 batching 优化吞吐量。</p>
+
+<p><strong>总延迟：</strong>P99 < 50ms，支撑亿级 DAU。</p>
+
+<h2 class="section-title" id="sec-16-7">16.7 本章小结</h2>
+
+<p>在线服务是推荐系统面向用户的"门面"，需要在 50-100ms 内完成全链路推理。本章介绍了在线服务的核心组件——服务架构（微服务化/级联架构）、模型推理（推理引擎/批处理/模型压缩）、缓存策略（多级缓存/缓存穿透防范）、降级容错（降级/熔断/限流）和监控告警（延迟/效果/异常）。</p>
+
+<p>在线服务的核心设计原则是：<strong>低延迟、高可用、可降级</strong>。低延迟保证用户体验；高可用保证服务不中断；可降级保证故障时基本可用。这三者构成了推荐系统在线服务的"铁三角"。</p>
+
+<p>随着模型规模的增长（如 HSTU 百亿参数），在线推理面临越来越大的延迟压力。模型压缩、推理优化和专用硬件（如推荐 ASIC）是在线服务的发展方向。同时，生成式推荐的端到端架构有望简化在线服务——从多级级联变为单次推理，可能降低架构复杂度但提高单次推理要求。</p>
+
+</body>
+</html>

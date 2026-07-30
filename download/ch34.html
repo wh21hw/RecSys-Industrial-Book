@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第34章 生成式推荐 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第七部分 多模态/生成式 · 第 34 章</div>
+
+<h1 class="chapter-title">生成式推荐</h1>
+
+<p>生成式推荐（Generative Recommendation）是推荐系统领域近年来最具革命性的发展方向之一。与传统"检索-排序"范式不同，生成式推荐将推荐问题重新定义为序列生成任务——模型直接生成用户可能感兴趣的物品 ID 或物品表示。随着大语言模型和 Transformer 架构的成熟，生成式推荐正在重塑推荐系统的技术范式。本章将系统介绍生成式推荐的核心思想、关键技术和最新进展。</p>
+
+<div class="toc-box">
+  <h3>本章目录</h3>
+  <ul>
+    <li><a href="#sec-34-1">34.1 从检索到生成：范式转变</a> — 传统范式局限 / 生成式推荐定义 / 技术路线</li>
+    <li><a href="#sec-34-2">34.2 物品 Tokenization</a> — 语义ID / RQ-VAE / 树状编码 / 协同语义ID</li>
+    <li><a href="#sec-34-3">34.3 生成式召回</a> — TIGER / GPT4Rec / Generative Retrieval / OneRec</li>
+    <li><a href="#sec-34-4">34.4 生成式排序与端到端推荐</a> — HSTU / OneRec / ReaRec</li>
+    <li><a href="#sec-34-5">34.5 生成式推荐系统架构</a> — 级联 vs 端到端 / 混合架构</li>
+    <li><a href="#sec-34-6">34.6 工业实践与前沿</a> — Meta HSTU / 阿里 OneRec / ReaRec</li>
+    <li><a href="#sec-34-7">34.7 本章小结</a></li>
+  </ul>
+</div>
+
+<h2 class="section-title" id="sec-34-1">34.1 从检索到生成：范式转变</h2>
+
+<h3 class="subsection-title">34.1.1 传统推荐范式的局限</h3>
+
+<p>传统推荐系统采用"检索-粗排-精排-重排"的级联式架构。这种范式在过去十年取得了巨大成功，但面临以下根本性局限：</p>
+
+<p><strong>（1）级联误差累积。</strong>每一级的漏斗都会损失信息——召回阶段过滤掉的物品无法在后续阶段恢复，粗排的近似排序误差会传递到精排。研究表明，在典型电商推荐系统中，从召回（万级）到精排（百级）的漏斗会导致 15-30% 的相关物品被错误过滤。</p>
+
+<p><strong>（2）候选集依赖。</strong>传统范式的效果上限受限于召回候选集的质量。如果召回阶段没有检索到某个物品，无论精排模型多强都无法推荐它。这导致推荐系统陷入"召回瓶颈"。</p>
+
+<p><strong>（3）多目标优化困难。</strong>在级联架构中，不同阶段优化不同目标（召回优化相关性、精排优化 CTR、重排优化多样性），目标间存在冲突，且各阶段独立优化难以达到全局最优。</p>
+
+<p><strong>（4）用户兴趣建模不足。</strong>传统模型通常将用户兴趣压缩为固定维度的向量，难以捕捉用户兴趣的复杂层次和动态演化。</p>
+
+<p><strong>（5）架构复杂度。</strong>级联架构涉及多个独立模型、特征管道和在线服务，系统复杂度高、维护成本大、迭代效率低。</p>
+
+<h3 class="subsection-title">34.1.2 生成式推荐的定义</h3>
+
+<div class="definition-box">
+  <div class="def-label">定义 34.1（生成式推荐）</div>
+  <p>生成式推荐是一种将推荐问题转化为序列生成任务的推荐范式。模型以用户历史行为序列为条件，通过自回归方式直接生成（而非检索）推荐物品的 ID 或表示。</p>
+</div>
+
+<p>生成式推荐的核心思想是：将推荐视为一个"给定用户历史，生成下一个物品"的条件生成任务，类似于语言模型"给定上下文，生成下一个 token"。这种范式具有以下优势：</p>
+
+<p><strong>端到端优化：</strong>整个推荐流程（从候选生成到排序）可以通过一个模型统一优化，避免级联误差。</p>
+
+<p><strong>无限候选集：</strong>生成式推荐不限于预定义的候选集，理论上可以生成任意物品（包括从未见过的组合）。</p>
+
+<p><strong>复杂兴趣建模：</strong>Transformer 架构的强大序列建模能力可以捕捉用户兴趣的复杂模式和长程依赖。</p>
+
+<p><strong>架构简化：</strong>一个模型替代多级架构，降低系统复杂度。</p>
+
+<h3 class="subsection-title">34.1.3 技术路线</h3>
+
+<p>生成式推荐的技术路线可以分为两条：</p>
+
+<p><strong>路线一：生成式召回（Generative Retrieval）。</strong>保留传统排序架构，但将召回阶段替换为生成式模型。模型根据用户历史生成物品 ID token 序列，然后在全量物品库中查找匹配的物品。代表工作：TIGER（NeurIPS 2023）、GPT4Rec、Generative Retrieval。这条路线是渐进式改进，与现有系统兼容性好。</p>
+
+<p><strong>路线二：端到端生成式推荐。</strong>完全抛弃级联架构，使用一个生成式模型完成从用户历史到推荐列表的端到端推理。代表工作：Meta 的 HSTU（2024）、阿里的 OneRec（2025）。这条路线是革命性变革，效果提升大但工程挑战也大。</p>
+
+<h2 class="section-title" id="sec-34-2">34.2 物品 Tokenization</h2>
+
+<p>生成式推荐的核心前提是将物品表示为可生成的 token 序列。这与传统推荐系统中使用连续向量或 hash ID 表示物品不同。物品 Tokenization 是生成式推荐的基础，直接决定了模型的表示能力和生成质量。</p>
+
+<h3 class="subsection-title">34.2.1 为什么需要 Tokenization</h3>
+
+<p>在语言模型中，文本天然可以被 tokenize 为 token 序列（如 BPE、WordPiece）。但推荐系统中的物品 ID 是一个无语义的离散标识符（如商品编号），直接使用原始 ID 作为 token 面临以下问题：</p>
+
+<p><strong>词表过大：</strong>工业推荐系统的物品数量通常在百万到十亿级别，远超语言模型的词表（通常 3-5 万）。直接使用原始 ID 作为 token 会导致巨大的 embedding 矩阵和 softmax 层，计算和存储不可行。</p>
+
+<p><strong>缺乏语义结构：</strong>原始 ID 没有语义信息——ID 相近的物品可能完全无关，而语义相近的物品 ID 可能相差很远。这使得模型难以学习物品间的语义关系，也难以泛化到新物品。</p>
+
+<p><strong>生成困难：</strong>如果每个物品对应一个 token，模型需要在百万级词表上做 softmax，计算量巨大且训练不充分。</p>
+
+<p>因此，需要将物品 ID 转化为有语义结构、词表可控的 token 序列。</p>
+
+<h3 class="subsection-title">34.2.2 语义ID（Semantic ID）</h3>
+
+<p>语义ID 是将物品映射为一组离散 token 序列的方法，使得语义相近的物品共享相同或相近的 token 前缀。语义ID 的核心目标是建立一棵"语义树"——从根到叶子的路径编码物品的语义层次。</p>
+
+<p><strong>RQ-VAE（Residual Quantized VAE）：</strong>TIGER 提出的方法。首先使用 VAE 或预训练模型获取物品的连续向量表示，然后通过残差量化将连续向量分解为多级离散 token：</p>
+
+<div class="formula-box">
+  z = Encoder(item) &nbsp;&nbsp;(34.1)<br>
+  z ≈ Σ<sub>l=1</sub><sup>L</sup> c<sub>l</sub>, &nbsp; c<sub>l</sub> = Quantize<sub>l</sub>(z - Σ<sub>j&lt;l</sub> c<sub>j</sub>) &nbsp;&nbsp;(34.2)
+</div>
+
+<p>其中 z 是物品的连续表示，c<sub>l</sub> 是第 l 级的量化码本向量。每级码本大小通常为 256-1024，级数 L 通常为 4-8。这样每个物品被表示为 L 个 token 的序列，每个 token 来自大小为 256-1024 的词表，总表示能力为 256<sup>4</sup> ≈ 43 亿到 1024<sup>8</sup> ≈ 10<sup>24</sup>，远超任何实际物品库规模。</p>
+
+<p>RQ-VAE 的优势是：语义相近的物品在量化后共享前缀（因为连续向量相近，第一级量化结果相同），形成了自然的语义层次。</p>
+
+<p><strong>树状语义ID：</strong>另一种方法是通过层次聚类构建语义树。首先对物品向量做 K-Means 聚类，然后递归地对每个簇继续聚类，形成多层树结构。从根到叶子的路径即为物品的语义ID。这种方法更直观但层次结构可能不如 RQ-VAE 均衡。</p>
+
+<p><strong>协同语义ID（Collaborative Semantic ID）：</strong>结合协同过滤信号和内容语义信息生成 ID。首先基于用户-物品交互图学习物品的协同表示（如 LightGCN），然后基于内容特征学习语义表示，最后将两者融合后进行量化。这种方法兼顾了用户行为相似性和物品内容相似性。</p>
+
+<h3 class="subsection-title">34.2.3 Tokenization 的挑战</h3>
+
+<p><strong>唯一性与歧义性：</strong>理想情况下，每个物品应对应唯一的 token 序列。但量化过程可能导致不同物品映射到相同的 token 序列（碰撞）。需要通过增加级数或码本大小来降低碰撞率。</p>
+
+<p><strong>新物品处理：</strong>新上架的物品需要实时计算其语义ID。如果使用 RQ-VAE，需要在线计算物品向量并做量化推理，延迟需控制在毫秒级。</p>
+
+<p><strong>ID 漂移问题：</strong>当码本更新时，物品的语义ID可能变化，导致历史训练数据中的 ID 失效。解决方案包括：冻结码本、版本化 ID、增量更新。</p>
+
+<p><strong>多模态 ID：</strong>对于多模态物品（如带图片的商品），可以将多模态特征融合后做量化，生成多模态语义ID。这使得语义ID同时编码了视觉、文本和协同信号。</p>
+
+<h2 class="section-title" id="sec-34-3">34.3 生成式召回</h2>
+
+<h3 class="subsection-title">34.3.1 TIGER：生成式物品检索</h3>
+
+<p>TIGER（Transferring Generative Item Retrieval，NeurIPS 2023）是生成式召回的里程碑工作。它将推荐召回重新定义为条件生成任务：给定用户历史行为序列，通过自回归模型生成下一个物品的语义ID token 序列。</p>
+
+<p><strong>模型架构：</strong>TIGER 使用标准 Transformer encoder-decoder 架构。Encoder 将用户历史物品的语义ID序列编码为上下文向量，Decoder 自回归地生成目标物品的语义ID token 序列：</p>
+
+<div class="formula-box">
+  P(item | history) = Π<sub>l=1</sub><sup>L</sup> P(c<sub>l</sub> | c<sub>&lt;l</sub>, history) &nbsp;&nbsp;(34.3)
+</div>
+
+<p>其中 c<sub>l</sub> 是目标物品语义ID的第 l 个 token。</p>
+
+<p><strong>训练：</strong>使用用户历史行为序列作为训练数据。对于每个用户，将前 n-1 个物品作为输入，第 n 个物品的语义ID作为目标，通过交叉熵损失训练模型。</p>
+
+<p><strong>推理：</strong>使用 beam search 生成多个候选物品的语义ID序列，然后在物品库中查找匹配的物品。beam size 通常为 10-100。</p>
+
+<p><strong>效果：</strong>TIGER 在 Amazon Reviews 数据集上相比传统召回方法（ItemCF、GRU4Rec、SASRec）提升 20-65% 的 Recall@5。更重要的是，TIGER 展现了生成式召回的独特优势：能够推荐训练集中未出现过的物品组合（通过语义ID的泛化能力）。</p>
+
+<h3 class="subsection-title">34.3.2 GPT4Rec：GPT 驱动的推荐</h3>
+
+<p>GPT4Rec 将 GPT 架构应用于推荐场景。与 TIGER 不同，GPT4Rec 直接使用物品标题文本（而非语义ID）作为 token 序列。模型以用户历史物品的标题序列为输入，自回归生成下一个物品的标题文本，然后通过文本匹配找到对应物品。</p>
+
+<p>优势是利用了语言模型的预训练知识，劣势是生成文本可能不对应任何实际物品（幻觉问题），需要后处理匹配。</p>
+
+<h3 class="subsection-title">34.3.3 生成式召回的变体</h3>
+
+<p><strong>Generative Retrieval（Google，2024）：</strong>Google 提出的生成式召回框架，使用 doc2query 思想——模型生成用户可能搜索的 query，然后通过 query 检索物品。这种方法将推荐与搜索统一。</p>
+
+<p><strong>LMIndexer：</strong>使用语言模型作为索引器，将物品表示为语言模型可以生成的自然语言描述，然后通过生成自然语言描述来召回物品。</p>
+
+<p><strong>Gen-IR 框架：</strong>将信息检索（IR）的生成式方法引入推荐，统一了搜索和推荐的生成式范式。</p>
+
+<h3 class="subsection-title">34.3.4 生成式召回的挑战</h3>
+
+<p><strong>幻觉问题：</strong>模型可能生成不对应任何实际物品的 token 序列。解决方案包括：约束解码（constrained decoding）确保只生成有效物品ID、后处理匹配、训练时增加负样本。</p>
+
+<p><strong>多样性不足：</strong>自回归生成容易陷入模式坍塌，反复生成相似的物品。解决方案包括：diversity-promoting decoding、temperature scaling、nucleus sampling。</p>
+
+<p><strong>长尾物品偏差：</strong>热门物品在训练数据中出现更多，模型倾向于生成热门物品的ID。解决方案包括：逆倾向打分（IPS）、长尾增强采样。</p>
+
+<p><strong>实时性：</strong>beam search 的计算开销比传统 ANN 检索大。解决方案包括：并行解码、speculative decoding、缓存常用 prefix。</p>
+
+<h2 class="section-title" id="sec-34-4">34.4 生成式排序与端到端推荐</h2>
+
+<h3 class="subsection-title">34.4.1 HSTU：Meta 的高性能序列推荐</h3>
+
+<p>HSTU（Hierarchical Sequential Transductive Units，Meta 2024）是 Meta（Facebook）开发的生成式推荐模型，被认为是生成式推荐在工业界落地的里程碑。HSTU 在 Meta 的多个推荐场景（Instagram Reels、Feed、广告）中全面替代了传统级联架构，取得了显著效果。</p>
+
+<p><strong>架构创新：</strong>HSTU 的核心创新包括：</p>
+
+<p>（1）<strong>层次化序列建模</strong>：使用多层 Transformer 对用户长期行为序列进行层次化建模。低层捕捉短期兴趣，高层捕捉长期兴趣。这种层次结构比平坦的 Transformer 更高效。</p>
+
+<p>（2）<strong>Transductive 推理</strong>：在推理时，HSTU 不是逐个生成物品，而是同时为一批候选物品打分。这保留了生成式模型的序列建模能力，同时避免了逐个生成的低效。</p>
+
+<p>（3）<strong>大规模序列长度</strong>：HSTU 可以处理 8192 长度的用户行为序列，远超传统模型的几百长度。长序列使得模型能够捕捉用户的长期兴趣演化。</p>
+
+<p>（4）<strong>高效注意力</strong>：使用稀疏注意力机制降低长序列的计算开销。</p>
+
+<p><strong>效果：</strong>Meta 公布的数据显示，HSTU 在 Instagram Reels 推荐中相比传统级联架构，观看时间提升 10-15%，推荐准确率显著提升。更重要的是，HSTU 的推理效率（每秒处理物品数）比传统架构提升了 2-5 倍，这得益于端到端架构避免了多级推理的开销。</p>
+
+<p><strong>系统意义：</strong>HSTU 的成功证明了生成式推荐在大规模工业场景中的可行性。Meta 将 HSTU 部署在覆盖数十亿用户的推荐系统中，标志着推荐系统从"检索-排序"范式向"生成式"范式的转变。</p>
+
+<h3 class="subsection-title">34.4.2 OneRec：阿里的端到端生成式推荐</h3>
+
+<p>OneRec（阿里 2025）是阿里巴巴开发的端到端生成式推荐框架，将传统的"召回-粗排-精排"三级架构统一为单一生成式模型。OneRec 的核心思想是：使用一个生成式模型直接从用户历史行为生成推荐列表，无需级联架构。</p>
+
+<p><strong>架构设计：</strong>OneRec 使用 encoder-decoder 架构：</p>
+
+<p>（1）Encoder：将用户历史行为序列（包括物品ID、行为类型、时间戳等）编码为上下文向量。</p>
+
+<p>（2）Decoder：自回归地生成推荐列表中每个物品的语义ID。一次推理生成整个推荐列表（如 40 个物品），而非逐个生成。</p>
+
+<p>（3）<strong>多目标训练</strong>：OneRec 同时优化多个目标（CTR、CVR、停留时长等），通过多任务学习在生成过程中平衡不同目标。</p>
+
+<p><strong>效果：</strong>阿里公布的数据显示，OneRec 相比传统级联架构，在淘宝首页推荐中 CTR 提升 5-8%，用户停留时长提升 3-5%，同时推理延迟降低 40%（因为避免了多级推理）。</p>
+
+<p><strong>工程创新：</strong>OneRec 的工程创新包括：在线语义ID计算（支持新物品实时加入）、高效 beam search（并行化 + 缓存）、多目标 beam search（在生成过程中平衡多目标）。</p>
+
+<h3 class="subsection-title">34.4.3 ReaRec：推理时计算框架</h3>
+
+<p>ReaRec（2025）引入了推理时计算（inference-time computing）框架，使传统序列推荐模型也能获得类似 LLM 的"思考"能力。核心思想是：在推理时进行多步潜在推理（latent reasoning），逐步精化用户兴趣表示。</p>
+
+<p><strong>方法：</strong>给定用户历史序列，ReaRec 不是直接做一次预测，而是通过多步自回归推理逐步精化用户表示：</p>
+
+<div class="formula-box">
+  h<sub>0</sub> = Encoder(history) &nbsp;&nbsp;(34.4)<br>
+  h<sub>t+1</sub> = LatentStep(h<sub>t</sub>) &nbsp;&nbsp;(34.5)<br>
+  prediction = Decoder(h<sub>T</sub>)
+</div>
+
+<p>其中 T 是推理步数（通常 3-10 步）。每步推理在潜在空间中进行，不生成实际物品，而是精化用户兴趣表示。</p>
+
+<p><strong>效果：</strong>ReaRec 在多个序列推荐基准上相比传统单步推理提升 5-12%，且推理步数与效果呈正相关（更多推理步 = 更好效果）。这种"思考"能力类似于 OpenAI o1 的推理时计算，但应用于推荐场景。</p>
+
+<p><strong>意义：</strong>ReaRec 表明推理时计算不仅适用于语言模型，在推荐系统中同样有效。这为推荐模型的"深度思考"开辟了新方向。</p>
+
+<h2 class="section-title" id="sec-34-5">34.5 生成式推荐系统架构</h2>
+
+<h3 class="subsection-title">34.5.1 级联 vs 端到端</h3>
+
+<p>生成式推荐的系统架构设计面临一个核心选择：是保留级联架构但替换某些模块为生成式模型，还是完全采用端到端生成式架构？</p>
+
+<p><strong>渐进式路线（级联保留）：</strong>在召回阶段使用生成式召回（如 TIGER），保留粗排和精排。优势是与现有系统兼容、风险低、可以逐步迭代。劣势是仍有级联误差。适合已有成熟推荐系统的平台。</p>
+
+<p><strong>革命式路线（端到端）：</strong>使用一个生成式模型完成全部推荐流程。优势是无级联误差、架构简洁、全局优化。劣势是工程改造大、模型训练复杂、初期风险高。适合新场景或技术储备充足的团队。</p>
+
+<p><strong>混合路线：</strong>生成式模型与传统模型并行运行，通过融合策略整合两路结果。例如，生成式召回与传统召回并行，各取 Top-K 后融合去重。这种策略兼顾创新和稳定，是工业界常用的过渡方案。</p>
+
+<h3 class="subsection-title">34.5.2 系统架构设计要点</h3>
+
+<p><strong>语义ID管理服务：</strong>需要独立服务管理物品的语义ID，支持新物品实时注册、ID版本管理、批量查询。这是生成式推荐的基础设施。</p>
+
+<p><strong>高效生成推理：</strong>beam search 的并行化、prefix 缓存、constrained decoding 加速是工程关键。Meta HSTU 使用了定制的 GPU kernel 实现高效注意力。</p>
+
+<p><strong>在线学习：</strong>生成式推荐模型需要快速适应新物品和新趋势。在线学习（online learning）或增量学习机制是必要的。OneRec 采用了分钟级模型更新策略。</p>
+
+<p><strong>多目标平衡：</strong>生成式推荐在生成过程中需要平衡多个目标（CTR、CVR、多样性、新颖性）。多目标 beam search 和目标条件生成是关键技术。</p>
+
+<h2 class="section-title" id="sec-34-6">34.6 工业实践与前沿</h2>
+
+<h3 class="subsection-title">34.6.1 Meta HSTU 的工业部署</h3>
+
+<p>Meta 的 HSTU 是目前最大规模的生成式推荐工业部署。关键经验包括：</p>
+
+<p><strong>硬件协同设计：</strong>Meta 为 HSTU 定制了 GPU kernel 和推理引擎，针对长序列注意力做了专门优化。推理效率提升 2-5 倍是硬件-算法协同设计的结果。</p>
+
+<p><strong>数据管道：</strong>HSTU 需要处理 8192 长度的用户序列，数据管道需要高效收集和清洗用户长期行为数据。Meta 构建了专门的序列数据管道。</p>
+
+<p><strong>A/B 测试策略：</strong>从传统级联架构切换到 HSTU 是重大变更，Meta 采用了长期 A/B 测试策略，逐步放量并持续监控效果。</p>
+
+<p><strong>效果指标：</strong>HSTU 在 Instagram Reels 上观看时间提升 10-15%，在 Feed 推荐上互动率提升 5-8%，在广告推荐上 ROI 提升 3-5%。</p>
+
+<h3 class="subsection-title">34.6.2 阿里 OneRec 的实践</h3>
+
+<p>阿里的 OneRec 代表了中国互联网公司在生成式推荐方面的前沿探索：</p>
+
+<p><strong>语义ID系统：</strong>阿里构建了基于 RQ-VAE 的语义ID系统，支持淘宝十亿级商品的实时ID分配。新商品上架后秒级获得语义ID。</p>
+
+<p><strong>多目标生成：</strong>OneRec 在 beam search 过程中同时考虑 CTR、CVR、GMV 等多个目标，通过多目标打分函数选择最优推荐列表。</p>
+
+<p><strong>冷启动处理：</strong>新物品通过多模态特征计算语义ID，即使没有交互数据也能被生成式模型推荐。</p>
+
+<p><strong>效果：</strong>OneRec 在淘宝首页推荐中相比传统架构提升 CTR 5-8%，在猜你喜欢场景提升 3-5%。</p>
+
+<h3 class="subsection-title">34.6.3 生成式推荐的前沿方向</h3>
+
+<p><strong>（1）多模态生成式推荐。</strong>将多模态信息（图像、文本、视频）融入生成式推荐。物品的语义ID不仅基于协同信号，还融合多模态特征。这使得生成式模型可以推荐视觉上相似但协同信号不足的物品。</p>
+
+<p><strong>（2）LLM 驱动的生成式推荐。</strong>使用大语言模型作为推荐生成器。将用户历史和候选物品编码为自然语言 prompt，输入 LLM 生成推荐结果。挑战在于推理延迟和 prompt 长度限制。当前研究方向包括：使用蒸馏加速、将 LLM 作为召回辅助而非精排主模型。</p>
+
+<p><strong>（3）推理时计算推荐。</strong>ReaRec 开创的推理时计算方向。类似于 LLM 的 chain-of-thought，推荐模型在推理时进行多步"思考"，逐步精化用户兴趣理解和推荐决策。这为推荐模型的"深度推理"开辟了新方向。</p>
+
+<p><strong>（4）个性化生成策略。</strong>不同用户可能需要不同的生成策略——活跃用户适合长序列生成，冷启动用户适合基于内容的生成。个性化生成策略根据用户特征动态调整生成参数。</p>
+
+<p><strong>（5）生成式推荐的 Scaling Law。</strong>研究生成式推荐模型的缩放规律——模型参数、序列长度、训练数据量如何影响推荐效果。初步研究表明，生成式推荐模型也遵循类似的 power-law 缩放规律，但最佳缩放策略与传统模型不同。</p>
+
+<p><strong>（6）DPO/GRPO 对齐推荐。</strong>将 LLM 对齐技术（DPO、GRPO）引入生成式推荐。通过用户反馈（点击、停留、购买）作为偏好信号，对齐生成式推荐模型使其更符合用户真实偏好。2025 年的研究开始探索将 GRPO（Group Relative Policy Optimization）应用于推荐场景，通过组内相对偏好优化提升推荐质量。</p>
+
+<p><strong>（7）生成式推荐与 Agent。</strong>将生成式推荐作为 Agent 的核心能力之一。Agent 可以通过多轮对话理解用户需求，调用生成式推荐模型产出推荐结果，并根据用户反馈调整推荐策略。这种 Agent-based 推荐范式将推荐从被动响应转变为主动交互。</p>
+
+<h2 class="section-title" id="sec-34-7">34.7 本章小结</h2>
+
+<p>生成式推荐代表了推荐系统范式的根本性转变——从"检索-排序"到"生成"。本章系统介绍了生成式推荐的核心技术：物品 Tokenization（RQ-VAE、语义ID）、生成式召回（TIGER、GPT4Rec）、端到端生成式推荐（HSTU、OneRec、ReaRec）。</p>
+
+<p>生成式推荐的优势在于：端到端优化避免级联误差、强大的序列建模能力、无限候选集、架构简化。Meta HSTU 和阿里 OneRec 的工业验证表明，生成式推荐不仅可行，而且效果优于传统架构。</p>
+
+<p>然而，生成式推荐也面临挑战：语义ID管理、生成效率、幻觉控制、长尾偏差、在线学习等。这些挑战正在被工程创新和算法改进逐步解决。</p>
+
+<p>展望未来，生成式推荐的发展趋势包括：多模态融合、LLM 驱动、推理时计算、个性化生成策略、Scaling Law 研究、DPO/GRPO 对齐、Agent-based 推荐。随着大模型技术的快速进步和工业实践的积累，生成式推荐有望成为推荐系统的主流范式。正如一些研究者所言，2025 年可能是推荐系统的"ChatGPT 时刻"——生成式推荐从研究走向大规模工业落地的转折点。</p>
+
+</body>
+</html>

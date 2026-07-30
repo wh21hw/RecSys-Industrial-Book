@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第29章 RL流量调控 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第六部分 RL推荐 · 第 29 章</div>
+
+<h1 class="chapter-title">RL 流量调控</h1>
+
+<p>推荐系统不仅需要推荐用户感兴趣的物品，还需要调控流量分配以实现全局最优。流量调控涉及冷启动扶持、新品扶持、长尾挖掘、生态平衡等目标，这些问题本质上是在不确定环境下的序贯决策问题，与强化学习（RL）的框架天然契合。本章将系统介绍强化学习在推荐系统流量调控中的应用。</p>
+
+<div class="toc-box">
+  <h3>本章目录</h3>
+  <ul>
+    <li><a href="#sec-29-1">29.1 流量调控问题</a> — 冷启动 / 长尾 / 生态平衡 / 全局最优</li>
+    <li><a href="#sec-29-2">29.2 多臂老虎机</a> — ε-greedy / UCB / LinUCB / Thompson Sampling</li>
+    <li><a href="#sec-29-3">29.3 上下文老虎机</a> — 上下文建模 / 线性模型 / 神经网络</li>
+    <li><a href="#sec-29-4">29.4 马尔可夫决策过程建模</a> — 状态/动作/奖励/转移</li>
+    <li><a href="#sec-29-5">29.5 工业实践</a> — 阿里/腾讯/百度流量调控</li>
+    <li><a href="#sec-29-6">29.6 本章小结</a></li>
+  </ul>
+</div>
+
+<h2 class="section-title" id="sec-29-1">29.1 流量调控问题</h2>
+
+<h3 class="subsection-title">29.1.1 冷启动扶持</h3>
+
+<p>新物品缺乏交互数据，传统推荐模型难以准确预估其 CTR/CVR。如果不主动扶持，新物品将长期得不到曝光，形成"富者愈富"的马太效应。流量调控需要将部分流量分配给新物品，通过探索收集数据，同时控制探索成本。</p>
+
+<p>这是经典的探索-利用（Exploration-Exploitation, E&E）权衡问题：利用已知信息推荐高 CTR 物品（exploitation），还是探索新物品以获取数据（exploration）。强化学习的多臂老虎机框架是解决 E&E 问题的经典方法。</p>
+
+<h3 class="subsection-title">29.1.2 长尾挖掘</h3>
+
+<p>推荐系统的流量分布通常呈长尾分布——头部物品获得大部分流量，尾部物品获得很少流量。然而，尾部物品的总量远大于头部，挖掘长尾可以提升用户满意度和平台多样性。</p>
+
+<p>长尾挖掘需要在保证整体效果的前提下，将部分流量分配给长尾物品。挑战在于长尾物品的数据稀少，难以准确预估效果。RL 方法可以在不确定环境下做出最优分配决策。</p>
+
+<h3 class="subsection-title">29.1.3 生态平衡</h3>
+
+<p>推荐系统需要维护内容生态的健康——不同类目、不同创作者、不同质量等级的内容需要获得合理的流量分配。纯 CTR 优化可能导致某些类目（如娱乐）占据过多流量，而其他类目（如知识）被边缘化。</p>
+
+<p>生态平衡可以建模为多目标优化问题，也可以建模为约束优化问题——在 CTR 优化的约束下保证各类目的最低流量。RL 方法可以在长期视角下优化生态目标。</p>
+
+<h3 class="subsection-title">29.1.4 全局最优</h3>
+
+<p>传统推荐系统优化单次请求的 CTR，但单次最优不等于全局最优。例如，连续推荐相似内容可能导致用户疲劳，降低长期留存。RL 的优势在于可以优化长期累积奖励，而非单次奖励。</p>
+
+<p>将推荐建模为 MDP（马尔可夫决策过程），状态是用户兴趣，动作是推荐物品，奖励是用户反馈，目标是最大化长期累积奖励。这种建模方式天然适合 RL 求解。</p>
+
+<h2 class="section-title" id="sec-29-2">29.2 多臂老虎机</h2>
+
+<h3 class="subsection-title">29.2.1 问题定义</h3>
+
+<p>多臂老虎机（Multi-Armed Bandit, MAB）是强化学习的最简形式。有 K 个臂（物品），每个臂有一个未知期望奖励 μᵢ。每轮选择一个臂，获得随机奖励。目标是最小化累积遗憾（Regret）：</p>
+
+<div class="formula-box">
+  R(T) = T·μ* − Σₜ₌₁ᵀ μₐₜ &nbsp;&nbsp;(29.1)
+</div>
+
+<p>其中 μ* 是最优臂的期望奖励，aₜ 是第 t 轮选择的臂。遗憾越小，策略越接近最优。</p>
+
+<h3 class="subsection-title">29.2.2 ε-greedy</h3>
+
+<p>最简单的 E&E 策略：以 ε 概率随机探索，以 1-ε 概率利用当前最优臂。ε 是探索率，通常设为 0.05-0.1。</p>
+
+<p><strong>优势：</strong>简单易实现。</p>
+
+<p><strong>局限：</strong>探索是均匀随机的，不区分探索价值。对于明显差的臂仍然探索，浪费流量。ε 固定不随时间衰减，后期探索过多。</p>
+
+<p><strong>改进：</strong>ε 随时间衰减（ε = 1/√t），早期多探索，后期多利用。</p>
+
+<h3 class="subsection-title">29.2.3 UCB（Upper Confidence Bound）</h3>
+
+<p>UCB 基于"面对不确定，选择乐观"的原则。每个臂的 UCB 值为：</p>
+
+<div class="formula-box">
+  UCBᵢ = x̄ᵢ + √(2·ln(t) / nᵢ) &nbsp;&nbsp;(29.2)
+</div>
+
+<p>其中 x̄ᵢ 是臂 i 的平均奖励，nᵢ 是臂 i 被选择的次数。第一项是利用项（平均奖励），第二项是探索项（不确定性）。nᵢ 越小，探索项越大，鼓励探索选择次数少的臂。</p>
+
+<p><strong>优势：</strong>理论保证 O(log T) 的遗憾上界。探索有方向性——优先探索不确定性高的臂。</p>
+
+<p><strong>局限：</strong>假设奖励分布有界，对异常值敏感。不适合上下文相关的场景。</p>
+
+<h3 class="subsection-title">29.2.4 LinUCB</h3>
+
+<p>LinUCB 是上下文老虎机的经典算法，将臂的期望奖励建模为上下文特征的线性函数：</p>
+
+<div class="formula-box">
+  E[r | x, a] = xₐᵀ · θ &nbsp;&nbsp;(29.3)
+</div>
+
+<p>其中 xₐ 是臂 a 的上下文特征，θ 是待学习的参数。LinUCB 使用岭回归估计 θ，并基于置信上界选择臂：</p>
+
+<div class="formula-box">
+  aₜ = argmaxₐ (xₐᵀ · θ̂ + α · √(xₐᵀ · A⁻¹ · xₐ)) &nbsp;&nbsp;(29.4)
+</div>
+
+<p>其中 A 是岭回归的协方差矩阵，α 是探索系数。第一项是利用项（预测奖励），第二项是探索项（特征不确定性）。</p>
+
+<p><strong>优势：</strong>利用上下文信息，探索更精准。适合推荐系统的上下文场景（用户特征、物品特征）。</p>
+
+<p><strong>工业应用：</strong>LinUCB 是推荐系统中最常用的 bandit 算法。Yahoo 新闻推荐使用 LinUCB 进行新闻推荐，显著提升了 CTR。阿里在广告推荐中使用 LinUCB 进行新广告扶持。</p>
+
+<h3 class="subsection-title">29.2.5 Thompson Sampling</h3>
+
+<p>Thompson Sampling（TS）是基于贝叶斯的 E&E 策略。维护每个臂奖励分布的后验，每轮从后验采样，选择采样值最大的臂：</p>
+
+<div class="formula-box">
+  aₜ = argmaxₐ θ̃ₐ, &nbsp; θ̃ₐ ~ posterior(θₐ | history) &nbsp;&nbsp;(29.5)
+</div>
+
+<p><strong>优势：</strong>理论性能优秀（O(log T) 遗憾）、实现简单、对超参数不敏感。实践效果通常优于 UCB。</p>
+
+<p><strong>贝叶斯线性 TS：</strong>将奖励建模为线性模型，使用贝叶斯线性回归维护后验。适合上下文场景。</p>
+
+<p><strong>高斯过程 TS：</strong>使用高斯过程建模奖励函数，适合非线性奖励。计算开销较大但精度高。</p>
+
+<h2 class="section-title" id="sec-29-3">29.3 上下文老虎机</h2>
+
+<h3 class="subsection-title">29.3.1 上下文建模</h3>
+
+<p>上下文老虎机（Contextual Bandit）在 MAB 基础上引入上下文信息——每轮可以观测到用户和物品的特征。推荐系统天然是上下文老虎机问题：每轮请求可以观测到用户特征（上下文），需要从候选物品（臂）中选择推荐。</p>
+
+<p><strong>上下文特征：</strong>用户特征（性别/年龄/兴趣）+ 物品特征（类目/价格/统计特征）+ 上下文特征（时间/场景）。</p>
+
+<p><strong>奖励建模：</strong>奖励可以是点击（二值）、停留时长（连续）、购买金额（连续）等。不同奖励类型需要不同的建模方式。</p>
+
+<h3 class="subsection-title">29.3.2 线性模型</h3>
+
+<p>线性模型是上下文老虎机的基础：</p>
+
+<ul>
+  <li>LinUCB：线性奖励 + UCB 探索</li>
+  <li>Bayesian LinUCB：线性奖励 + 贝叶斯后验 + TS 探索</li>
+  <li>Linear TS：线性奖励 + Thompson Sampling</li>
+</ul>
+
+<p>线性模型的优势是计算高效、可解释性强。局限是无法建模特征间的非线性关系。</p>
+
+<h3 class="subsection-title">29.3.3 神经网络模型</h3>
+
+<p>神经网络可以建模复杂的非线性奖励函数：</p>
+
+<p><strong>NeuralUCB：</strong>使用神经网络建模奖励，使用网络输出的不确定性进行探索。不确定性估计通过网络 ensemble 或 MC Dropout 实现。</p>
+
+<p><strong>Neural Thompson：</strong>使用神经网络建模奖励，使用贝叶斯神经网络的后验进行 Thompson Sampling。</p>
+
+<p><strong>挑战：</strong>神经网络的不确定性估计计算开销大。在线更新神经网络的参数需要特殊设计（如使用低秩近似降低计算量）。</p>
+
+<h2 class="section-title" id="sec-29-4">29.4 马尔可夫决策过程建模</h2>
+
+<h3 class="subsection-title">29.4.1 MDP 建模</h3>
+
+<p>将推荐系统建模为 MDP：</p>
+
+<p><strong>状态 S：</strong>用户兴趣状态。可以是用户最近 N 次行为的物品序列，或用户兴趣 embedding。</p>
+
+<p><strong>动作 A：</strong>推荐的物品或物品列表。动作空间可能很大（百万级物品），需要参数化动作空间。</p>
+
+<p><strong>奖励 R：</strong>用户反馈。可以是即时奖励（点击/购买）或延迟奖励（留存/GMV）。</p>
+
+<p><strong>转移 P：</strong>用户兴趣状态转移。推荐物品后用户兴趣如何变化。转移通常是未知的，需要从数据中学习。</p>
+
+<p><strong>目标：</strong>最大化累积折扣奖励 E[Σ γᵗ · rₜ]。</p>
+
+<h3 class="subsection-title">29.4.2 值函数方法</h3>
+
+<p><strong>DQN：</strong>使用神经网络近似 Q(s, a)。通过经验回放和目标网络稳定训练。挑战：动作空间大，Q 值估计困难。</p>
+
+<p><strong>Deep Q-Network for Rec：</strong>将推荐物品的 Q 值建模为用户状态和物品 embedding 的内积。通过负采样减少计算量。</p>
+
+<h3 class="subsection-title">29.4.3 策略梯度方法</h3>
+
+<p><strong>REINFORCE：</strong>直接优化策略 π(a|s) 的期望奖励。策略梯度 ∇J = E[∇log π(a|s) · (R - b)]。基线 b 减少方差。</p>
+
+<p><strong>Actor-Critic：</strong>Actor 学习策略，Critic 评估值函数。比 REINFORCE 方差更小。</p>
+
+<p><strong>工业应用：</strong>Meta 使用 REINFORCE 优化 Instagram 视频推荐的长期价值。阿里使用 Actor-Critic 优化淘宝推荐的长期留存。</p>
+
+<h3 class="subsection-title">29.4.4 离线 RL</h3>
+
+<p>在线 RL 需要与用户实时交互，风险高、成本大。离线 RL 从历史日志中学习策略，不需要在线交互：</p>
+
+<p><strong>BCQ（Batch-Constrained Q-Learning）：</strong>只从历史数据中学习的 Q-learning 变体。约束动作在历史数据中出现过的范围内，避免外推误差。</p>
+
+<p><strong>CQL（Conservative Q-Learning）：</strong>保守地估计 Q 值，对历史数据中未见的动作降低 Q 值估计。防止过度乐观的值估计。</p>
+
+<p><strong>工业应用：</strong>离线 RL 在推荐系统中的应用越来越受关注。阿里在 2023 年发表了多篇离线 RL 推荐论文，使用 CQL 从历史日志中学习推荐策略。</p>
+
+<h2 class="section-title" id="sec-29-5">29.5 工业实践</h2>
+
+<h3 class="subsection-title">29.5.1 阿里流量调控</h3>
+
+<p>阿里在淘宝推荐中使用 RL 进行流量调控：</p>
+
+<p><strong>冷启动扶持：</strong>使用 LinUCB 对新物品进行探索性曝光。根据物品特征（类目/价格/质量）估计 CTR 置信区间，在保证整体效果的前提下分配探索流量。</p>
+
+<p><strong>长期价值优化：</strong>使用 Actor-Critic 优化用户长期留存。状态是用户兴趣序列，动作是推荐物品，奖励是用户活跃度。</p>
+
+<p><strong>生态平衡：</strong>使用约束 MDP 保证各类目的最低流量分配。在 CTR 优化的约束下最大化长期 GMV。</p>
+
+<h3 class="subsection-title">29.5.2 腾讯广告流量调控</h3>
+
+<p>腾讯在广告推荐中使用 RL 进行流量分配：</p>
+
+<p><strong>广告冷启动：</strong>使用 Thompson Sampling 对新广告进行探索。根据广告特征估计 CTR 后验分布，在 eCPM 排序中加入探索项。</p>
+
+<p><strong>预算控制：</strong>使用 PID 控制器 + RL 调整广告出价，保证广告预算平滑消耗。RL 学习预算消耗的最优策略。</p>
+
+<h3 class="subsection-title">29.5.3 百度信息流调控</h3>
+
+<p>百度在信息流推荐中使用 RL 进行内容生态调控：</p>
+
+<p><strong>内容多样性：</strong>使用 MDP 建模用户浏览过程，优化长期多样性。避免连续推荐相似内容导致用户疲劳。</p>
+
+<p><strong>创作者扶持：</strong>使用 bandit 算法对新兴创作者进行流量扶持。根据创作者质量和内容特征分配探索流量。</p>
+
+<h2 class="section-title" id="sec-29-6">29.6 本章小结</h2>
+
+<p>强化学习在推荐系统流量调控中扮演着重要角色。本章介绍了流量调控的核心问题（冷启动/长尾/生态/全局最优）、多臂老虎机算法（ε-greedy/UCB/LinUCB/Thompson Sampling）、上下文老虎机（线性/神经网络模型）、MDP 建模（值函数/策略梯度/离线 RL）和工业实践。</p>
+
+<p>流量调控的核心是探索-利用权衡——在利用已知信息推荐高效果物品和探索新物品以获取数据之间取得平衡。bandit 算法适合短期 E&E，MDP 方法适合长期价值优化。</p>
+
+<p>在实践中，RL 流量调控通常与传统推荐模型结合使用——传统模型负责效果推荐，RL 负责探索和长期优化。这种混合策略既保证了短期效果，又兼顾了长期价值。</p>
+
+</body>
+</html>

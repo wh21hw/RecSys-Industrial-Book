@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第31章 Session推荐与层次决策 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第六部分 RL推荐 · 第 31 章</div>
+
+<h1 class="chapter-title">Session 推荐与层次决策</h1>
+
+<p>用户在推荐系统中的行为通常以 Session（会话）为单位组织——用户打开应用后进行一系列浏览、点击、购买等行为，然后离开。Session 内的行为存在强依赖关系——前一次推荐影响用户状态，进而影响后续推荐的效果。传统推荐系统独立优化每次请求，忽略了 Session 内的行为依赖。RL 的马尔可夫决策过程（MDP）框架天然适合建模 Session 内的序列决策。本章将系统介绍 Session 推荐和层次化决策方法。</p>
+
+<div class="toc-box">
+  <h3>本章目录</h3>
+  <ul>
+    <li><a href="#sec-31-1">31.1 Session 推荐问题</a> — Session 定义 / 行为依赖 / 优化目标</li>
+    <li><a href="#sec-31-2">31.2 Session MDP 建模</a> — 状态/动作/奖励/转移</li>
+    <li><a href="#sec-31-3">31.3 层次化推荐决策</a> — 意图层/策略层/执行层</li>
+    <li><a href="#sec-31-4">31.4 Session 级 RL 算法</a> — REINFORCE/Actor-Critic/离线RL</li>
+    <li><a href="#sec-31-5">31.5 工业实践</a> — 阿里/抖音/Meta Session推荐</li>
+    <li><a href="#sec-31-6">31.6 本章小结</a></li>
+  </ul>
+</div>
+
+<h2 class="section-title" id="sec-31-1">31.1 Session 推荐问题</h2>
+
+<h3 class="subsection-title">31.1.1 Session 定义</h3>
+
+<p>Session 是用户在一段时间内连续行为的集合。例如，用户打开淘宝后浏览了 20 分钟、点击了 15 个商品、购买了 2 个商品，然后关闭应用——这构成一个 Session。</p>
+
+<p><strong>Session 边界：</strong>通常以时间间隔划分——如果两次行为的间隔超过 30 分钟，视为不同 Session。也可以以应用打开/关闭为边界。</p>
+
+<p><strong>Session 长度：</strong>不同用户的 Session 长度差异大——短 Session（几步）可能表示用户快速找到目标或未找到感兴趣内容；长 Session（几十步）可能表示用户深度浏览。</p>
+
+<h3 class="subsection-title">31.1.2 行为依赖</h3>
+
+<p>Session 内的行为存在强依赖关系：</p>
+
+<p><strong>兴趣演化：</strong>用户在 Session 内的兴趣会随推荐内容演化。例如，用户浏览了几件运动鞋后，对运动装备的兴趣增加。</p>
+
+<p><strong>疲劳效应：</strong>连续推荐相似内容会导致用户疲劳，降低后续推荐的 CTR。需要在 Session 内控制内容多样性。</p>
+
+<p><strong>交叉影响：</strong>前一次推荐的商品影响后续购买决策。例如，推荐了手机后推荐手机壳的 CTR 会高于随机推荐。</p>
+
+<p><strong>退出效应：</strong>Session 内某些推荐可能导致用户退出。例如，推荐了不相关内容或重复内容可能导致用户流失。</p>
+
+<h3 class="subsection-title">31.1.3 优化目标</h3>
+
+<p>Session 级推荐优化整个 Session 的累积效果，而非单次请求：</p>
+
+<p><strong>Session CTR：</strong>Session 内所有点击数 / Session 内所有曝光数。优化 Session 整体 CTR 而非单次 CTR。</p>
+
+<p><strong>Session GMV：</strong>Session 内的总交易额。需要平衡短期 GMV（推荐高转化商品）和长期 GMV（维护用户留存）。</p>
+
+<p><strong>Session 长度：</strong>用户在 Session 内的浏览深度。更长的 Session 通常意味着更高的用户参与度。</p>
+
+<p><strong>Session 留存：</strong>用户次日/七日留存率。Session 体验影响用户是否再次使用应用。</p>
+
+<h2 class="section-title" id="sec-31-2">31.2 Session MDP 建模</h2>
+
+<h3 class="subsection-title">31.2.1 状态设计</h3>
+
+<p>状态需要刻画用户在 Session 内的动态兴趣：</p>
+
+<p><strong>行为序列状态：</strong>sₜ = (a₁, a₂, ..., aₜ₋₁)，其中 aᵢ 是第 i 次推荐的物品。使用 RNN/Transformer 编码行为序列。</p>
+
+<p><strong>兴趣 embedding 状态：</strong>sₜ = hₜ，其中 hₜ 是 RNN/Transformer 的隐状态。hₜ 刻画用户当前兴趣。</p>
+
+<p><strong>统计特征状态：</strong>Session 内的统计特征——已点击数、已购买数、已浏览时长、类目分布等。</p>
+
+<p><strong>组合状态：</strong>序列 embedding + 统计特征 + 用户长期画像。组合状态信息最丰富但维度高。</p>
+
+<h3 class="subsection-title">31.2.2 动作设计</h3>
+
+<p><strong>物品级动作：</strong>aₜ 是推荐的具体物品。动作空间大（百万级），需要参数化或层次化。</p>
+
+<p><strong>类目级动作：</strong>aₜ 是推荐的类目。动作空间小（百级），适合 RL 直接学习。确定类目后，在类目内用传统模型选物品。</p>
+
+<p><strong>策略级动作：</strong>aₜ 是推荐策略（如"探索新类目"或"深耕当前兴趣"）。动作空间是策略集合，适合层次化决策。</p>
+
+<h3 class="subsection-title">31.2.3 奖励设计</h3>
+
+<p><strong>即时奖励：</strong>rₜ = 点击(+1) + 购买(+10) + 停留时长(连续值)。即时奖励信号密集但短视。</p>
+
+<p><strong>延迟奖励：</strong>Session 结束时的总效果——Session GMV、Session 长度、是否留存。延迟奖励信号稀疏但反映长期价值。</p>
+
+<p><strong>组合奖励：</strong>rₜ = 即时奖励 + λ·延迟奖励。λ 控制长期权重。组合奖励兼顾短期和长期。</p>
+
+<p><strong>惩罚项：</strong>重复推荐惩罚、低质量内容惩罚、用户退出惩罚。惩罚引导策略避免负面行为。</p>
+
+<h3 class="subsection-title">31.2.4 转移建模</h3>
+
+<p>状态转移 P(sₜ₊₁|sₜ, aₜ) 描述用户兴趣如何随推荐变化。转移通常是未知的，RL 从数据中隐式学习。</p>
+
+<p><strong>转移的确定性：</strong>推荐物品后用户兴趣的变化有一定规律——推荐运动鞋后对运动装备兴趣增加。但也有随机性——用户可能对推荐不感兴趣，兴趣不变。</p>
+
+<p><strong>转移的建模：</strong>使用模型预测转移（Model-based RL）或从数据中学习（Model-free RL）。推荐系统通常使用 Model-free 方法，因为用户行为转移难以准确建模。</p>
+
+<h2 class="section-title" id="sec-31-3">31.3 层次化推荐决策</h2>
+
+<h3 class="subsection-title">31.3.1 三层架构</h3>
+
+<p>层次化推荐将决策过程分为三层：</p>
+
+<p><strong>意图层（Intent Level）：</strong>决定 Session 级的推荐意图——"探索新兴趣"或"深耕当前兴趣"或"促进转化"。意图层基于用户长期画像和 Session 内状态决策。</p>
+
+<p><strong>策略层（Strategy Level）：</strong>根据意图选择推荐策略——如"推荐类目 A"或"推荐长尾物品"或"推荐高 CTR 物品"。策略层将意图转化为具体策略。</p>
+
+<p><strong>执行层（Execution Level）：</strong>根据策略选择具体物品。执行层使用传统推荐模型（召回+排序）选择物品。</p>
+
+<p><strong>层次优势：</strong>层次化决策将复杂问题分解为子问题，每层专注于不同时间尺度的决策。意图层关注长期，策略层关注中期，执行层关注即时。</p>
+
+<h3 class="subsection-title">31.3.2 层次 RL</h3>
+
+<p><strong>Options 框架：</strong>层次 RL 的经典框架。高层策略选择"选项"（Option），选项是低层策略 + 终止条件。高层在选项终止后重新决策。</p>
+
+<p><strong>FeUdal Networks：</strong>层次化网络架构。Manager 网络生成目标向量，Worker 网络根据目标选择动作。Manager 和 Worker 分别训练。</p>
+
+<p><strong>HAM（Hierarchical Abstract Machines）：</strong>层次化抽象机。高层策略调用低层策略，低层策略执行具体动作。适合多粒度决策。</p>
+
+<h3 class="subsection-title">31.3.3 意图识别与策略切换</h3>
+
+<p><strong>意图识别：</strong>从用户行为序列识别当前意图——浏览/搜索/比价/购买。使用序列模型（RNN/Transformer）分类。</p>
+
+<p><strong>策略切换：</strong>根据意图变化动态切换推荐策略。例如，用户从浏览切换到搜索时，推荐策略从"发现"切换为"精准匹配"。</p>
+
+<p><strong>切换平滑性：</strong>策略切换时需要保证推荐结果的连续性，避免突变影响用户体验。可以通过混合策略实现平滑过渡。</p>
+
+<h2 class="section-title" id="sec-31-4">31.4 Session 级 RL 算法</h2>
+
+<h3 class="subsection-title">31.4.1 REINFORCE</h3>
+
+<p>REINFORCE 是最简单的策略梯度方法：</p>
+
+<div class="formula-box">
+  ∇J(θ) = E[Σₜ ∇log π(aₜ|sₜ; θ) · (Gₜ - bₜ)] &nbsp;&nbsp;(31.1)
+</div>
+
+<p>其中 Gₜ 是从 t 时刻开始的累积折扣奖励，bₜ 是基线。</p>
+
+<p><strong>优势：</strong>简单、直接优化策略。</p>
+
+<p><strong>局限：</strong>方差大、样本效率低。需要大量 Session 数据训练。</p>
+
+<p><strong>Meta 的应用：</strong>Meta 在 Instagram 使用 REINFORCE 优化长期参与度。使用留存预测作为基线，减少方差。</p>
+
+<h3 class="subsection-title">31.4.2 Actor-Critic</h3>
+
+<p>Actor-Critic 同时学习策略（Actor）和值函数（Critic）：</p>
+
+<div class="formula-box">
+  Actor: ∇J = E[∇log π(aₜ|sₜ) · (rₜ + γV(sₜ₊₁) - V(sₜ))]<br>
+  Critic: L = (rₜ + γV(sₜ₊₁) - V(sₜ))² &nbsp;&nbsp;(31.2)
+</div>
+
+<p>Critic 提供时序差分（TD）误差作为 Actor 的梯度信号，比 REINFORCE 的蒙特卡洛回报方差更小。</p>
+
+<p><strong>优势：</strong>方差小、样本效率高。适合在线学习。</p>
+
+<p><strong>挑战：</strong>Critic 和 Actor 的训练稳定性。需要目标网络和延迟更新稳定训练。</p>
+
+<h3 class="subsection-title">31.4.3 离线 RL</h3>
+
+<p>在线 RL 需要与用户实时交互，风险高。离线 RL 从历史 Session 日志中学习策略：</p>
+
+<p><strong>BCQ：</strong>约束策略在历史数据范围内。学习一个行为克隆模型限制动作选择范围。</p>
+
+<p><strong>CQL：</strong>保守估计 Q 值，对未见动作降低估计。防止过度乐观。</p>
+
+<p><strong>优势：</strong>无需在线探索，风险低。可以利用海量历史数据。</p>
+
+<p><strong>挑战：</strong>分布偏移——历史数据由旧策略生成，新策略可能选择不同的动作。需要重要性采样或分布约束。</p>
+
+<h3 class="subsection-title">31.4.4 模仿学习</h3>
+
+<p>模仿学习（Imitation Learning）从专家示范中学习策略：</p>
+
+<p><strong>行为克隆（BC）：</strong>直接模仿专家行为。简单但可能学到次优策略。</p>
+
+<p><strong>生成对抗模仿学习（GAIL）：</strong>使用 GAN 框架学习策略。Generator 生成行为，Discriminator 区分专家和生成行为。</p>
+
+<p><strong>应用：</strong>从高质量用户的 Session 数据中学习推荐策略。假设高质量用户的行为是"专家示范"。</p>
+
+<h2 class="section-title" id="sec-31-5">31.5 工业实践</h2>
+
+<h3 class="subsection-title">31.5.1 阿里 Session 推荐</h3>
+
+<p>阿里在淘宝推荐中使用 Session 级 RL：</p>
+
+<p><strong>Session MDP：</strong>状态 = 用户行为序列 + 统计特征，动作 = 推荐物品，奖励 = 点击 + 购买 + 留存。</p>
+
+<p><strong>层次化决策：</strong>意图层识别用户购物意图（浏览/比价/购买），策略层选择推荐策略，执行层选物品。</p>
+
+<p><strong>离线 RL：</strong>使用 CQL 从历史 Session 数据中学习策略。学习到的策略与传统模型融合使用。</p>
+
+<h3 class="subsection-title">31.5.2 抖音 Session 推荐</h3>
+
+<p>抖音推荐系统的 Session 特征明显——用户连续刷视频构成 Session：</p>
+
+<p><strong>Session 级多样性：</strong>在 Session 内控制内容多样性，避免连续推荐相似视频。使用 MDP 优化 Session 级多样性。</p>
+
+<p><strong>疲劳控制：</strong>监测用户疲劳信号（滑动速度加快/停留时间缩短），动态调整推荐策略。疲劳时推荐新类目或休息提醒。</p>
+
+<p><strong>完播率优化：</strong>优化 Session 整体完播率而非单视频完播率。使用 Actor-Critic 学习长期策略。</p>
+
+<h3 class="subsection-title">31.5.3 Meta Session 推荐</h3>
+
+<p>Meta 在 Instagram Reels 推荐中使用 Session 级 RL：</p>
+
+<p><strong>REINFORCE：</strong>使用 REINFORCE 优化 Session 级长期参与度。状态是用户观看历史，动作是推荐视频。</p>
+
+<p><strong>离线训练 + 在线微调：</strong>先从历史数据离线训练策略，然后在线微调。降低在线探索风险。</p>
+
+<p><strong>多目标：</strong>同时优化参与度、多样性和创作者公平性。使用条件策略动态调整目标权重。</p>
+
+<h2 class="section-title" id="sec-31-6">31.6 本章小结</h2>
+
+<p>Session 推荐将推荐从单次请求优化提升到 Session 级序列优化。本章介绍了 Session 推荐的问题定义（行为依赖/优化目标）、MDP 建模（状态/动作/奖励/转移）、层次化决策（意图层/策略层/执行层）和 Session 级 RL 算法（REINFORCE/Actor-Critic/离线RL/模仿学习）。</p>
+
+<p>Session 级 RL 的优势在于：（1）建模 Session 内行为依赖，优化整体效果；（2）层次化决策将复杂问题分解，不同层关注不同时间尺度；（3）直接优化长期价值（留存/LTV）。</p>
+
+<p>挑战在于：Session 数据量大但信号稀疏、信用分配困难、离线学习分布偏移、在线探索风险。在实践中，Session 级 RL 通常与传统推荐模型结合——传统模型负责单次推荐效果，RL 负责 Session 级策略优化和长期价值。随着 RL 技术的成熟和工业实践的积累，Session 级 RL 有望成为推荐系统的标配能力。</p>
+
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第27章 因果推荐 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣 · 补充版</div>
+</div>
+<div class="chapter-num">第五部分 推荐系统进阶 · 第 27 章</div>
+<h1 class="chapter-title">因果推荐</h1>
+
+<p>传统推荐系统基于相关性（Correlation）进行推荐：用户点击过 A，A 与 B 相似，所以推荐 B。但相关性不等于因果性（Causation）。用户点击 A 可能是因为内容好，也可能是因为位置靠前或内容流行。因果推荐（Causal Recommendation）从因果推断角度重新审视推荐问题，关注推荐系统对用户行为的因果影响而非简单关联。本章将系统介绍因果推荐的核心概念、方法和工具。</p>
+
+<h2 class="section-title">27.1 因果动机</h2>
+
+<p>推荐系统中的偏差本质上都是因果问题。从因果推断的角度来看：</p>
+<ul>
+<li><strong>位置偏差</strong>：用户点击是因为内容好还是因为位置靠前？——混淆变量是位置</li>
+<li><strong>流行度偏差</strong>：用户喜欢是因为内容好还是因为流行？——混淆变量是流行度</li>
+<li><strong>曝光偏差</strong>：内容被推荐是因为用户喜欢还是因为推荐系统偏好？——混淆变量是推荐策略</li>
+</ul>
+
+<p>因果推断的核心工具是<strong>因果图</strong>（Causal Graph），通过有向无环图（DAG）描述变量之间的因果关系。在因果图中，箭头表示因果关系，没有箭头连接的变量之间不存在直接因果关系。识别因果图中的混淆变量（Confounder）是进行因果推断的前提——混淆变量是同时影响"处理"（Treatment，即推荐行为）和"结果"（Outcome，即用户反馈）的变量，如果不控制混淆变量，就会产生虚假的相关性。</p>
+
+<h2 class="section-title">27.2 IPW (Inverse Propensity Weighting)</h2>
+
+<p>逆倾向加权（IPW）是因果推断中最经典的纠偏方法。其核心思想是：如果样本 i 被曝光（被处理）的概率为 p_i（倾向分数），那么对该样本进行 1/p_i 的加权，可以消除曝光偏差，获得无偏的效果估计。</p>
+
+<div class="formula-box">L_IPS = (1/N) * Sum_i [ y_i / p_i * L(f(x_i), y_i) ]</div>
+
+<p>其中 p_i 为样本 i 被曝光的倾向分数，y_i 为真实标签，f(x_i) 为模型预测。被低估的样本（低曝光概率）获得更高权重，从而纠正曝光偏差。</p>
+
+<p>IPW 的优点是理论保证无偏性，缺点包括：</p>
+<ul>
+<li><strong>倾向分数估计困难</strong>：实际系统中倾向分数往往难以准确估计，估计误差会直接影响纠偏效果</li>
+<li><strong>高方差</strong>：当某些样本的倾向分数很小时，1/p_i 会非常大，导致梯度不稳定</li>
+<li><strong>强假设</strong>：IPW 要求"无未观测混淆"（No Unobserved Confounders），即所有混淆变量都被观测到并纳入倾向分数模型</li>
+</ul>
+
+<h2 class="section-title">27.3 Doubly Robust</h2>
+
+<p>Doubly Robust（双重稳健）估计结合了 IPW 和直接模型两种纠偏方式：</p>
+
+<div class="formula-box">L_DR = (1/N) * Sum_i [ f_hat(x_i) + (y_i - f_hat(x_i)) / p_i ]</div>
+
+<p>其中 f_hat(x_i) 是直接模型的预测值。DR 的核心优势是"双重保险"——只要倾向分数模型或直接模型其中之一正确，DR 就能实现无偏估计。</p>
+
+<p>DR 的工作原理可以直观理解为：直接模型 f_hat 提供了基准预测，IPS 项 (y_i - f_hat(x_i)) / p_i 提供了残差修正。如果直接模型准确，残差接近零，IPS 项的影响很小；如果倾向分数准确，IPS 项能够正确修正直接模型的偏差。两者互补，提供了更强的鲁棒性。DR 在理论上优于纯 IPW，因为它对模型误差更鲁棒，且方差通常更低。</p>
+
+<h2 class="section-title">27.4 反事实学习</h2>
+
+<p>反事实学习（Counterfactual Learning）关注"如果推荐了不同内容，用户行为会怎样"的问题。在观测数据中，我们只能看到"推荐了 A，用户点击了"的事实，但无法看到"如果推荐了 B，用户会怎样"的反事实结果。</p>
+
+<p>反事实学习通过构建反事实估计器来评估不同推荐策略的因果效应。核心方法包括：</p>
+<ul>
+<li><strong>反事实风险最小化</strong>（Counterfactual Risk Minimization）：通过 IPW 或 DR 估计反事实风险，指导模型学习去偏差的策略</li>
+<li><strong>逆倾向加权学习</strong>：在训练时对样本进行 IPW 加权，使模型学习到的策略不受曝光偏差影响</li>
+<li><strong>反事实嵌入</strong>（Counterfactual Embedding）：在表示学习阶段引入因果约束，使学到的表示不受混淆变量影响</li>
+</ul>
+
+<h2 class="section-title">27.5 OPE (Off-Policy Evaluation)</h2>
+
+<p>离线策略评估（Off-Policy Evaluation, OPE）是因果推荐的核心工具。给定历史日志数据（由旧策略生成），评估新策略的效果，无需在线 A/B 实验。OPE 使得推荐系统能够在离线环境中快速筛选策略，降低线上实验风险和成本。</p>
+
+<p>常用 OPE 方法包括：</p>
+<ul>
+<li><strong>IPS 估计器</strong>：通过倾向分数加权消除策略偏差，简单但可能高方差</li>
+<li><strong>直接方法（Direct Method, DM）</strong>：训练一个奖励预测模型，直接预测新策略的奖励。低方差但可能有偏</li>
+<li><strong>DR 估计器</strong>：结合 IPS 和 DM，双重稳健</li>
+<li><strong>MIPS（Marginalized IPS）</strong>：通过对部分变量进行边际化，降低方差</li>
+</ul>
+
+<p>OPE 在工业界推荐系统中广泛应用，特别是在 A/B 实验成本高昂的场景中（如广告投放、大促活动等），OPE 能够在离线环境中快速评估数十甚至数百个候选策略的效果。</p>
+
+<h2 class="section-title">27.6 流行度纠偏</h2>
+
+<h3 class="subsection-title">27.6.1 DICE</h3>
+
+<p>DICE（Disentangling Interest and Conformity）[1] 由清华大学于 KDD 2021 提出，被引用 518 次。DICE 的核心思想是将用户行为分解为兴趣驱动（Interest）和流行度驱动（Conformity）两部分，分别建模后组合。传统方法将流行度偏差视为需要消除的噪声，而 DICE 认为流行度信息本身也包含有价值的信号——用户的从众心理是一种真实的行为模式，不应完全消除，而应与兴趣分离建模。</p>
+
+<h3 class="subsection-title">27.6.2 MACR</h3>
+
+<p>MACR（Model-Agnostic Counterfactual Reasoning）[2] 由中国人民大学于 SIGIR 2021 提出，被引用 486 次。MACR 通过反事实推理框架消除流行度偏差：识别到流行度偏差存在于"物品节点到排序分数的直接路径"中，通过反事实推理评估"如果物品不流行，排序分数会是多少"，从而消除流行度偏差的影响。MACR 的"模型无关"特性意味着它可以作为插件应用于任何推荐模型。</p>
+
+<h2 class="section-title">27.7 Uplift 模型</h2>
+
+<p>Uplift 模型关注推荐系统对用户行为的<strong>增量效应</strong>（Treatment Effect），而非绝对效果。核心问题是："推荐系统推荐了内容 A，用户点击了。但如果不推荐 A，用户会点击吗？"两者的差值就是 Uplift。</p>
+
+<div class="formula-box">Uplift = P(y | do(recommend)) - P(y | do(not recommend))</div>
+
+<p>Uplift 模型将用户分为四类：</p>
+<ul>
+<li><strong>可说服型（Persuadable）</strong>：只有被推荐才会转化。推荐系统应优先推荐给这类用户</li>
+<li><strong>必然转化型（Sure Thing）</strong>：无论是否推荐都会转化。推荐系统无需浪费资源</li>
+<li><strong>必然不转化型（Lost Cause）</strong>：无论是否推荐都不会转化。推荐系统无需关注</li>
+<li><strong>反效果型（Sleeping Dogs）</strong>：不推荐会转化，推荐反而不转化。推荐系统应避免推荐给这类用户</li>
+</ul>
+
+<p>Uplift 模型的核心价值在于帮助推荐系统识别"被推荐说服的用户"（Persuadable Users），提升推荐投入产出比。传统推荐模型只关注绝对效果（P(y | recommend)），无法区分必然转化型和可说服型——两者在观测数据中都表现为"被推荐后转化"，但前者不需要推荐也会转化。Uplift 模型通过因果推断方法估计增量效应，能够精准识别可说服型用户。</p>
+
+<h2 class="section-title">27.8 本章小结</h2>
+
+<p>因果推荐从因果推断角度重新定义推荐问题——从关注"相关性"到关注"因果性"。IPS 和 DR 是经典的无偏估计方法，反事实学习和 OPE 提供了评估因果效应的工具。DICE 和 MACR 针对流行度偏差提出了专门的解耦和反事实推理方案。Uplift 模型关注推荐的增量效应，将用户分为可说服型、必然转化型、必然不转化型和反效果型四类，帮助推荐系统精准识别"被推荐说服的用户"。因果推荐是推荐系统领域的重要前沿方向，随着因果推断方法的发展和工业实践的需求，正在成为推荐系统的核心理论基础。</p>
+
+<h2 class="section-title">参考文献</h2>
+<p>[1] Zheng, Y. et al. "Disentangling User Interest and Conformity for Recommendation". KDD 2021.</p>
+<p>[2] Wei, T. et al. "Model-Agnostic Counterfactual Reasoning for Eliminating Popularity Bias". SIGIR 2021.</p>
+<p>[3] Schnabel, T. et al. "Recommendations as Treatments: Debiasing Learning and Evaluation". ICML 2016.</p>
+<p>[4] Dudik, M. et al. "Doubly Robust Policy Evaluation and Learning". ICML 2011.</p>
+<p>[5] Li, C. et al. "Unbiased Offline Evaluation of Contextual-bandit-based News Article Recommendation Algorithms". WSDM 2012.</p>
+
+<div class="chapter-end">* * *</div>
+<div class="nav-bar">
+  <a href="ch26.html">← 上一章：第26章 探索与利用</a>
+  <a href="ch28.html">下一章：第28章 强化学习推荐场景 →</a>
+</div>
+</body>
+</html>

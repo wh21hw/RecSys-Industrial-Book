@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第19章 多目标与多场景 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣 · 补充版</div>
+</div>
+<div class="chapter-num">第五部分 推荐系统进阶 · 第 19 章</div>
+<h1 class="chapter-title">多目标与多场景</h1>
+
+<p>现代推荐系统需要同时优化点击率（CTR）、转化率（CVR）、观看时长（Watch Time）、互动率（点赞、评论、分享）等多个目标，同时服务于短视频、直播、电商、广告等多个业务场景。多任务学习（Multi-Task Learning, MTL）与多场景建模是解决这一问题的核心技术。本章将系统介绍从 Shared-Bottom 到 MMoE 到 PLE 的多任务学习演进，以及 ESMM 解决 CVR 样本选择偏差的创新方案，最后讨论多场景建模的 STAR 和 PEPNet 方法。</p>
+
+<h2 class="section-title">19.1 多任务学习概述</h2>
+
+<p>在传统推荐系统中，通常为每个优化目标单独训练一个模型。例如，一个模型预测 CTR，另一个模型预测 CVR，再一个模型预测点赞率。这种"一目标一模型"的方式存在明显问题：</p>
+<ul>
+<li><strong>参数冗余</strong>：多个模型各自独立训练，底层 Embedding 参数无法共享，导致存储和计算开销线性增长</li>
+<li><strong>数据稀疏</strong>：部分目标（如转化、购买）的正样本非常稀疏，单独训练容易过拟合</li>
+<li><strong>目标冲突</strong>：不同目标之间可能存在冲突（如高 CTR 不一定带来高转化），独立模型无法联合优化</li>
+</ul>
+
+<p>多任务学习通过统一模型同时预测多个用户行为目标，其核心优势包括：</p>
+<ul>
+<li><strong>参数共享</strong>：多个任务共享底层 Embedding 和表示网络，减少参数量。例如 Item ID Embedding 只需学习一次，所有任务共用</li>
+<li><strong>正则化效果</strong>：辅助任务为主任务提供额外监督信号，相当于隐式数据增强。例如 CTR 任务可以为稀疏的 CVR 任务提供泛化信息</li>
+<li><strong>推理效率</strong>：一次前向计算同时输出多个预估值（pCTR、pCVR、pWatchTime 等），无需多次推理</li>
+</ul>
+
+<p>但 MTL 也面临一个核心挑战——<strong>负迁移</strong>（Negative Transfer）：当任务之间相关性较弱时，联合训练可能导致各任务效果反而下降。例如"点击"和"分享"两个任务的相关性可能较弱（用户点击不一定意味着愿意分享），强行共享参数会导致两个任务互相干扰。</p>
+
+<h2 class="section-title">19.2 Shared-Bottom 架构</h2>
+
+<p>最简单的 MTL 架构是 Shared-Bottom：所有任务共享底层的表示网络（通常是多层 DNN），在顶层分别使用独立的任务塔（Task Tower）输出不同目标的预估值。</p>
+
+<div style="margin:24px 0;display:flex;flex-direction:column;align-items:center;gap:6px">
+<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+<div style="background:#e3f2fd;border:2px solid #1565c0;border-radius:8px;padding:8px 14px;color:#1565c0;font-weight:600">输入特征</div>
+</div>
+<div style="color:#999">↓</div>
+<div style="background:#1565c0;color:#fff;border-radius:8px;padding:10px 20px;font-weight:700">Shared Bottom (DNN)</div>
+<div style="color:#999">↓</div>
+<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+<div style="background:#e8f5e9;border:2px solid #2e7d32;border-radius:8px;padding:8px 14px;color:#2e7d32;font-weight:600">CTR Tower</div>
+<div style="background:#fff3e0;border:2px solid #e65100;border-radius:8px;padding:8px 14px;color:#e65100;font-weight:600">CVR Tower</div>
+<div style="background:#fce4ec;border:2px solid #c62828;border-radius:8px;padding:8px 14px;color:#c62828;font-weight:600">LTR Tower</div>
+</div>
+</div>
+<div style="text-align:center;color:#9a8b7a;font-size:0.85em;margin-bottom:16px">图 19.1 Shared-Bottom 架构</div>
+
+<p>Shared-Bottom 架构简单高效，当任务之间相关性较高时效果良好。但当任务差异较大时（如点击 vs 转化，或推荐 vs 广告），共享底层被迫学习所有任务的"最大公约数"表示，难以兼顾各任务的特异性需求，容易产生负迁移。</p>
+
+<h2 class="section-title">19.3 MMoE：多门控混合专家</h2>
+
+<p>MMoE（Multi-gate Mixture-of-Experts）[1] 由 Google 于 2018 年提出，是工业界多任务学习最经典的架构之一。MMoE 的核心创新是为每个任务引入独立的门控网络（Gate Network），从多个共享专家网络中动态选择。</p>
+
+<h3 class="subsection-title">19.3.1 设计动机</h3>
+
+<p>Shared-Bottom 的核心问题是所有任务强制共享同一组底层参数。MMoE 借鉴了 Mixture-of-Experts（MoE）的思想：不强制共享，而是提供多个专家网络，让每个任务通过门控网络动态选择最适合自己的专家组合。</p>
+
+<h3 class="subsection-title">19.3.2 模型结构</h3>
+
+<p>MMoE 包含三个核心组件：</p>
+<ul>
+<li><strong>专家网络</strong>：M 个共享的专家网络 f₁, f₂, ..., f_M，每个专家是一个独立的 DNN，学习不同的特征表示</li>
+<li><strong>门控网络</strong>：每个任务 t 有一个独立的门控网络 g_t，输出 M 维概率分布，表示该任务对各专家的偏好权重</li>
+<li><strong>任务塔</strong>：每个任务有独立的 Tower 网络，基于门控加权后的专家输出进行预测</li>
+</ul>
+
+<p>对于任务 t，其输入表示为所有专家的加权求和：</p>
+
+<div class="formula-box">y_t = Tower_t( Σᵢ g_t(i) · fᵢ(x) )</div>
+
+<p>其中门控权重为：</p>
+
+<div class="formula-box">g_t = softmax( W_t · x )</div>
+
+<p>W_t 是任务 t 的门控参数矩阵。通过 softmax 归一化，确保各专家权重之和为 1。</p>
+
+<h3 class="subsection-title">19.3.3 软路由机制</h3>
+
+<p>MMoE 的核心优势在于<strong>软性路由</strong>（Soft Routing）：不同任务可以通过门控网络侧重不同的专家。例如，CTR 任务可能更多依赖点击相关专家（学习点击模式的专家），CVR 任务更多依赖转化相关专家。门控网络自动学习最优的路由分配，无需人工设计。</p>
+
+<p>当两个任务相关性高时，门控网络会学习到相似的权重分布，相当于参数共享；当任务相关性低时，门控网络会学习到不同的权重分布，相当于参数分离。这种自适应的参数共享机制有效缓解了负迁移问题。</p>
+
+<h3 class="subsection-title">19.3.4 实验效果</h3>
+
+<p>Google 在大规模推荐场景的实验表明，MMoE 相比 Shared-Bottom 在各任务上均取得提升，且任务相关性越低，MMoE 的优势越明显。MMoE 已成为工业界多任务学习的基础架构，被广泛应用于 CTR/CVR 联合预估、多行为预测等场景。</p>
+
+<h2 class="section-title">19.4 PLE：渐进式分层抽取</h2>
+
+<p>PLE（Progressive Layered Extraction）[2] 由腾讯于 2020 年提出，在 MMoE 基础上进一步改进，解决了 MMoE 在复杂任务关系下的路由冲突问题。</p>
+
+<h3 class="subsection-title">19.4.1 MMoE 的局限</h3>
+
+<p>MMoE 的所有专家都是共享的，没有任务专属的专家。当任务差异较大时，所有专家被迫同时服务所有任务，可能导致专家学习到"折中"表示，无法充分捕捉任务特异性。此外，MMoE 是单层的，只有一层路由，表达能力有限。</p>
+
+<h3 class="subsection-title">19.4.2 CGC 模块</h3>
+
+<p>PLE 的核心创新是 CGC（Customized Gate Control）模块：将专家分为两类：</p>
+<ul>
+<li><strong>共享专家</strong>（Shared Experts）：所有任务共用，学习通用表示</li>
+<li><strong>任务专属专家</strong>（Task-specific Experts）：每个任务独有，学习任务特有信息</li>
+</ul>
+
+<p>对于任务 t，其输入表示为该任务的专属专家和共享专家的加权组合：</p>
+
+<div class="formula-box">y_t = Tower_t( Σᵢ g_t^s(i) · fᵢ^s(x) + Σⱼ g_t^t(j) · fⱼ^t(x) )</div>
+
+<p>其中 fⁱˢ 为共享专家，fʲᵗ 为任务 t 的专属专家，g_tˢ 和 g_tᵗ 分别为共享和专属的门控权重。</p>
+
+<h3 class="subsection-title">19.4.3 多层路由</h3>
+
+<p>PLE 通过堆叠多层 CGC 实现渐进式特征提取：低层 CGC 学习基础表示，高层 CGC 在低层基础上学习更抽象的表示。多层路由使得模型能够从不同抽象层次区分共享和专属信息。</p>
+
+<h3 class="subsection-title">19.4.4 工业实践</h3>
+
+<p>PLE 在腾讯视频推荐场景中取得了显著效果提升，相比 MMoE 在各任务上均有提升。PLE 已成为工业界 MTL 的主流方案之一，特别适合任务差异较大的场景（如同时优化点击、观看时长、互动、转化等）。</p>
+
+<h2 class="section-title">19.5 ESMM：全空间多任务模型</h2>
+
+<p>ESMM（Entire Space Multi-Task Model）[3] 由阿里巴巴于 2018 年提出，解决了 CVR 建模中的<strong>样本选择偏差</strong>（Sample Selection Bias, SSB）问题。</p>
+
+<h3 class="subsection-title">19.5.1 CVR 建模的挑战</h3>
+
+<p>在电商推荐中，转化（Conversion）是用户点击之后的行为：曝光 → 点击 → 转化。传统 CVR 模型只在点击样本上训练（因为只有点击后才能知道是否转化），但在线推理时需要对所有曝光样本预测 CVR。这导致训练分布（点击样本）与推理分布（曝光样本）不一致，即样本选择偏差。</p>
+
+<p>此外，转化数据极其稀疏。在电商场景中，点击率可能为 1-5%，而转化率通常只有点击的 1-5%，意味着转化正样本占曝光样本的比例可能低至 0.01-0.25%。如此稀疏的正样本使得 CVR 模型极难训练。</p>
+
+<h3 class="subsection-title">19.5.2 联合建模</h3>
+
+<p>ESMM 的核心创新是将 CTR 和 CVR 联合建模，利用它们之间的漏斗关系：</p>
+
+<div class="formula-box">pCTCVR = pCTR × pCVR</div>
+
+<p>其中 pCTR 为点击率预估，pCVR 为转化率预估，pCTCVR 为点击后转化率。ESMM 在<strong>全部曝光样本</strong>上训练，通过 pCTCVR = pCTR × pCVR 的关系，利用 CTR 任务的监督信号间接学习 CVR。</p>
+
+<p>具体来说，ESMM 共享 Embedding 层，上面有两个 Tower：CTR Tower 和 CVR Tower。模型的损失函数为：</p>
+
+<div class="formula-box">L = L_CTR + L_CTCVR = L_CTR + L(pCTR × pCVR, y_CTCVR)</div>
+
+<p>其中 y_CTCVR 为点击后转化的真实标签。由于 pCTCVR = pCTR × pCVR，梯度可以通过 pCTR 反向传播到 CVR Tower，使得 CVR 模型在全部曝光样本上学习，消除了样本选择偏差。</p>
+
+<h3 class="subsection-title">19.5.3 ESMM2</h3>
+
+<p>ESMM2 [4] 进一步引入了点击后行为（如加购、收藏）的中间目标，构建了更细粒度的转化漏斗：曝光 → 点击 → 加购/收藏 → 转化。通过引入中间目标，ESMM2 能够利用更丰富的行为信号辅助 CVR 建模，进一步缓解数据稀疏问题。</p>
+
+<h2 class="section-title">19.6 多场景建模</h2>
+
+<p>多场景建模（Multi-Domain Modeling）关注如何在统一模型中服务多个业务场景（如首页推荐、搜索结果、详情页推荐等），同时保持各场景的差异化特征。</p>
+
+<h3 class="subsection-title">19.6.1 STAR：星形拓扑</h3>
+
+<p>STAR（Star Topology Aware Recommender）[5] 由阿里巴巴于 2021 年提出，采用星形拓扑结构：所有场景共享主干网络（Central Network），每个场景有独立的子网络（Domain-specific Network），通过元素级乘法融合：</p>
+
+<div class="formula-box">W* = W_central ⊙ W_domain</div>
+
+<p>其中 W_central 为共享主干权重，W_domain 为场景专属权重，⊙ 为 Hadamard 积。这种设计使得共享权重学习通用模式，场景权重学习差异化特征，两者通过乘法融合实现"共性+个性"的表达。</p>
+
+<h3 class="subsection-title">19.6.2 PEPNet</h3>
+
+<p>PEPNet 通过场景特征生成动态缩放因子（Scaling Factor），对共享网络的输出进行场景级个性化调整。与 STAR 的乘法融合类似，但 PEPNet 的缩放因子是通过场景特征动态生成的，而非学习固定参数。</p>
+
+<h2 class="section-title">19.7 技术演进总结</h2>
+
+<p>多任务学习与多场景建模的演进可以总结为：</p>
+<ul>
+<li><strong>从硬共享到软路由</strong>：Shared-Bottom 强制共享所有参数 → MMoE 通过门控实现软性路由 → PLE 区分共享和专属专家</li>
+<li><strong>从单层到多层</strong>：MMoE 单层路由 → PLE 多层 CGC 实现渐进式提取</li>
+<li><strong>从偏差到全空间</strong>：传统 CVR 在点击样本上训练（偏差）→ ESMM 在全空间曝光样本上训练（无偏）</li>
+<li><strong>从单场景到多场景</strong>：每个场景独立模型 → STAR 统一模型+场景子网络 → PEPNet 动态缩放</li>
+</ul>
+
+<p>在实际工业系统中，通常会组合使用多种技术：例如用 PLE 进行多任务学习（CTR/CVR/WatchTime），用 STAR 进行多场景建模（首页/搜索/详情页），用 ESMM 解决 CVR 的样本选择偏差。这些技术共同构成了现代推荐系统多目标多场景优化的技术基础。</p>
+
+<h2 class="section-title">参考文献</h2>
+<p>[1] Ma, J. et al. "Modeling Task Relationships in Multi-task Learning with Multi-gate Mixture-of-Experts". KDD 2018.</p>
+<p>[2] Tang, H. et al. "Progressive Layered Extraction (PLE): A Novel Multi-Task Learning Model for Personalized Recommendations". RecSys 2020.</p>
+<p>[3] Ma, X. et al. "Entire Space Multi-Task Model: An Effective Approach for Estimating Post-Click Conversion Rate". SIGIR 2018.</p>
+<p>[4] Zhang, W. et al. "ESMM2: Entire Space Multi-Task Model v2". CIKM 2021.</p>
+<p>[5] Sheng, X. et al. "One Model to Serve All: Star Topology Adaptive Recommender for Multi-Domain CTR Prediction". CIKM 2021.</p>
+
+<div class="chapter-end">* * *</div>
+<div class="nav-bar">
+  <a href="ch18.html">← 上一章：第18章 用户兴趣建模</a>
+  <a href="ch20.html">下一章：第20章 链路一致性 →</a>
+</div>
+</body>
+</html>

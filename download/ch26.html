@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第26章 探索与利用 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣 · 补充版</div>
+</div>
+<div class="chapter-num">第五部分 推荐系统进阶 · 第 26 章</div>
+<h1 class="chapter-title">探索与利用</h1>
+
+<p>推荐系统面临一个根本性矛盾：利用（Exploitation）已有知识推荐用户最可能喜欢的内容，还是探索（Exploration）新内容以发现潜在兴趣。过度利用导致信息茧房和马太效应——推荐结果越来越同质化，用户兴趣逐渐收窄；过度探索则损害用户体验——推荐不相关内容导致用户满意度下降。本章将系统介绍工业界常用的探索与利用（Explore-Exploit）策略，从经典的 Epsilon-Greedy 到 UCB、Thompson Sampling 和 Contextual Bandit。</p>
+
+<h2 class="section-title">26.1 探索-利用困境</h2>
+
+<p>探索-利用困境（Exploration-Exploitation Dilemma）是强化学习中的经典问题，在推荐系统中同样存在。推荐系统的训练数据来源于自身的推荐结果——推荐什么，用户就对什么产生反馈，系统就学到什么。这种"数据循环"（Data Feedback Loop）使得：</p>
+<ul>
+<li><strong>过度利用</strong>：系统只推荐历史表现好的内容，这些内容获得更多曝光和反馈，进一步强化其优势地位。长期来看，推荐结果越来越集中，长尾内容无法获得曝光，用户陷入信息茧房</li>
+<li><strong>过度探索</strong>：系统大量推荐新内容或随机内容，虽然能够发现潜在兴趣，但推荐不相关内容的概率很高，损害用户体验和短期指标</li>
+</ul>
+
+<p>最优策略是在探索和利用之间找到平衡：大部分流量用于利用已有知识保证推荐质量，小部分流量用于探索新内容发现潜在兴趣。</p>
+
+<h2 class="section-title">26.2 Epsilon-Greedy</h2>
+
+<p>最简单的探索策略：以 epsilon 概率随机探索，以 1-epsilon 概率利用已有模型。实现简单但探索效率低——随机探索可能推荐完全不相关内容，且所有探索内容被等权对待，没有优先级之分。</p>
+
+<p>工业界通常设置较小的 epsilon（如 0.01-0.05）以控制探索风险。Epsilon-Greedy 的优点是实现简单、可控性强；缺点是探索效率低、无法根据不确定性进行智能探索。</p>
+
+<h2 class="section-title">26.3 UCB (Upper Confidence Bound)</h2>
+
+<p>UCB 基于"面对不确定性时的乐观主义"（Optimism in Face of Uncertainty）原则，为每个物品维护历史均值和置信区间：</p>
+
+<div class="formula-box">score = mu + alpha * sqrt(2 * ln(N) / n_i)</div>
+
+<p>其中 mu 为物品的历史平均奖励，n_i 为物品 i 被探索的次数，N 为总尝试次数，alpha 为探索强度超参数。UCB 的核心思想是：</p>
+<ul>
+<li>探索次数少（n_i 小）的物品，置信区间大（sqrt(ln(N)/n_i) 大），更容易被选中</li>
+<li>随着探索次数增加，不确定性降低，置信区间缩小，逐渐转向利用</li>
+<li>UCB 在理论上具有 O(log T) 的遗憾界（Regret Bound），是最优的确定性探索策略</li>
+</ul>
+
+<p>UCB 相比 Epsilon-Greedy 的优势在于"智能探索"——优先探索不确定性高的物品，而非随机探索。但 UCB 假设奖励分布已知（通常假设为高斯或伯努利分布），在奖励分布复杂时可能不适用。</p>
+
+<h2 class="section-title">26.4 Thompson Sampling</h2>
+
+<p>Thompson Sampling 基于贝叶斯思想，为每个物品维护后验分布，从后验分布中采样作为预估值：</p>
+
+<div class="formula-box">score ~ Beta(alpha + clicks, beta + non_clicks)</div>
+
+<p>其中 alpha 和 beta 为 Beta 分布的先验参数，clicks 和 non_clicks 为观测到的正负反馈数。Thompson Sampling 的核心优势：</p>
+<ul>
+<li><strong>自然平衡</strong>：不确定性高的物品后验分布更宽，采样值更可能超过真实均值，从而获得更多探索机会。随着数据积累，后验分布逐渐收窄，自动转向利用</li>
+<li><strong>理论最优</strong>：在理论上优于 UCB，且对延迟反馈更鲁棒</li>
+<li><strong>概率匹配</strong>：Thompson Sampling 采样值超过真实均值的概率正好等于该物品是最优的概率，实现了"概率匹配"（Probability Matching）</li>
+</ul>
+
+<p>Thompson Sampling 在工业界推荐系统中广泛应用，特别是在新闻推荐、广告投放等场景中表现优异。</p>
+
+<h2 class="section-title">26.5 Contextual Bandit</h2>
+
+<p>前述方法（Epsilon-Greedy、UCB、Thompson Sampling）都是"无上下文"的——它们只基于物品的历史奖励进行决策，不考虑用户特征和上下文信息。Contextual Bandit 将上下文信息引入探索策略，根据用户特征和物品特征动态调整探索方向。</p>
+
+<h3 class="subsection-title">26.5.1 LinUCB</h3>
+
+<p>LinUCB [1] 由 Li 等人于 WWW 2010 提出，被引用 4532 次，是 Contextual Bandit 领域最经典的工作。LinUCB 通过线性模型建模上下文与奖励的关系：</p>
+
+<div class="formula-box">score = theta^T * x + alpha * sqrt(x^T * A^{-1} * x)</div>
+
+<p>其中 x 为上下文特征（用户特征+物品特征），theta 为线性模型参数，A 为特征协方差矩阵。第一项 theta^T * x 是利用项（基于历史数据的预测），第二项 alpha * sqrt(x^T * A^{-1} * x) 是探索项（基于特征的不确定性）。</p>
+
+<p>LinUCB 在 Yahoo! 新闻推荐中取得了显著效果，相比无上下文的 Bandit 方法，CTR 提升了 23%。LinUCB 的核心创新是将上下文信息融入探索策略，使得探索更加精准——不是随机探索所有新内容，而是优先探索与当前用户上下文相关的不确定内容。</p>
+
+<h3 class="subsection-title">26.5.2 线性 vs 非线性</h3>
+
+<p>LinUCB 假设奖励与特征呈线性关系。对于非线性场景，工业界发展了 Neural Bandit（用神经网络替代线性模型）和 Neural Thompson Sampling（用神经网络参数化 Thompson Sampling 的后验分布）等方法。但非线性方法面临训练不稳定和计算开销大等挑战。</p>
+
+<h2 class="section-title">26.6 工业界探索策略</h2>
+
+<p>在工业实践中，完全基于 Bandit 算法的探索策略往往过于激进，可能损害用户体验。工业界通常采用更安全的探索方式：</p>
+
+<ul>
+<li><strong>新内容保量</strong>：为新发布内容预留固定曝光配额（如 5%-10%），确保新内容能够获得初始曝光和反馈数据。这是最简单也最常用的探索策略</li>
+<li><strong>兴趣拓展</strong>：在用户已有兴趣标签的相邻区域进行探索。例如用户喜欢"科技"，可以探索"科技+教育"或"科技+生活"的交叉领域内容</li>
+<li><strong>多样性约束</strong>：通过多样性打散（MMR/DPP/SSD）间接实现探索——多样性约束迫使推荐结果包含不同类目的内容，相当于隐式探索</li>
+<li><strong>模拟环境评估</strong>：在离线模拟环境中使用 OPE（Off-Policy Evaluation）评估探索策略的风险和收益，降低线上探索的风险</li>
+<li><strong>渐进式探索</strong>：从小流量（1%）开始验证探索策略，逐步扩大到 5%→10%→20%，确保探索不会损害整体体验</li>
+</ul>
+
+<h2 class="section-title">26.7 探索与利用的平衡</h2>
+
+<p>在实际推荐系统中，探索与利用的平衡需要考虑以下因素：</p>
+<ul>
+<li><strong>用户类型</strong>：新用户需要更多探索（发现兴趣），老用户需要更多利用（精准推荐）</li>
+<li><strong>内容生命周期</strong>：新内容需要探索（获取初始反馈），成熟内容需要利用（最大化效果）</li>
+<li><strong>业务目标</strong>：增长期需要更多探索（拓展用户兴趣），稳定期需要更多利用（最大化短期收益）</li>
+<li><strong>风险控制</strong>：探索可能带来短期指标下降，需要设置安全阈值和回滚机制</li>
+</ul>
+
+<h2 class="section-title">26.8 本章小结</h2>
+
+<p>Epsilon-Greedy 简单但低效，UCB 和 Thompson Sampling 提供了更智能的探索策略——基于不确定性进行探索而非随机探索。Contextual Bandit（LinUCB）引入上下文信息实现个性化探索，在 Yahoo! 新闻推荐中取得 23% 的 CTR 提升。工业界通常采用新内容保量、兴趣拓展、多样性约束等安全策略，在控制风险的前提下实现有效探索。探索与利用的平衡需要根据用户类型、内容生命周期和业务目标动态调整。</p>
+
+<h2 class="section-title">参考文献</h2>
+<p>[1] Li, L. et al. "A Contextual-Bandit Approach to Personalized News Article Recommendation". WWW 2010.</p>
+<p>[2] Auer, P. et al. "Using Confidence Bounds for Exploitation-Exploration Trade-offs". JMLR 2002.</p>
+<p>[3] Chapelle, O. & Li, L. "An Empirical Evaluation of Thompson Sampling". NeurIPS 2011.</p>
+<p>[4] "Scalable and Interpretable Contextual Bandits: A Literature Survey". arXiv 2025.</p>
+
+<div class="chapter-end">* * *</div>
+<div class="nav-bar">
+  <a href="ch25.html">← 上一章：第25章 长期价值</a>
+  <a href="ch27.html">下一章：第27章 因果推荐 →</a>
+</div>
+</body>
+</html>

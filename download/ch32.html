@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第32章 重排与混排中的RL - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第六部分 RL推荐 · 第 32 章</div>
+
+<h1 class="chapter-title">重排与混排中的 RL</h1>
+
+<p>重排（Reranking）是推荐链路的最后一环——在精排输出的 Top-N 候选列表基础上，重新调整顺序或选择子集，以优化全局效果。传统重排方法（如 DPP、MMR）主要关注多样性，而 RL 方法可以将重排建模为序列决策问题，同时优化点击率、多样性、长期价值等多个目标。本章将系统介绍 RL 在重排和混排中的应用。</p>
+
+<div class="toc-box">
+  <h3>本章目录</h3>
+  <ul>
+    <li><a href="#sec-32-1">32.1 重排问题</a> — 列表级优化 / 全局视角 / 上下文依赖</li>
+    <li><a href="#sec-32-2">32.2 传统重排方法</a> — DPP / MMR / LambdaMART</li>
+    <li><a href="#sec-32-3">32.3 RL 重排</a> — 序列决策建模 / 奖励设计 / 策略学习</li>
+    <li><a href="#sec-32-4">32.4 混排问题</a> — 多源融合 / 广告与自然结果 / 全局最优</li>
+    <li><a href="#sec-32-5">32.5 RL 混排</a> — MDP 建模 / 策略优化 / 工业实践</li>
+    <li><a href="#sec-32-6">32.6 工业实践</a> — 阿里/抖音/Meta 重排混排</li>
+    <li><a href="#sec-32-7">32.7 本章小结</a></li>
+  </ul>
+</div>
+
+<h2 class="section-title" id="sec-32-1">32.1 重排问题</h2>
+
+<h3 class="subsection-title">32.1.1 列表级优化</h3>
+
+<p>精排模型对每个物品独立打分，然后按分数排序。这种逐点（pointwise）方式忽略了物品间的相互影响——两个高分物品可能高度相似，同时推荐会导致冗余。重排从列表级（listwise）视角优化整个推荐列表的效果。</p>
+
+<p><strong>逐点 vs 列表级：</strong>逐点方法独立评估每个物品，列表级方法考虑物品间关系。列表级方法通常效果更好，但计算复杂度更高。</p>
+
+<p><strong>列表级目标：</strong>列表 CTR（用户至少点击一个的概率）、列表多样性、列表覆盖（覆盖用户兴趣的程度）、列表序列效应（位置对点击的影响）。</p>
+
+<h3 class="subsection-title">32.1.2 全局视角</h3>
+
+<p>重排从全局视角优化推荐列表：</p>
+
+<p><strong>多样性：</strong>列表内物品的类目/价格/风格多样性。避免列表内所有物品高度相似。</p>
+
+<p><strong>覆盖：</strong>列表覆盖用户兴趣的程度。一个好的列表应该覆盖用户的多个兴趣点。</p>
+
+<p><strong>序列效应：</strong>列表中物品的位置影响点击概率。用户更关注前几个位置，高价值物品应放前面。但连续高刺激物品可能导致疲劳。</p>
+
+<p><strong>上下文依赖：</strong>前一个物品影响后一个物品的点击概率。例如，推荐手机后推荐手机壳的点击概率高于随机推荐。</p>
+
+<h2 class="section-title" id="sec-32-2">32.2 传统重排方法</h2>
+
+<h3 class="subsection-title">32.2.1 DPP（Determinantal Point Process）</h3>
+
+<p>DPP 是一种概率模型，用于从候选集中选择多样性子集。DPP 定义一个核矩阵 K，K 的子行列式衡量子集的质量和多样性：</p>
+
+<div class="formula-box">
+  P(S) ∝ det(K_S) &nbsp;&nbsp;(32.1)
+</div>
+
+<p>其中 K_S 是子集 S 对应的子矩阵。det(K_S) 同时考虑物品质量（对角线元素）和物品间相似度（非对角线元素）。</p>
+
+<p><strong>优势：</strong>有数学保证的多样性、可解释性强。</p>
+
+<p><strong>局限：</strong>计算行列式的复杂度高（O(N³)）。需要近似算法加速。只考虑多样性，不优化序列效应。</p>
+
+<p><strong>加速：</strong>使用贪心算法——逐步选择使行列式增长最大的物品。复杂度降为 O(N²·K)，K 是列表长度。</p>
+
+<h3 class="subsection-title">32.2.2 MMR（Maximal Marginal Relevance）</h3>
+
+<p>MMR 在选择物品时平衡相关性和多样性：</p>
+
+<div class="formula-box">
+  MMR = argmaxₐ [α·Sim(a, q) − (1−α)·max_{a'∈S} Sim(a, a')] &nbsp;&nbsp;(32.2)
+</div>
+
+<p>第一项是物品 a 与用户查询 q 的相关性，第二项是物品 a 与已选集合 S 的最大相似度。α 控制相关性和多样性的权衡。</p>
+
+<p><strong>优势：</strong>简单高效、广泛使用。</p>
+
+<p><strong>局限：</strong>贪心策略不保证全局最优。相似度度量需要精心设计。</p>
+
+<h3 class="subsection-title">32.2.3 LambdaMART</h3>
+
+<p>LambdaMART 是排序学习的经典方法，通过梯度提升树优化 NDCG：</p>
+
+<p><strong>Lambda 梯度：</strong>定义 λ 梯度衡量物品位置交换对 NDCG 的影响。λ 梯度考虑了列表级指标，比逐点损失更接近排序目标。</p>
+
+<p><strong>优势：</strong>直接优化列表级指标（NDCG）、效果好。</p>
+
+<p><strong>局限：</strong>只考虑相关性排序，不显式优化多样性。需要标注数据训练。</p>
+
+<h2 class="section-title" id="sec-32-3">32.3 RL 重排</h2>
+
+<h3 class="subsection-title">32.3.1 序列决策建模</h3>
+
+<p>RL 将重排建模为序列决策过程：</p>
+
+<p><strong>状态 sₜ：</strong>已选物品列表 + 候选物品集 + 用户特征。状态编码已选物品的信息和剩余候选。</p>
+
+<p><strong>动作 aₜ：</strong>从候选集中选择第 t 个物品放入列表。动作空间随选择递减。</p>
+
+<p><strong>奖励 rₜ：</strong>第 t 个物品的即时效果（CTR/CVR）+ 多样性奖励 + 上下文奖励。</p>
+
+<p><strong>目标：</strong>最大化整个列表的累积奖励 Σ rₜ。</p>
+
+<p><strong>优势：</strong>RL 重排可以考虑序列效应和上下文依赖，而 DPP/MMR 是贪心的，不考虑序列。</p>
+
+<h3 class="subsection-title">32.3.2 奖励设计</h3>
+
+<p>RL 重排的奖励需要综合考虑多个目标：</p>
+
+<div class="formula-box">
+  rₜ = w₁·CTR(aₜ) + w₂·Diversity(aₜ, S) + w₃·Context(aₜ, aₜ₋₁) + w₄·Novelty(aₜ) &nbsp;&nbsp;(32.3)
+</div>
+
+<p><strong>CTR 奖励：</strong>物品 aₜ 的预测 CTR。保证推荐效果。</p>
+
+<p><strong>多样性奖励：</strong>物品 aₜ 与已选集合 S 的差异度。使用 embedding 距离或类目差异度量。</p>
+
+<p><strong>上下文奖励：</strong>物品 aₜ 与前一个物品 aₜ₋₁ 的搭配度。例如，手机→手机壳的上下文奖励高。</p>
+
+<p><strong>新颖性奖励：</strong>物品 aₜ 对用户的新颖程度。推荐长尾物品获得更高新颖性奖励。</p>
+
+<h3 class="subsection-title">32.3.3 策略学习</h3>
+
+<p><strong>策略网络：</strong>π(aₜ|sₜ) 使用 Pointer Network 或 Transformer。输入已选序列和候选集，输出候选集中每个物品的选择概率。</p>
+
+<p><strong>Actor-Critic：</strong>Actor 学习选择策略，Critic 评估列表级值函数。Critic 考虑整个列表的质量，而非单步奖励。</p>
+
+<p><strong>离线 RL：</strong>从历史重排日志中学习策略。使用 CQL 约束策略在历史数据范围内。</p>
+
+<p><strong>挑战：</strong>动作空间大（候选集可能数百个物品）、序列决策的信用分配困难、列表级奖励稀疏。</p>
+
+<h3 class="subsection-title">32.3.4 Contextual MDP 重排</h3>
+
+<p>Contextual MDP（CMDP）将重排建模为上下文相关的 MDP：</p>
+
+<p><strong>上下文：</strong>用户特征和请求场景。上下文影响状态转移和奖励。</p>
+
+<p><strong>状态转移：</strong>P(sₜ₊₁|sₜ, aₜ, c)，其中 c 是上下文。不同用户在不同场景下的状态转移不同。</p>
+
+<p><strong>策略：</strong>π(aₜ|sₜ, c) 根据状态和上下文选择动作。上下文感知的策略更灵活。</p>
+
+<h2 class="section-title" id="sec-32-4">32.4 混排问题</h2>
+
+<h3 class="subsection-title">32.4.1 多源融合</h3>
+
+<p>推荐系统的最终列表通常来自多个源——自然推荐、广告、运营内容、直播等。混排需要将不同源的内容合理排列：</p>
+
+<p><strong>自然推荐 vs 广告：</strong>自然推荐优化用户体验，广告优化收入。混排需要在用户体验和收入之间平衡。</p>
+
+<p><strong>多源排序：</strong>不同源的内容使用不同模型打分，分数不可直接比较。需要归一化或统一打分。</p>
+
+<p><strong>位置分配：</strong>不同源的内容对位置有不同要求——广告通常要求前几个位置，运营内容要求特定位置。</p>
+
+<h3 class="subsection-title">32.4.2 广告与自然结果混排</h3>
+
+<p>广告和自然结果的混排是推荐系统的核心商业逻辑：</p>
+
+<p><strong>eCPM 排序：</strong>广告按 eCPM（expected CPM = CTR × 出价）排序，自然推荐按 CTR 排序。混排时需要统一比较。</p>
+
+<p><strong>广告位约束：</strong>广告位数量有上限（如每 5 个位置最多 1 个广告）。广告位间隔有最小距离约束。</p>
+
+<p><strong>用户体验约束：</strong>广告过多影响用户体验，导致用户流失。需要控制广告密度。</p>
+
+<p><strong>收入 vs 体验：</strong>纯广告优化最大化短期收入，但可能损害长期留存。需要在收入和体验之间平衡。</p>
+
+<h3 class="subsection-title">32.4.3 全局最优</h3>
+
+<p>混排的全局最优需要考虑：</p>
+
+<p><strong>短期收入 vs 长期价值：</strong>多放广告增加短期收入，但可能降低留存。RL 可以优化长期累积收入。</p>
+
+<p><strong>用户差异化：</strong>不同用户对广告的容忍度不同。高价值用户可以多放广告，低价值用户需要少放广告以提升留存。</p>
+
+<p><strong>场景差异化：</strong>不同场景的广告密度不同。首页广告密度低，搜索结果页广告密度可以高。</p>
+
+<h2 class="section-title" id="sec-32-5">32.5 RL 混排</h2>
+
+<h3 class="subsection-title">32.5.1 MDP 建模</h3>
+
+<p>将混排建模为 MDP：</p>
+
+<p><strong>状态：</strong>已排列表 + 剩余候选（自然+广告）+ 用户特征 + 广告预算。</p>
+
+<p><strong>动作：</strong>选择下一个位置放自然推荐还是广告，以及具体放哪个内容。</p>
+
+<p><strong>奖励：</strong>r = 自然推荐效果 + 广告收入 − 体验惩罚。体验惩罚在广告过密时触发。</p>
+
+<p><strong>约束：</strong>广告位数量上限、广告间隔约束、用户体验下限。约束可以通过拉格朗日方法或约束 MDP 处理。</p>
+
+<h3 class="subsection-title">32.5.2 策略优化</h3>
+
+<p><strong>约束 RL：</strong>在广告数量约束下最大化累积奖励。使用拉格朗日乘子将约束转化为惩罚项。</p>
+
+<p><strong>多目标 RL：</strong>同时优化用户体验和广告收入。使用帕累托优化或条件策略。</p>
+
+<p><strong>离线 RL：</strong>从历史混排日志中学习策略。使用 CQL 避免外推误差。</p>
+
+<h3 class="subsection-title">32.5.3 工业应用</h3>
+
+<p><strong>阿里广告混排：</strong>使用 RL 在淘宝信息流中混排自然推荐和广告。状态编码已排列表和用户特征，动作选择自然或广告，奖励包含 CTR、GMV 和留存信号。使用约束 RL 控制广告密度。</p>
+
+<p><strong>抖音广告混排：</strong>使用 RL 优化短视频信息流中的广告插入。考虑完播率、互动率和广告收入的平衡。使用层次化决策——先决定是否插入广告，再决定插入哪个广告。</p>
+
+<h2 class="section-title" id="sec-32-6">32.6 工业实践</h2>
+
+<h3 class="subsection-title">32.6.1 阿里重排混排</h3>
+
+<p>阿里在淘宝推荐中使用 RL 进行重排和混排：</p>
+
+<p><strong>重排：</strong>使用 RL 重排优化列表级 CTR 和多样性。状态编码已选序列，动作选择下一个物品，奖励包含 CTR 和多样性。</p>
+
+<p><strong>混排：</strong>使用约束 RL 在自然推荐和广告之间分配位置。约束包括广告位上限和间隔约束。目标是最大化长期累积收入 + 用户体验。</p>
+
+<p><strong>效果：</strong>RL 重排相比 DPP 提升列表 CTR 2-3%，RL 混排在保证收入的同时提升留存 1-2%。</p>
+
+<h3 class="subsection-title">32.6.2 抖音重排混排</h3>
+
+<p>抖音推荐系统的重排和混排以用户体验为核心：</p>
+
+<p><strong>重排：</strong>使用 RL 重排优化 Session 级完播率和多样性。考虑视频间的上下文依赖——连续推荐相似视频会降低完播率。</p>
+
+<p><strong>混排：</strong>使用 RL 在自然视频和广告视频之间分配位置。考虑广告对完播率的影响——广告打断会降低用户后续完播率。</p>
+
+<h3 class="subsection-title">32.6.3 Meta 重排</h3>
+
+<p>Meta 在 Instagram Feed 推荐中使用 RL 重排：</p>
+
+<p><strong>序列重排：</strong>使用 Transformer 编码已选序列，RL 策略选择下一个内容。考虑内容的长期影响——某些内容可能导致用户退出。</p>
+
+<p><strong>多目标：</strong>同时优化参与度、多样性和创作者公平性。使用条件策略根据当前需求调整目标权重。</p>
+
+<h2 class="section-title" id="sec-32-7">32.7 本章小结</h2>
+
+<p>重排和混排是推荐链路的最后一环，对推荐效果和商业收入有重要影响。本章介绍了重排问题（列表级优化/全局视角）、传统方法（DPP/MMR/LambdaMART）、RL 重排（序列决策/奖励设计/策略学习）、混排问题（多源融合/广告混排/全局最优）和 RL 混排（MDP 建模/约束优化）。</p>
+
+<p>RL 在重排和混排中的优势在于：（1）建模序列效应和上下文依赖，优于贪心方法；（2）优化长期累积奖励，而非单次效果；（3）灵活处理多目标和约束。</p>
+
+<p>挑战在于：动作空间大、信用分配困难、约束处理复杂。在实践中，RL 重排通常与传统方法（DPP/MMR）结合——传统方法提供初始列表，RL 进行微调优化。RL 混排通常在约束 RL 框架下实现，平衡收入和体验。随着 RL 技术的成熟，RL 重排和混排有望成为推荐系统的标配能力。</p>
+
+</body>
+</html>

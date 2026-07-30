@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第22章 推荐系统偏差 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣 · 补充版</div>
+</div>
+<div class="chapter-num">第五部分 推荐系统进阶 · 第 22 章</div>
+<h1 class="chapter-title">推荐系统偏差</h1>
+
+<p>推荐系统在数据采集、模型训练和在线推理过程中存在多种偏差（Bias）。这些偏差不仅影响推荐效果，还可能导致"信息茧房"（Filter Bubble）、流量集中（马太效应）和内容生态恶化等问题。随着推荐系统对社会信息分发影响的加深，偏差纠偏和因果推理已成为推荐系统领域最重要的研究方向之一。本章将系统介绍推荐系统中的常见偏差类型及其纠偏方法。</p>
+
+<h2 class="section-title">22.1 偏差类型</h2>
+
+<p>推荐系统中的偏差可以分为多种类型，每种偏差都有其特定的成因和影响。理解偏差的成因是设计纠偏方法的前提。</p>
+
+<table>
+  <caption>表 22.1 推荐系统常见偏差</caption>
+  <thead>
+    <tr><th>偏差类型</th><th>成因</th><th>影响</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>位置偏差 (Position Bias)</td><td>靠前位置天然获得更高点击率</td><td>模型高估头部内容质量</td></tr>
+    <tr><td>选择偏差 (Selection Bias)</td><td>只有被曝光的内容才有反馈数据</td><td>训练分布与推理分布不一致</td></tr>
+    <tr><td>曝光偏差 (Exposure Bias)</td><td>曝光由推荐系统自身决定</td><td>数据循环，强化已有偏好</td></tr>
+    <tr><td>流行度偏差 (Popularity Bias)</td><td>热门内容获得更多曝光</td><td>长尾内容被抑制，马太效应</td></tr>
+    <tr><td>一致性偏差 (Consistency Bias)</td><td>用户行为受以往推荐影响</td><td>用户兴趣被推荐系统塑造</td></tr>
+    <tr><td>归纳偏差 (Inductive Bias)</td><td>模型假设与真实数据分布不匹配</td><td>模型泛化能力受限</td></tr>
+  </tbody>
+</table>
+
+<h3 class="subsection-title">22.1.1 位置偏差</h3>
+
+<p>位置偏差（Position Bias）是指用户对靠前位置的内容天然赋予更高注意力，导致靠前位置的点击率、观看时长等指标系统性偏高。这种偏差使得模型难以区分"内容好"和"位置好"——一个高质量内容如果被排在靠后位置，可能获得比低质量内容更低的反馈数据。</p>
+
+<p>位置偏差的成因包括：用户的视觉注意力从上到下递减、用户在浏览过程中逐渐疲劳、用户在找到满意内容后停止继续浏览。位置偏差使得训练数据中的反馈信号被位置因素"污染"，模型学习到的"优质内容"实际上可能只是"位置好的内容"。</p>
+
+<h3 class="subsection-title">22.1.2 选择偏差</h3>
+
+<p>选择偏差（Selection Bias）是指推荐系统的训练数据只包含被曝光过的内容，而未被曝光的内容没有反馈数据。这导致训练分布与推理分布不一致——模型在被曝光的样本上训练，但推理时需要对所有候选物品（包括从未被曝光过的物品）进行预测。</p>
+
+<p>选择偏差在 CVR 建模中尤为严重：CVR 标签只在"被点击"的样本上存在，而模型推理时需要对所有"被曝光"的样本预测 CVR。ESMM（第 19 章）通过全空间建模解决了这一问题。</p>
+
+<h3 class="subsection-title">22.1.3 曝光偏差</h3>
+
+<p>曝光偏差（Exposure Bias）是指曝光由推荐系统自身决定，形成"数据循环"（Data Feedback Loop）：推荐系统倾向于推荐历史表现好的内容 → 这些内容获得更多曝光 → 积累更多正反馈 → 进一步被推荐。长期迭代后，推荐系统陷入"信息茧房"，逐渐丧失对内容空间的探索能力。</p>
+
+<h3 class="subsection-title">22.1.4 流行度偏差</h3>
+
+<p>流行度偏差（Popularity Bias）是指热门内容由于历史反馈数据丰富，在模型预测中获得更高分数，从而获得更多曝光，进一步强化其热门地位。这种"马太效应"使得长尾内容难以获得曝光机会，导致推荐结果同质化，内容生态多样性下降。</p>
+
+<h2 class="section-title">22.2 逆倾向加权 (IPS)</h2>
+
+<p>逆倾向加权（Inverse Propensity Score Weighting, IPS）是因果推断中最经典的纠偏方法。其核心思想是：如果样本 i 被曝光的概率为 p_i（倾向分数），那么对该样本进行 1/p_i 的加权，可以消除曝光偏差。</p>
+
+<div class="formula-box">L_IPS = (1/N) * Sum_i [ y_i / p_i * L(f(x_i), y_i) ]</div>
+
+<p>其中 p_i 为样本 i 被曝光的倾向分数，y_i 为真实标签，f(x_i) 为模型预测。被低估的样本（低曝光概率）获得更高权重，从而纠正曝光偏差。IPS 的核心假设是倾向分数已知或可估计，但在实际系统中倾向分数往往难以准确估计。</p>
+
+<p>IPS 的优点是理论保证无偏性，缺点是对倾向分数的估计误差敏感——如果倾向分数估计不准，IPS 的纠偏效果会大打折扣。此外，IPS 可能产生高方差的估计，特别是当某些样本的倾向分数很小时，1/p_i 会非常大，导致梯度不稳定。</p>
+
+<h2 class="section-title">22.3 Doubly Robust</h2>
+
+<p>Doubly Robust（双重稳健）估计结合了 IPS 和直接模型两种纠偏方式：</p>
+
+<div class="formula-box">L_DR = (1/N) * Sum_i [ f_hat(x_i) + (y_i - f_hat(x_i)) / p_i ]</div>
+
+<p>其中 f_hat(x_i) 是直接模型的预测值。DR 的核心优势是"双重保险"——只要倾向分数模型或直接模型其中之一正确，DR 就能实现无偏估计。这使得 DR 在理论上优于纯 IPS 方法，因为它对模型误差更鲁棒。</p>
+
+<p>DR 的工作原理可以直观理解为：直接模型 f_hat 提供了基准预测，IPS 项 (y_i - f_hat(x_i)) / p_i 提供了残差修正。如果直接模型准确，残差接近零，IPS 项的影响很小；如果倾向分数准确，IPS 项能够正确修正直接模型的偏差。两者互补，提供了更强的鲁棒性。</p>
+
+<h2 class="section-title">22.4 流行度纠偏</h2>
+
+<h3 class="subsection-title">22.4.1 DICE</h3>
+
+<p>DICE（Disentangling Interest and Conformity）[1] 由清华大学于 KDD 2021 提出，被引用 518 次。DICE 的核心思想是将用户行为分解为<strong>兴趣驱动</strong>（Interest）和<strong>流行度驱动</strong>（Conformity）两部分，分别建模后组合。</p>
+
+<p>传统方法将流行度偏差视为需要消除的噪声，而 DICE 认为流行度信息本身也包含有价值的信号——用户的从众心理（Conformity）是一种真实的行为模式，不应完全消除，而应与兴趣分离建模。DICE 通过结构化解耦，使兴趣表示不受流行度干扰，同时保留流行度信息用于预测。</p>
+
+<h3 class="subsection-title">22.4.2 MACR</h3>
+
+<p>MACR（Model-Agnostic Counterfactual Reasoning）[2] 由中国人民大学于 SIGIR 2021 提出，被引用 486 次。MACR 通过反事实推理框架消除流行度偏差。</p>
+
+<p>MACR 识别到流行度偏差存在于"物品节点到排序分数的直接路径"中——物品的流行度属性直接影响排序分数，使得热门物品即使内容质量一般也能获得高分。MACR 通过反事实推理评估"如果物品不流行，排序分数会是多少"，从而消除流行度偏差的影响。</p>
+
+<p>具体而言，MACR 在训练时同时计算事实分数（有流行度信息）和反事实分数（去除流行度信息），通过反事实推理框架指导模型学习去偏差的表示。MACR 的"模型无关"特性意味着它可以作为插件应用于任何推荐模型。</p>
+
+<h2 class="section-title">22.5 因果推荐</h2>
+
+<p>因果推荐（Causal Recommendation）从因果推断角度重新审视推荐问题。传统推荐系统基于相关性（Correlation）进行推荐：用户点击过 A，A 与 B 相似，所以推荐 B。但相关性不等于因果性（Causation）——用户点击 A 可能是因为内容好，也可能是因为位置靠前或内容流行。</p>
+
+<p>因果推荐的核心思想是区分<strong>观察到的行为</strong>和<strong>因果效应</strong>。推荐系统不应只关注"用户点击了什么"，而应关注"推荐系统对用户行为的因果影响"。因果图（Causal Graph）是核心工具，通过有向无环图（DAG）描述变量之间的因果关系。</p>
+
+<p>因果推荐的关键技术包括：IPW（逆倾向加权）、DR（双重稳健估计）、反事实学习（Counterfactual Learning）、离线策略评估（OPE）等。这些方法在第 27 章中将进一步深入讨论。</p>
+
+<h2 class="section-title">22.6 工业界纠偏实践</h2>
+
+<p>在工业实践中，完全消除所有偏差是不现实的。工业界通常采用以下策略来缓解偏差：</p>
+<ul>
+<li><strong>位置特征</strong>：将位置作为特征输入模型，让模型学习位置偏差，在推理时使用固定位置（如位置 1）消除偏差</li>
+<li><strong>样本重加权</strong>：对低曝光概率的样本进行加权，缓解选择偏差</li>
+<li><strong>多样性约束</strong>：在重排阶段引入多样性打散，缓解流行度偏差和信息茧房</li>
+<li><strong>探索策略</strong>：通过 Epsilon-Greedy、UCB 等方法引入探索，缓解曝光偏差</li>
+<li><strong>因果图建模</strong>：构建因果图识别混淆变量，使用 IPW/DR 进行纠偏</li>
+</ul>
+
+<h2 class="section-title">22.7 本章小结</h2>
+
+<p>本章系统介绍了推荐系统中的偏差类型及其纠偏方法。位置偏差、选择偏差、曝光偏差和流行度偏差是最常见的四种类型。IPS 和 DR 是经典的无偏估计方法，DICE 和 MACR 针对流行度偏差提出了专门的解耦和反事实推理方案。因果推荐从更深层次重新定义推荐问题的本质——从关注"相关性"到关注"因果性"。随着推荐系统对社会信息分发影响的加深，偏差纠偏和因果推理正在成为推荐系统领域最重要的研究方向之一。</p>
+
+<h2 class="section-title">参考文献</h2>
+<p>[1] Zheng, Y. et al. "Disentangling User Interest and Conformity for Recommendation". KDD 2021.</p>
+<p>[2] Wei, T. et al. "Model-Agnostic Counterfactual Reasoning for Eliminating Popularity Bias in Recommender Systems". SIGIR 2021.</p>
+<p>[3] Schnabel, T. et al. "Recommendations as Treatments: Debiasing Learning and Evaluation". ICML 2016.</p>
+<p>[4] Wang, X. et al. "Causal Inference for Recommender Systems". WSDM 2022.</p>
+<p>[5] Li, C. et al. "Unbiased Offline Evaluation of Contextual-bandit-based News Article Recommendation Algorithms". WSDM 2012.</p>
+
+<div class="chapter-end">* * *</div>
+<div class="nav-bar">
+  <a href="ch21.html">← 上一章：第21章 时长预估</a>
+  <a href="ch23.html">下一章：第23章 个性化参数 →</a>
+</div>
+</body>
+</html>

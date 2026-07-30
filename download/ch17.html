@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第17章 向量检索系统 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第四部分 工程实践 · 第 17 章</div>
+
+<h1 class="chapter-title">向量检索系统</h1>
+
+<p>向量检索是现代推荐系统召回层的核心基础设施。随着双塔模型和 Embedding 技术的成熟，基于向量相似度的召回已成为推荐系统最重要的召回方式之一。本章将系统介绍向量检索的算法原理、工程实现和工业实践——从暴力检索到近似最近邻（ANN）算法，从开源工具到自研系统。</p>
+
+<div class="toc-box">
+  <h3>本章目录</h3>
+  <ul>
+    <li><a href="#sec-17-1">17.1 向量检索基础</a> — 问题定义 / 距离度量 / 精确检索</li>
+    <li><a href="#sec-17-2">17.2 近似最近邻算法</a> — IVF / HNSW / PQ / LSH</li>
+    <li><a href="#sec-17-3">17.3 混合检索</a> — 向量+标量 / 多路融合</li>
+    <li><a href="#sec-17-4">17.4 工程实现</a> — 索引构建 / 在线检索 / 分布式</li>
+    <li><a href="#sec-17-5">17.5 开源工具</a> — FAISS / Milvus / ScaNN / ProxiMa</li>
+    <li><a href="#sec-17-6">17.6 工业实践</a> — 淘宝/抖音/Pinterest</li>
+    <li><a href="#sec-17-7">17.7 本章小结</a></li>
+  </ul>
+</div>
+
+<h2 class="section-title" id="sec-17-1">17.1 向量检索基础</h2>
+
+<h3 class="subsection-title">17.1.1 问题定义</h3>
+
+<p>向量检索问题：给定一个查询向量 q 和一个包含 N 个物品向量的数据库 D = {v₁, v₂, ..., vₙ}，找到与 q 最相似的 K 个物品。相似度通过距离度量计算。</p>
+
+<p>在推荐系统中，查询向量 q 通常是用户 Embedding（由用户塔生成），物品向量 vᵢ 是物品 Embedding（由物品塔生成）。向量检索的目的是找到与用户 Embedding 最相似的物品 Embedding，即用户最可能感兴趣的物品。</p>
+
+<h3 class="subsection-title">17.1.2 距离度量</h3>
+
+<p>常用的距离度量包括：</p>
+
+<p><strong>内积（Inner Product）：</strong>sim(q, v) = q · v = Σ qᵢ · vᵢ。内积是最常用的相似度度量，当向量归一化后等价于余弦相似度。双塔模型通常使用内积作为相似度度量。</p>
+
+<p><strong>余弦相似度（Cosine Similarity）：</strong>sim(q, v) = (q · v) / (|q| · |v|)。归一化后只关注方向相似性，忽略向量长度。适合文本 embedding。</p>
+
+<p><strong>L2 距离（Euclidean Distance）：</strong>dist(q, v) = √(Σ (qᵢ - vᵢ)²)。距离越小越相似。L2 距离满足三角不等式，支持空间划分算法。</p>
+
+<p><strong>选择建议：</strong>推荐系统通常使用内积（因为双塔模型训练时使用内积作为相似度）。如果需要使用 L2 距离的索引结构（如 IVF），可以将向量归一化后使用 L2 距离（等价于内积）。</p>
+
+<h3 class="subsection-title">17.1.3 精确检索</h3>
+
+<p>精确检索（Exact Search）计算查询向量与所有物品向量的距离，返回 Top-K。复杂度 O(N·d)，其中 N 是物品数量，d 是向量维度。</p>
+
+<p>对于小规模数据（N < 100,000），精确检索的延迟可以接受（<10ms）。但对于大规模数据（N > 10,000,000），精确检索的延迟过高（>100ms），需要近似方法。</p>
+
+<p><strong>BLAS 优化：</strong>精确检索可以使用 BLAS（Basic Linear Algebra Subprograms）库加速。矩阵乘法 sim = q · V 可以用 GEMM（矩阵乘法）高效计算。对于 N=1,000,000、d=64，BLAS 优化的精确检索延迟约 5-10ms。</p>
+
+<h2 class="section-title" id="sec-17-2">17.2 近似最近邻算法</h2>
+
+<h3 class="subsection-title">17.2.1 IVF（Inverted File Index）</h3>
+
+<p>IVF 是基于聚类的索引方法：</p>
+
+<p><strong>索引构建：</strong>使用 K-Means 将物品向量聚为 K 个簇。每个簇维护一个倒排列表，存储属于该簇的物品 ID。K 通常设为 √N 到 N/1000 之间。</p>
+
+<p><strong>在线检索：</strong>查询向量 q 先计算与 K 个簇中心的距离，选择最近的 nprobe 个簇。然后在这 nprobe 个簇的倒排列表中精确检索。nprobe 控制精度-速度权衡——nprobe 越大精度越高但速度越慢。</p>
+
+<p><strong>IVF 的优势：</strong>构建速度快、内存占用小、参数简单。适合中等规模（百万级）的向量检索。</p>
+
+<p><strong>IVF 的局限：</strong>聚类质量影响检索效果。如果簇中心不能很好地代表数据分布，检索精度会下降。对于均匀分布的数据，IVF 效果较好；对于长尾分布的数据，IVF 可能在长尾部分效果差。</p>
+
+<h3 class="subsection-title">17.2.2 HNSW（Hierarchical Navigable Small World）</h3>
+
+<p>HNSW 是基于图的索引方法，是目前最流行的 ANN 算法之一：</p>
+
+<p><strong>索引构建：</strong>构建层次化图结构。最顶层是稀疏图（少数节点），最底层是密集图（所有节点）。每个节点与若干邻居相连。构建时逐层插入节点，通过贪心搜索找到最近邻居。</p>
+
+<p><strong>在线检索：</strong>从最顶层开始贪心搜索，找到局部最优后下降到下一层。在最底层精确搜索 Top-K。层次化结构使搜索复杂度接近 O(log N)。</p>
+
+<p><strong>HNSW 的优势：</strong>检索速度快（比 IVF 快 2-5 倍）、精度高（recall@10 > 95%）、支持动态插入。适合对延迟敏感的场景。</p>
+
+<p><strong>HNSW 的局限：</strong>内存占用大（图结构需要存储邻居列表）、构建速度慢（O(N·log N)）。对于十亿级数据，HNSW 的内存占用可能不可接受。</p>
+
+<p><strong>关键参数：</strong>M（每个节点的邻居数，通常 16-48）、efConstruction（构建时搜索宽度，通常 200-500）、efSearch（检索时搜索宽度，通常 50-200）。M 越大精度越高但内存越大；efSearch 越大精度越高但速度越慢。</p>
+
+<h3 class="subsection-title">17.2.3 PQ（Product Quantization）</h3>
+
+<p>PQ 是基于量化的压缩方法，用于减少向量存储和计算开销：</p>
+
+<p><strong>原理：</strong>将 d 维向量切分为 m 个子向量，每个子向量独立量化。每个子向量使用 256 个簇中心（8 bit）表示。原始 d 维 float 向量（4d 字节）压缩为 m 字节。压缩率 4d/m。</p>
+
+<p><strong>距离计算：</strong>使用查表法（Look-up Table）。预计算查询向量与每个子量化的 256 个簇中心的距离，存储在表中。检索时查表累加即可得到近似距离。速度极快。</p>
+
+<p><strong>IVF-PQ：</strong>IVF + PQ 的组合。先用 IVF 聚类，再在每个簇内使用 PQ 压缩。这是 FAISS 的标志性算法，在十亿级数据上可以实现 <10ms 的检索延迟。</p>
+
+<p><strong>PQ 的局限：</strong>量化引入精度损失。子向量维度 d/m 越小，量化误差越大。通常 d/m ≥ 4 时效果可接受（如 d=64, m=16）。</p>
+
+<h3 class="subsection-title">17.2.4 LSH（Locality-Sensitive Hashing）</h3>
+
+<p>LSH 是基于哈希的近似检索方法：</p>
+
+<p><strong>原理：</strong>使用局部敏感哈希函数，使相似向量以高概率映射到相同桶。检索时只需搜索相同桶的物品。哈希函数满足：相似向量哈希冲突概率高，不相似向量冲突概率低。</p>
+
+<p><strong>优势：</strong>内存占用极小（只存哈希值）、构建速度快。</p>
+
+<p><strong>局限：</strong>精度较低（recall 通常 <90%）、参数调优复杂。在实际推荐系统中，LSH 的效果通常不如 HNSW 和 IVF-PQ，使用较少。</p>
+
+<h2 class="section-title" id="sec-17-3">17.3 混合检索</h2>
+
+<h3 class="subsection-title">17.3.1 向量+标量混合检索</h3>
+
+<p>纯向量检索可能返回不满足业务约束的结果（如推荐已下架物品）。混合检索在向量检索的同时过滤标量条件：</p>
+
+<p><strong>预过滤 + 向量检索：</strong>先按标量条件（类目/价格/地域）过滤候选集，再在过滤后的候选集上做向量检索。问题：过滤后候选集可能过小，影响检索效果。</p>
+
+<p><strong>向量检索 + 后过滤：</strong>先做向量检索，再按标量条件过滤。问题：过滤后剩余结果可能不足 K 个，需要多次检索。</p>
+
+<p><strong>一体化检索：</strong>在索引构建时将标量条件纳入索引结构。FAISS 和 Milvus 支持一体化检索——在 HNSW 图搜索时跳过不满足条件的节点。这是当前最优的混合检索方案。</p>
+
+<h3 class="subsection-title">17.3.2 多路融合</h3>
+
+<p>向量检索通常与其它召回方式融合：</p>
+
+<p><strong>多向量召回：</strong>使用多个向量空间（如点击向量 + 购买向量 + 内容向量）分别检索，合并结果。不同向量空间捕获不同维度的相似性。</p>
+
+<p><strong>向量 + 规则召回：</strong>向量召回与热门召回、类目召回、图召回并行执行，结果合并后送入粗排。</p>
+
+<p><strong>融合策略：</strong>分数归一化后加权求和，或使用 RRF（Reciprocal Rank Fusion）融合排名。RRF 不需要分数归一化，更鲁棒。</p>
+
+<h2 class="section-title" id="sec-17-4">17.4 工程实现</h2>
+
+<h3 class="subsection-title">17.4.1 索引构建</h3>
+
+<p><strong>全量构建：</strong>定期（每天/每周）全量重建索引。适合数据变化不频繁的场景。全量构建可以优化索引结构，达到最优检索效果。</p>
+
+<p><strong>增量更新：</strong>新物品实时插入索引。HNSW 支持动态插入，IVF 需要重新分配簇。增量更新保证新物品可以被检索到，但可能导致索引碎片化。</p>
+
+<p><strong>索引版本管理：</strong>新索引构建完成后原子切换，避免检索过程中索引变更。双 buffer 策略——新索引在后台构建，完成后切换前台。</p>
+
+<h3 class="subsection-title">17.4.2 在线检索</h3>
+
+<p><strong>批量检索：</strong>一个用户请求可能需要检索多个向量（如点击向量 + 购买向量）。批量检索可以复用索引加载，提高效率。</p>
+
+<p><strong>多线程检索：</strong>将数据库分片到多个线程并行检索，合并结果。适合大规模数据的单次检索。</p>
+
+<p><strong>结果缓存：</strong>同一用户的检索结果缓存几分钟。避免短时间内重复检索相同向量。</p>
+
+<h3 class="subsection-title">17.4.3 分布式检索</h3>
+
+<p>对于十亿级数据，单机无法容纳全部索引，需要分布式检索：</p>
+
+<p><strong>数据分片：</strong>将物品向量按 ID 哈希分片到多个节点。每个节点维护一部分索引。检索时并行查询所有节点，合并全局 Top-K。</p>
+
+<p><strong>副本机制：</strong>每个分片维护副本，提高可用性和吞吐量。副本可以分担读负载。</p>
+
+<p><strong>路由层：</strong>请求路由层将检索请求分发到正确的分片，收集结果并合并。路由层是分布式检索的"大脑"。</p>
+
+<h2 class="section-title" id="sec-17-5">17.5 开源工具</h2>
+
+<h3 class="subsection-title">17.5.1 FAISS</h3>
+
+<p>FAISS（Facebook AI Similarity Search）是 Meta 开源的向量检索库，是推荐系统最常用的向量检索工具：</p>
+
+<p><strong>核心算法：</strong>IVF、HNSW、PQ 及其组合（IVF-PQ、HNSW-PQ）。支持 GPU 加速。</p>
+
+<p><strong>优势：</strong>性能优秀（GPU 版本在十亿级数据上 <10ms）、算法丰富、社区活跃。</p>
+
+<p><strong>局限：</strong>不支持分布式（需要自研分布式层）、不支持实时删除、Python API 不友好（C++ 核心）。</p>
+
+<h3 class="subsection-title">17.5.2 Milvus</h3>
+
+<p>Milvus 是 Zilliz 开源的分布式向量检索系统：</p>
+
+<p><strong>核心特性：</strong>分布式架构、支持多种索引（IVF/HNSW/DiskANN）、支持标量过滤、支持实时插入删除。</p>
+
+<p><strong>优势：</strong>分布式原生支持、易用性好（REST/gRPC API）、生态丰富。</p>
+
+<p><strong>局限：</strong>性能不如 FAISS（有分布式开销）、资源占用较大。</p>
+
+<h3 class="subsection-title">17.5.3 ScaNN</h3>
+
+<p>ScaNN 是 Google 开源的向量检索库：</p>
+
+<p><strong>核心算法：</strong>各向异性量化（Anisotropic Quantization），在量化时考虑查询分布，比 PQ 精度更高。</p>
+
+<p><strong>优势：</strong>精度高（在相同压缩率下 recall 比 PQ 高 5-10%）。</p>
+
+<p><strong>局限：</strong>社区不如 FAISS 活跃、不支持 GPU 加速。</p>
+
+<h3 class="subsection-title">17.5.4 DiskANN</h3>
+
+<p>DiskANN 是 Microsoft 开源的磁盘向量检索系统：</p>
+
+<p><strong>核心特性：</strong>将索引存储在 SSD 上，内存只存少量元数据。支持十亿级数据的单机检索。</p>
+
+<p><strong>优势：</strong>内存占用极小（十亿级数据只需几 GB 内存）、成本低。</p>
+
+<p><strong>局限：</strong>延迟比内存检索高（SSD 访问延迟约 100μs），适合对延迟要求不极端的场景。</p>
+
+<h2 class="section-title" id="sec-17-6">17.6 工业实践</h2>
+
+<h3 class="subsection-title">17.6.1 淘宝向量检索</h3>
+
+<p>淘宝推荐系统的向量检索是工业级标杆：</p>
+
+<p><strong>规模：</strong>十亿级物品向量，百万级 QPS，延迟 <10ms。</p>
+
+<p><strong>架构：</strong>自研分布式向量检索系统。数据分片 + 副本机制。索引使用 IVF-PQ + HNSW 混合。</p>
+
+<p><strong>多向量空间：</strong>维护多个向量空间（点击/购买/内容），支持多路向量召回。</p>
+
+<p><strong>实时更新：</strong>新物品实时插入索引。使用 HNSW 的动态插入特性。</p>
+
+<h3 class="subsection-title">17.6.2 抖音向量检索</h3>
+
+<p>抖音推荐系统的向量检索以多模态为特色：</p>
+
+<p><strong>多模态向量：</strong>视频封面 CLIP 向量 + 视频内容向量 + 音频向量。不同模态的向量分别索引。</p>
+
+<p><strong>实时性：</strong>新视频上传后秒级建索引，保证新内容可以被检索到。</p>
+
+<p><strong>GPU 检索：</strong>使用 FAISS GPU 版本，支撑百万级 QPS。</p>
+
+<h3 class="subsection-title">17.6.3 Pinterest PinSage</h3>
+
+<p>Pinterest 的 PinSage 是图推荐系统的标志性工作：</p>
+
+<p><strong>图卷积 embedding：</strong>使用随机游走 + 图卷积学习 Pin 的表示。PinSage 可以在 20 亿 Pin 上运行。</p>
+
+<p><strong>分布式检索：</strong>使用自研分布式检索系统，支持十亿级向量的快速检索。</p>
+
+<p><strong>多模态融合：</strong>CLIP 特征与图卷积特征融合，增强 Pin 的表示能力。</p>
+
+<h2 class="section-title" id="sec-17-7">17.7 本章小结</h2>
+
+<p>向量检索是现代推荐系统召回层的核心基础设施。本章系统介绍了向量检索的算法原理（IVF/HNSW/PQ/LSH）、混合检索（向量+标量/多路融合）、工程实现（索引构建/在线检索/分布式）和开源工具（FAISS/Milvus/ScaNN/DiskANN）。</p>
+
+<p>在算法选择上，HNSW 适合对延迟敏感的中等规模数据（千万级），IVF-PQ 适合大规模数据（亿级），DiskANN 适合成本敏感的超大规模数据（十亿级）。在工具选择上，FAISS 适合自研分布式层的场景，Milvus 适合需要开箱即用的分布式检索的场景。</p>
+
+<p>随着 Embedding 技术的普及和双塔模型的成熟，向量检索已成为推荐系统的标配。未来，随着多模态 Embedding 和 LLM Embedding 的发展，向量检索的规模和复杂度将持续增长，对检索算法和工程系统提出更高要求。</p>
+
+</body>
+</html>

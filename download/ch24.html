@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第24章 多任务融合 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣 · 补充版</div>
+</div>
+<div class="chapter-num">第五部分 推荐系统进阶 · 第 24 章</div>
+<h1 class="chapter-title">多任务融合</h1>
+
+<p>第 5 章和第 6 章已经介绍了粗排和精排阶段的多目标融合方法。本章将进一步深入讨论多任务融合的理论基础、数学分析以及工业界的自动化融合方案。多任务融合（Multi-Task Fusion, MTF）是连接多任务学习模型输出与最终排序决策的关键桥梁——模型预估出 pCTR、pCVR、pWatchTime 等多个预估值后，如何将它们融合为一个统一的排序分数，直接决定了推荐效果。</p>
+
+<h2 class="section-title">24.1 融合公式分类</h2>
+
+<p>工业界常见的多目标融合方法可分为四大类：</p>
+
+<table>
+  <caption>表 24.1 多目标融合方法分类</caption>
+  <thead>
+    <tr><th>类型</th><th>代表方法</th><th>优势</th><th>劣势</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>基于值（Value-Based）</td><td>线性加法、乘法公式</td><td>直观、可解释</td><td>对数值分布敏感</td></tr>
+    <tr><td>基于序（Rank-Based）</td><td>倒数变换、幂次变换</td><td>鲁棒性强</td><td>丢失数值信息</td></tr>
+    <tr><td>值序融合（Hybrid）</td><td>值×序加权</td><td>兼顾数值与鲁棒性</td><td>参数空间大</td></tr>
+    <tr><td>自动化融合（Auto）</td><td>贝叶斯优化、CEM、RL</td><td>无需人工调参</td><td>搜索成本高</td></tr>
+  </tbody>
+</table>
+
+<h2 class="section-title">24.2 加法融合</h2>
+
+<p>加法融合（Additive Fusion）是最简单的融合方式，将多个预估值进行线性加权求和：</p>
+
+<div class="formula-box">score = w1*p1 + w2*p2 + ... + wn*pn</div>
+
+<p>其中 pi 为第 i 个目标的预估值（如 pCTR、pCVR 等），wi 为对应的权重。加法融合的核心特性是<strong>补偿性</strong>（Compensatory）：一个目标的高值可以补偿另一个目标的低值。例如，一个高 CTR 但低 CVR 的内容，与一个低 CTR 但高 CVR 的内容，可能获得相同的融合分数。</p>
+
+<p>加法融合适用于目标之间相对独立的场景。其优点是直观可解释——权重 wi 直接反映目标 i 在融合中的重要性。缺点是对预估值的具体数值分布敏感：如果模型输出的 pCTR 整体偏高、pCVR 整体偏低，即使两者的相对排序正确，融合结果也会偏向 pCTR。</p>
+
+<h2 class="section-title">24.3 乘法融合</h2>
+
+<p>乘法融合（Multiplicative Fusion）将多个预估值进行乘法组合：</p>
+
+<div class="formula-box">score = Product_i (bi + ai*pi)^gi</div>
+
+<p>其中 ai、bi、gi 为可调超参数。乘法融合的核心特性是<strong>短板约束</strong>（Bottleneck-Constrained）：任何一个目标过低都会显著拉低最终得分。例如，如果 pCTR 接近 0，则整体得分接近 0，无论其他目标多高。</p>
+
+<p>乘法融合更倾向于选择多个目标同时表现优秀的内容，而非在单一目标上极端突出的内容。在电商场景中，CTR 和 CVR 通常采用乘法组合，因为平台需要的是"既被点击又转化"的内容，而非"高点击低转化"或"低点击高转化"的内容。</p>
+
+<h2 class="section-title">24.4 加法 vs 乘法的数学分析</h2>
+
+<h3 class="subsection-title">24.4.1 Taylor 展开分析</h3>
+
+<p>广义乘法公式 Score = Product_i (bi + ai*pi) 可通过 Taylor 展开揭示其与加法公式的关系：</p>
+
+<div class="formula-box">Score = Const * [1 + Sum_i (ai*pi/bi) + Sum_{i<j} (ai*aj*pi*pj/(bi*bj)) + ...]</div>
+
+<p>展开后可以看到：</p>
+<ul>
+<li><strong>一阶项</strong> Sum_i (ai*pi/bi) 对应线性加权求和——这就是加法融合</li>
+<li><strong>二阶项</strong> Sum_{i<j} (ai*aj*pi*pj/(bi*bj)) 对应两两目标的协同交互</li>
+<li><strong>三阶项</strong> 对应三个目标同时优秀时的额外奖励</li>
+<li><strong>更高阶项</strong> 对应更复杂的多目标协同关系</li>
+</ul>
+
+<p>当偏置项 bi 很大时（bi >> ai*pi），高阶项可以忽略，乘法公式退化为加法公式。当 bi 很小时，高阶交互项占主导，模型更强调多目标协同。这意味着广义乘法公式实际上构造了一条从纯乘法到线性加法的连续过渡路径，bi 控制着过渡的位置。</p>
+
+<h3 class="subsection-title">24.4.2 梯度分析</h3>
+
+<p>从梯度视角可以更直观地理解两种融合方式的差异。对于乘法融合 Score = (b1 + a1*p1)(b2 + a2*p2)，对 p1 求偏导：</p>
+
+<div class="formula-box">dScore/dp1 = a1 * (b2 + a2*p2)</div>
+
+<p>即 p1 的重要性依赖于 p2 的大小——当 p2 较大时，p1 的提升价值更高。这体现了目标之间的<strong>正向协同</strong>（Positive Synergy）：一个目标越优秀，另一个目标的提升价值越高。</p>
+
+<p>而对于加法融合 Score = w1*p1 + w2*p2，梯度为常数 dScore/dp1 = w1，各目标彼此独立，不存在协同效应。</p>
+
+<h3 class="subsection-title">24.4.3 幂指数 gamma 的影响</h3>
+
+<p>超参数 gamma 控制流量分布的陡峭程度。当 gamma > 1 时，高分样本进一步被放大，流量向头部内容集中（强化马太效应）。当 0 < gamma < 1 时，高分与低分之间的差距被压缩，流量分布更加平缓，中腰部内容获得更多曝光机会。</p>
+
+<h2 class="section-title">24.5 序变换函数</h2>
+
+<p>基于序的融合方法不直接使用预估值，而是利用排序位置进行融合。核心思想是：不同模型输出的预估值往往存在数值尺度不一致和分布漂移问题，而排序位置天然具有更强的鲁棒性。</p>
+
+<p>常见序变换函数包括：</p>
+<ul>
+<li><strong>倒数变换</strong>：S = 1/Rank，激进的头部强化策略，Top-1 和 Top-2 之间差异巨大</li>
+<li><strong>平滑倒数</strong>：S = w/(Rank^lambda + b)，引入超参数 lambda 和偏置 b 控制曲线形状</li>
+<li><strong>归一化幂次</strong>：S = w*(1 - (Rank/N)^lambda)，灵活控制资源在头部和中腰部的分配</li>
+<li><strong>指数双曲</strong>：S = w*sinh(k*(2*Rank/N - 1))，在不同区间呈现不同敏感性</li>
+</ul>
+
+<p>序变换的优势是对预估值的具体数值分布不敏感，但缺点是丢失了数值差异信息——排名第一和第二的物品可能分数极其接近（0.99 vs 0.98），也可能差异巨大（0.99 vs 0.50），但在序变换中都被视为相邻位置。</p>
+
+<h2 class="section-title">24.6 值序融合</h2>
+
+<p>值序融合（Hybrid Fusion）同时保留数值信息和序信息：</p>
+
+<div class="formula-box">score = f(pxtr) * g(Rank_pxtr)</div>
+
+<p>其中 f() 负责建模 Value 信息，g() 负责建模 Rank 信息。例如 f(pxtr) = log(1 + pxtr)，g(Rank) = 1/Rank^lambda。值序融合既保留了模型输出的细粒度数值差异，又获得了 Rank 融合的鲁棒性，目前大量工业级推荐系统都采用了某种形式的值序混合融合策略。</p>
+
+<h2 class="section-title">24.7 自动化融合</h2>
+
+<h3 class="subsection-title">24.7.1 贝叶斯优化</h3>
+
+<p>贝叶斯优化使用高斯过程（GP）或 TPE 作为代理模型，通过采集函数（EI、UCB 等）指导参数搜索。适合低维参数空间（<20 维）。贝叶斯优化的核心优势是样本效率高——用尽可能少的实验次数找到尽可能优的参数。工业界广泛使用的超参数优化框架 Optuna 默认采用 TPE 算法。</p>
+
+<h3 class="subsection-title">24.7.2 CEM (Cross-Entropy Method)</h3>
+
+<p>CEM 通过维护参数分布并迭代更新，逐步向高收益区域收敛。每轮采样多组参数，在线上分配流量实验，根据收益筛选精英样本（Elite Samples），用精英样本重新拟合采样分布。CEM 的理论基础是最小化 KL 散度，适合中等维度参数空间（20-50 维）。快手 [1] 在多目标排序中广泛使用了 CEM 进行自动调参。</p>
+
+<h3 class="subsection-title">24.7.3 强化学习融合</h3>
+
+<p>将参数选择建模为序列决策问题，通过 RL 策略学习最优融合方案。RL 的优势在于能够优化长期收益而非即时效果，但面临训练不稳定和线上探索风险等挑战。近年来，一些公司开始尝试利用 LLM Agent 自动分析实验结果、生成新的排序策略。</p>
+
+<h2 class="section-title">24.8 工业实践</h2>
+
+<p>在工业实践中，多任务融合通常采用以下流程：</p>
+<ol>
+<li><strong>离线搜索</strong>：使用贝叶斯优化或 CEM 在离线数据上搜索初始参数</li>
+<li><strong>线上小流量验证</strong>：将搜索到的参数在小流量（5%-10%）上验证</li>
+<li><strong>逐步扩量</strong>：如果小流量效果正向，逐步扩大到 20%→50%→100%</li>
+<li><strong>持续监控</strong>：监控各业务指标，如果效果下降则回滚</li>
+<li><strong>周期更新</strong>：定期重新搜索参数，适应用户兴趣和业务目标的变化</li>
+</ol>
+
+<p>快手 [1] 在多目标排序实践中开发了多种超参优化方法，包括 CEM、进化策略（ES）和贝叶斯优化。阿里巴巴飞猪 [2] 也采用了类似的自动化调参方案。</p>
+
+<h2 class="section-title">24.9 本章小结</h2>
+
+<p>加法融合是补偿型机制，乘法融合是协同增强型机制。广义乘法公式通过 Taylor 展开揭示了从线性加法到高阶交互的连续过渡——一阶项是加法，二阶及以上项是协同交互。自动化融合方法（贝叶斯优化、CEM、RL）正在替代人工调参，成为工业界的主流方案。工业实践通常采用"离线搜索→小流量验证→逐步扩量→持续监控→周期更新"的闭环流程。</p>
+
+<h2 class="section-title">参考文献</h2>
+<p>[1] 快手. "多目标排序在快手短视频推荐中的实践". InfoQ 2021.</p>
+<p>[2] 阿里飞猪. "多目标融合优化实践". 2023.</p>
+<p>[3] "推荐系统：精排多目标融合与超参数学习方法". 博客园 2024.</p>
+<p>[4] "多目标 score 融合方法初探". 知乎 2024.</p>
+<p>[5] Swersky, K. et al. "Multi-Task Bayesian Optimization". NeurIPS 2013.</p>
+
+<div class="chapter-end">* * *</div>
+<div class="nav-bar">
+  <a href="ch23.html">← 上一章：第23章 个性化参数</a>
+  <a href="ch25.html">下一章：第25章 长期价值 →</a>
+</div>
+</body>
+</html>

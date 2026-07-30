@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第28章 强化学习推荐场景 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣 · 补充版</div>
+</div>
+<div class="chapter-num">第六部分 强化学习推荐 · 第 28 章</div>
+<h1 class="chapter-title">强化学习推荐场景</h1>
+
+<p>强化学习（Reinforcement Learning, RL）在推荐系统中的应用近年来受到广泛关注。与传统监督学习不同，RL 通过序列决策建模推荐过程，能够优化长期收益而非即时反馈。传统监督学习将推荐建模为"给定特征预测标签"的静态问题，而 RL 将推荐建模为"在环境中采取行动以最大化长期收益"的动态决策问题。这种范式转变使得 RL 能够捕捉推荐决策对用户未来行为的因果影响。本章将系统介绍 RL 在推荐系统中的典型应用场景、核心方法和挑战。</p>
+
+<h2 class="section-title">28.1 RL 推荐的基本框架</h2>
+
+<p>将推荐系统建模为 MDP（马尔可夫决策过程），需要定义以下要素：</p>
+<ul>
+<li><strong>状态空间 S</strong>：用户当前的兴趣表示、历史行为序列、上下文信息（时间、地域、场景等）</li>
+<li><strong>动作空间 A</strong>：推荐内容的选择。可以是单个物品（Point-wise）、物品列表（List-wise）或流量分配策略</li>
+<li><strong>转移函数 T</strong>：用户状态在推荐后的变化。例如用户兴趣因推荐内容而发生漂移</li>
+<li><strong>奖励函数 R</strong>：用户对推荐内容的反馈，包括即时奖励（点击、时长、互动）和长期奖励（留存、LTV）</li>
+<li><strong>折扣因子 gamma</strong>：控制长期奖励的权重。gamma 越大，越重视长期收益</li>
+</ul>
+
+<p>RL 推荐的目标是学习最优策略 pi(a|s)，使得期望累计回报最大化。与传统监督学习相比，RL 的核心优势在于能够建模"当前推荐如何影响用户未来行为"的因果关系，而非仅关注即时效果。</p>
+
+<h2 class="section-title">28.2 流量分配与调控</h2>
+
+<p>推荐系统需要在多个业务之间动态分配流量。RL 可以将流量分配建模为 MDP：状态为各业务当前流量占比和用户活跃度，动作为流量配额调整，奖励为平台整体收益。Facebook 的 Horizon [1] 是工业界最早的 RL 推荐平台之一，提供了从数据处理到模型训练到在线部署的完整工具链。LinkedIn 的 REINFORCE [2] 在职业推荐中应用 RL 优化用户参与度。Meta 的 HSTU [3] 在 Instagram 推荐中通过 1.5 万亿参数的生成式推荐模型取得了 12.4% 的观看时长提升，是迄今为止 RL/生成式推荐在工业界最大规模的验证。</p>
+
+<h2 class="section-title">28.3 多任务融合</h2>
+
+<p>RL 可以学习排序公式的参数策略，替代传统人工调参或贝叶斯优化。通过策略梯度方法，RL 能够在长期收益维度上优化融合参数。状态为当前用户特征和业务指标，动作为排序参数调整，奖励为综合业务收益。相比贝叶斯优化（离线搜索）和 CEM（在线采样），RL 的优势在于能够建模参数调整的序列依赖关系——当前参数调整会影响后续用户行为，进而影响后续最优参数。</p>
+
+<h2 class="section-title">28.4 层次决策</h2>
+
+<p>推荐系统本身是层次化系统（召回→粗排→精排→重排）。层次强化学习（Hierarchical RL, HRL）可以建模各层之间的决策关系：高层策略决定各层资源分配（如召回候选数、粗排候选数），低层策略执行具体推荐决策。HRL 能够处理不同时间尺度的决策——高层策略关注长期目标（如用户留存），低层策略关注即时推荐质量（如 CTR）。这种层次化建模避免了单一策略同时处理长期和短期目标的困难。</p>
+
+<h2 class="section-title">28.5 流量降级优化</h2>
+
+<p>在流量高峰或系统异常时，RL 可以动态选择降级策略，在推荐效果和系统稳定性之间取得平衡。DCAF 框架将算力分配建模为背包问题，RL 可以学习最优的资源分配策略，优先保障高价值流量的推荐质量。状态为系统负载和请求特征，动作为降级级别选择（如全量精排→简化精排→粗排兜底→热榜兜底），奖励为推荐效果与系统稳定性的综合评分。</p>
+
+<h2 class="section-title">28.6 Session 优化</h2>
+
+<p>用户在一次 Session 中的行为是序列依赖的：前几条内容的推荐质量会影响用户是否继续浏览。RL 能够建模 Session 级的长期收益，优化整个浏览序列的推荐策略。状态为用户当前 Session 历史，动作为推荐内容选择，奖励为用户反馈（点击、时长、继续浏览等）。Session RL 的核心挑战在于奖励稀疏——大部分推荐请求不会直接影响用户是否继续浏览，需要通过辅助任务提供密集的训练信号。</p>
+
+<h2 class="section-title">28.7 重排混排序列生成</h2>
+
+<p>重排和混排阶段的序列生成可以建模为 RL 问题：序列生成器是 Actor，序列评估器是 Critic，通过策略梯度优化序列生成策略。Actor-Critic 框架结合了策略梯度（Actor）和价值函数估计（Critic），Critic 提供基线（Baseline）降低梯度方差，Actor 根据基线调整策略。这种框架在工业界推荐系统中广泛应用。</p>
+
+<h2 class="section-title">28.8 个性化探索</h2>
+
+<p>RL 天然具备探索与利用的平衡能力。Contextual Bandit 和 Thompson Sampling 等 RL 方法可以用于推荐系统的个性化探索，在控制风险的前提下发现用户新兴趣。LinUCB（WWW 2010，引用 4532 次）是 Contextual Bandit 在推荐系统中的经典应用。</p>
+
+<h2 class="section-title">28.9 RL 推荐的挑战</h2>
+
+<p>尽管 RL 在推荐系统中有广泛应用前景，但也面临诸多挑战 [4]：</p>
+<ul>
+<li><strong>Q 值估计不稳定</strong>：RL 中的价值函数估计容易产生高方差，导致训练不稳定。特别是在推荐系统中，状态空间巨大、奖励稀疏，Q 值估计更加困难</li>
+<li><strong>样本效率低</strong>：RL 需要大量交互数据才能学习有效策略，而线上探索成本高——探索策略可能推荐不相关内容，损害用户体验和短期指标</li>
+<li><strong>训练难收敛</strong>：RL 的训练过程通常比监督学习更难收敛，需要精心设计学习率、探索率和奖励函数</li>
+<li><strong>Reward 设计困难</strong>：如何将多个业务目标（CTR、时长、GMV、留存）统一为标量 Reward 是 RL 推荐最困难的环节。不同目标之间可能存在冲突，简单的线性加权可能不是最优方案</li>
+<li><strong>延迟反馈</strong>：部分奖励（如留存、转化）需要数天甚至数周才能观测到，使得 RL 的训练信号严重滞后</li>
+<li><strong>分布偏移</strong>：训练数据由旧策略生成，但新策略的推荐分布与旧策略不同，导致训练分布与推理分布不一致</li>
+</ul>
+
+<p>因此，目前大多数工业界推荐系统仍然采用"序列生成+序列评估"的两阶段架构，RL 更多作为局部优化手段而非全局替代方案。完全使用 RL 替代监督学习在工业界仍面临理论和工程上的双重挑战。</p>
+
+<h2 class="section-title">28.10 本章小结</h2>
+
+<p>RL 在推荐系统中的应用场景广泛，包括流量调控、多任务融合、层次决策、降级优化、Session 优化、序列生成和个性化探索等。RL 的核心优势在于能够优化长期收益和序列级目标，建模推荐决策对用户未来行为的因果影响。但也面临样本效率低、训练不稳定、Reward 设计困难和延迟反馈等挑战。工业界通常采用 RL 作为局部优化手段，而非完全替代传统监督学习。</p>
+
+<h2 class="section-title">参考文献</h2>
+<p>[1] Facebook. "Horizon: Facebook's Open Source Applied Reinforcement Learning Platform". 2018.</p>
+<p>[2] LinkedIn. "REINFORCE: Reinforcement Learning for Recommendations". 2022.</p>
+<p>[3] Zhai, J. et al. "Actions Speak Louder than Words: Trillion-Parameter Sequential Transducers for Generative Recommendations". 2024.</p>
+<p>[4] "A Survey on Reinforcement Learning for Recommender Systems". arXiv 2021.</p>
+
+<div class="chapter-end">* * *</div>
+<div class="nav-bar">
+  <a href="ch27.html">← 上一章</a>
+  <a href="ch29.html">下一章 →</a>
+</div>
+</body>
+</html>

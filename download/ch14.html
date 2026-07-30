@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第14章 特征工程 - 《推荐系统：工业架构与核心算法》</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="book-header">
+  <div class="book-title">推荐系统：工业架构与核心算法</div>
+  <div class="book-subtitle">RecSys-Industrial-Book</div>
+  <div class="book-author">作者：刘京欣</div>
+</div>
+
+<div class="chapter-num">第四部分 工程实践 · 第 14 章</div>
+
+<h1 class="chapter-title">特征工程</h1>
+
+<p>特征工程是推荐系统的基石。在工业实践中，特征工程的质量往往比模型选择更决定推荐效果的上限。一个好的特征工程可以让简单模型发挥出色效果，而糟糕的特征工程会让最先进的模型也无能为力。本章将系统介绍推荐系统特征工程的全貌——从特征分类、特征提取、特征处理到自动化特征工程。</p>
+
+<div class="toc-box">
+  <h3>本章目录</h3>
+  <ul>
+    <li><a href="#sec-14-1">14.1 特征分类体系</a> — 用户特征 / 物品特征 / 上下文特征 / 交叉特征</li>
+    <li><a href="#sec-14-2">14.2 统计特征</a> — 点击率特征 / 转化率特征 / 时间衰减统计</li>
+    <li><a href="#sec-14-3">14.3 序列特征</a> — 行为序列 / 序列编码 / 长序列处理</li>
+    <li><a href="#sec-14-4">14.4 Embedding 特征</a> — ID Embedding / 内容 Embedding / 预训练 Embedding</li>
+    <li><a href="#sec-14-5">14.5 特征处理</a> — 归一化 / 离散化 / 缺失值 / 特征穿越</li>
+    <li><a href="#sec-14-6">14.6 自动化特征工程</a> — AutoFeature / 特征选择 / 特征监控</li>
+    <li><a href="#sec-14-7">14.7 工业实践</a> — 淘宝/抖音特征体系</li>
+    <li><a href="#sec-14-8">14.8 本章小结</a></li>
+  </ul>
+</div>
+
+<h2 class="section-title" id="sec-14-1">14.1 特征分类体系</h2>
+
+<h3 class="subsection-title">14.1.1 用户特征</h3>
+
+<p>用户特征描述用户的属性和行为偏好，是推荐系统最重要的特征类别之一。</p>
+
+<p><strong>静态属性特征：</strong></p>
+
+<ul>
+  <li>人口统计学特征：性别、年龄段、地域、职业、收入水平</li>
+  <li>设备特征：操作系统、设备型号、网络类型、运营商</li>
+  <li>注册特征：注册时间、会员等级、实名认证状态</li>
+</ul>
+
+<p><strong>行为统计特征：</strong></p>
+
+<ul>
+  <li>活跃度特征：近 7/30 天登录天数、日均使用时长、活跃时段分布</li>
+  <li>消费特征：历史购买次数、客单价、复购率、最近购买时间</li>
+  <li>偏好特征：品类偏好分布、价格偏好、品牌偏好、风格偏好</li>
+</ul>
+
+<p><strong>序列行为特征：</strong></p>
+
+<ul>
+  <li>短期行为序列：最近 N 次点击/购买/浏览的物品 ID 序列</li>
+  <li>长期行为序列：最近 30/90 天的行为序列（通常压缩后使用）</li>
+  <li>负反馈序列：最近忽略/不感兴趣/举报的物品序列</li>
+</ul>
+
+<p><strong>社交关系特征：</strong></p>
+
+<ul>
+  <li>社交网络特征：好友数量、社交活跃度、社交影响力（PageRank）</li>
+  <li>群体特征：所属社区、兴趣圈子、参考群体偏好</li>
+</ul>
+
+<h3 class="subsection-title">14.1.2 物品特征</h3>
+
+<p>物品特征描述物品的属性、质量和热度。</p>
+
+<p><strong>基础属性特征：</strong></p>
+
+<ul>
+  <li>标识特征：物品 ID、店铺 ID、品牌 ID、类目 ID</li>
+  <li>属性特征：价格、颜色、尺寸、材质、产地</li>
+  <li>时间特征：上架时间、库存状态、促销状态</li>
+</ul>
+
+<p><strong>质量统计特征：</strong></p>
+
+<ul>
+  <li>热度特征：近 7/30 天点击量、购买量、收藏量、分享量</li>
+  <li>评分特征：平均评分、评分分布、评价数量</li>
+  <li>转化特征：点击转化率、加购转化率、退货率</li>
+</ul>
+
+<p><strong>内容特征：</strong></p>
+
+<ul>
+  <li>文本特征：标题、描述、评论的 embedding（BERT/LLM 编码）</li>
+  <li>图像特征：主图、详情图的 embedding（CNN/CLIP 编码）</li>
+  <li>视频特征：封面图 embedding、视频内容 embedding</li>
+</ul>
+
+<h3 class="subsection-title">14.1.3 上下文特征</h3>
+
+<p>上下文特征描述推荐发生时的环境信息。</p>
+
+<p><strong>时间上下文：</strong>请求时间（小时/星期/季节）、是否节假日、是否促销期、距上次请求间隔。</p>
+
+<p><strong>空间上下文：</strong>用户地理位置、城市级别、天气、温度。</p>
+
+<p><strong>场景上下文：</strong>请求来源（首页/搜索/详情页）、页面位置、推荐场景（信息流/详情推荐/购物车推荐）。</p>
+
+<p><strong>设备上下文：</strong>屏幕尺寸、网络状况、电量水平。</p>
+
+<h3 class="subsection-title">14.1.4 交叉特征</h3>
+
+<p>交叉特征捕获用户与物品、用户与上下文之间的交互模式。</p>
+
+<p><strong>用户-物品交叉：</strong>用户对该类目的偏好得分、用户对该品牌的偏好得分、用户历史与该物品的交互次数。</p>
+
+<p><strong>用户-上下文交叉：</strong>用户在该时段的活跃度、用户在该地域的购买偏好、用户在该场景的点击偏好。</p>
+
+<p><strong>物品-上下文交叉：</strong>物品在该时段的点击率、物品在该地域的销量、物品在该场景的转化率。</p>
+
+<p><strong>三阶交叉：</strong>用户-物品-上下文三阶交叉特征（如"该用户在该时段对该类目的点击率"），通常通过模型自动学习而非人工构造。</p>
+
+<h2 class="section-title" id="sec-14-2">14.2 统计特征</h2>
+
+<h3 class="subsection-title">14.2.1 点击率特征</h3>
+
+<p>点击率（CTR）是推荐系统最核心的统计特征。但直接使用全局 CTR 存在以下问题：</p>
+
+<p><strong>（1）冷启动问题：</strong>新物品没有历史点击数据，CTR 估计为 0 或不可靠。</p>
+
+<p><strong>（2）位置偏差：</strong>高位置曝光的物品 CTR 天然偏低，直接比较不公平。</p>
+
+<p><strong>（3）时间衰减：</strong>用户兴趣和物品热度随时间变化，全量平均 CTR 不够准确。</p>
+
+<p><strong>解决方案：</strong></p>
+
+<p><strong>平滑估计（Bayesian Smoothing）：</strong>使用 Beta 先验分布对 CTR 进行贝叶斯平滑：</p>
+
+<div class="formula-box">
+  CTR_smooth = (clicks + α) / (impressions + α + β) &nbsp;&nbsp;(14.1)
+</div>
+
+<p>其中 α 和 β 是 Beta 分布的超参数，可以通过矩估计或 MLE 从全局数据估计。平滑后的 CTR 对新物品不会为 0，对低曝光物品也不会极端偏移。</p>
+
+<p><strong>时间衰减统计：</strong>使用指数衰减加权 CTR：</p>
+
+<div class="formula-box">
+  CTR_decay = Σ w_t · ctr_t / Σ w_t, &nbsp;&nbsp;w_t = e^(-λ·(T-t)) &nbsp;&nbsp;(14.2)
+</div>
+
+<p>其中 w_t 是时间 t 的权重，λ 是衰减系数。近期数据权重更高，使 CTR 反映最新趋势。</p>
+
+<p><strong>分时段 CTR：</strong>按小时/星期统计 CTR，捕获物品在不同时段的点击率模式。例如，早餐食品在早晨 CTR 高，夜间在晚上 CTR 高。</p>
+
+<h3 class="subsection-title">14.2.2 转化率特征</h3>
+
+<p>转化率（CVR）特征比 CTR 更稀疏，因为购买行为远少于点击。CVR 特征的挑战：</p>
+
+<p><strong>数据稀疏：</strong>大部分物品的购买次数很少，CVR 估计不可靠。解决方案：使用更长的统计窗口（30 天 vs 7 天）、更强的平滑（更大的 α）。</p>
+
+<p><strong>延迟反馈：</strong>用户可能点击后几天才购买，实时 CVR 不准确。解决方案：使用延迟反馈模型（Delayed Feedback Model, DFEM）估计真实 CVR。</p>
+
+<p><strong>多目标统计：</strong>除了购买 CVR，还可以统计加购率、收藏率、分享率、评论率等多个目标。这些统计特征为多目标排序模型提供输入。</p>
+
+<h3 class="subsection-title">14.2.3 用户行为统计特征</h3>
+
+<p>用户侧的统计特征描述用户的行为模式和偏好：</p>
+
+<p><strong>活跃度分桶：</strong>将用户按活跃度分为高/中/低/沉默用户。不同活跃度的用户推荐策略不同——高活用户重多样性，低活用户重热门推荐。</p>
+
+<p><strong>消费能力分桶：</strong>按客单价和购买频次将用户分为高/中/低消费用户。影响价格特征和商品推荐策略。</p>
+
+<p><strong>品类偏好向量：</strong>统计用户在各类目的点击/购买分布，形成偏好向量。用于召回策略选择和推荐多样性控制。</p>
+
+<p><strong>行为周期性特征：</strong>统计用户的活跃时段分布（一天内何时活跃）、活跃周期（每周哪几天活跃）。用于时段推荐和推送时间优化。</p>
+
+<h2 class="section-title" id="sec-14-3">14.3 序列特征</h2>
+
+<h3 class="subsection-title">14.3.1 行为序列构建</h3>
+
+<p>用户行为序列是推荐系统最重要的特征之一，直接决定了序列模型（DIN/DIEN/SIM）的效果。</p>
+
+<p><strong>序列类型：</strong></p>
+
+<ul>
+  <li>点击序列：用户最近点击的物品 ID 列表</li>
+  <li>购买序列：用户最近购买的物品 ID 列表</li>
+  <li>浏览序列：用户最近浏览（停留 > N 秒）的物品 ID 列表</li>
+  <li>混合序列：点击+购买+浏览的混合行为序列，行为类型作为 side feature</li>
+</ul>
+
+<p><strong>序列长度选择：</strong>短期序列通常 50-200，长期序列可达 1000-5000。DIN 通常用 50-100，SIM 可以处理 1000+ 的长序列。</p>
+
+<p><strong>序列方向：</strong>按时间倒序排列（最近的在前）或正序排列。倒序更符合"最近行为最重要"的直觉，且方便截断。</p>
+
+<h3 class="subsection-title">14.3.2 序列编码</h3>
+
+<p>行为序列中的每个物品需要编码为向量表示：</p>
+
+<p><strong>ID Embedding：</strong>物品 ID 通过 embedding 表映射为向量。这是最基础的编码方式，但冷启动物品没有 embedding。</p>
+
+<p><strong>属性 Embedding：</strong>物品的类目、品牌、价格等属性分别 embedding 后拼接。属性 embedding 可以跨物品共享，缓解冷启动。</p>
+
+<p><strong>内容 Embedding：</strong>使用预训练模型（BERT/CLIP）编码物品文本/图片，作为物品表示。内容 embedding 对冷启动友好。</p>
+
+<p><strong>位置编码：</strong>在序列中加入位置 embedding，表示行为的时间顺序。位置编码可以是绝对位置（第 1/2/3 个）或相对位置（距当前请求的时间间隔）。</p>
+
+<p><strong>行为类型编码：</strong>在混合序列中，使用行为类型 embedding（点击/购买/浏览）区分不同行为。购买行为的权重通常高于点击。</p>
+
+<h3 class="subsection-title">14.3.3 长序列处理</h3>
+
+<p>长序列（1000+）可以捕获用户长期偏好，但计算开销大。工业实践中的处理策略：</p>
+
+<p><strong>SIM（Search-based Interest Model）方案：</strong>不直接处理全序列，而是以目标物品为 query 检索序列中最相关的 K 个行为。检索方式可以是内积检索或学习检索。SIM 可以将 1000+ 序列压缩到 50-100 的相关子序列。</p>
+
+<p><strong>层次化序列：</strong>将长序列分层处理——长期序列粗粒度编码（类目级），短期序列细粒度编码（物品级）。长期偏好用类目分布表示，短期兴趣用物品序列表示。</p>
+
+<p><strong>序列摘要：</strong>将长序列压缩为固定长度的摘要向量。可以使用平均池化、注意力池化或 RNN 编码。摘要向量作为用户长期偏好的紧凑表示。</p>
+
+<p><strong>时间分桶序列：</strong>将长序列按时间分桶（如近 1 天/7 天/30 天/90 天），每个桶内分别编码。不同时间桶的权重不同，近期桶权重更高。</p>
+
+<h2 class="section-title" id="sec-14-4">14.4 Embedding 特征</h2>
+
+<h3 class="subsection-title">14.4.1 ID Embedding</h3>
+
+<p>ID Embedding 是推荐系统最基础也是最重要的特征表示方式。每个物品 ID 和用户 ID 对应一个可学习的稠密向量。</p>
+
+<p><strong>Embedding 维度选择：</strong>通常 32-128 维。维度过高容易过拟合且内存占用大，维度过低表达能力不足。实践中，高频物品可以用更高维度，低频物品用更低维度（通过维度共享或哈希）。</p>
+
+<p><strong>Embedding 共享：</strong>相关 ID 可以共享 embedding 空间。例如，同一品牌的物品共享品牌 embedding，同一类目的物品共享类目 embedding。共享可以减少参数量和冷启动问题。</p>
+
+<p><strong>哈希 Embedding：</strong>对于极大规模 ID（亿级），使用哈希将 ID 映射到固定大小的 embedding 表。虽然存在哈希冲突，但在大规模场景中是可接受的折中。</p>
+
+<h3 class="subsection-title">14.4.2 内容 Embedding</h3>
+
+<p>内容 Embedding 使用预训练模型编码物品的多模态内容：</p>
+
+<p><strong>文本 Embedding：</strong>使用 BERT/LLM 编码物品标题和描述。取 [CLS] token 或平均 pooling 作为文本表示。文本 embedding 对冷启动物品尤其重要。</p>
+
+<p><strong>图像 Embedding：</strong>使用 CNN（ResNet/EfficientNet）或 CLIP 编码物品主图。图像 embedding 捕获视觉相似性，在服饰、家居等视觉导向品类中效果显著。</p>
+
+<p><strong>视频 Embedding：</strong>使用 3D-CNN 或 VideoBERT 编码视频内容。封面图 embedding + 视频内容 embedding 组合使用。</p>
+
+<p><strong>融合策略：</strong>多模态 embedding 可以拼接、加权融合或通过注意力机制融合。实践中，拼接 + MLP 是最简单有效的方式。</p>
+
+<h3 class="subsection-title">14.4.3 预训练 Embedding</h3>
+
+<p>预训练 Embedding 在推荐系统中的应用越来越广泛：</p>
+
+<p><strong>图预训练 Embedding：</strong>在用户-物品二部图上预训练图卷积模型（PinSage/GraphSAGE），获得用户和物品的图表示。图 embedding 捕获协同信号和图结构信息。</p>
+
+<p><strong>序列预训练 Embedding：</strong>在用户行为序列上预训练序列模型（BERT4Rec/SASRec），获得用户兴趣表示和物品上下文表示。</p>
+
+<p><strong>多模态预训练 Embedding：</strong>使用 CLIP 等多模态预训练模型，获得图文对齐的 embedding。CLIP embedding 在跨模态召回中效果优异。</p>
+
+<p><strong>LLM Embedding：</strong>使用大语言模型的 embedding 层编码物品文本，获得蕴含丰富世界知识的表示。LLM embedding 可以作为推荐模型的辅助特征。</p>
+
+<h2 class="section-title" id="sec-14-5">14.5 特征处理</h2>
+
+<h3 class="subsection-title">14.5.1 归一化</h3>
+
+<p>不同特征的取值范围差异很大（价格 0-10000，CTR 0-1），需要归一化到统一范围：</p>
+
+<p><strong>Min-Max 归一化：</strong>x' = (x - min) / (max - min)，映射到 [0, 1]。简单但受异常值影响。</p>
+
+<p><strong>Z-Score 归一化：</strong>x' = (x - μ) / σ，均值为 0 方差为 1。适合近似正态分布的特征。</p>
+
+<p><strong>Log 归一化：</strong>x' = log(1 + x)，适合长尾分布的特征（如价格、播放量）。</p>
+
+<p><strong>分桶归一化：</strong>将连续值分桶后离散化。例如，价格分为 [0-50, 50-200, 200-500, 500+]。分桶可以捕获非线性关系，但桶的边界选择需要经验。</p>
+
+<h3 class="subsection-title">14.5.2 离散化</h3>
+
+<p>连续特征离散化是推荐系统特征处理的常用手段：</p>
+
+<p><strong>等频分桶：</strong>每个桶包含相同数量的样本，保证每个桶的统计可靠性。</p>
+
+<p><strong>等距分桶：</strong>每个桶的取值范围相同，简单但可能某些桶样本极少。</p>
+
+<p><strong>决策树分桶：</strong>使用决策树学习最优分桶边界，使分桶后特征与标签的相关性最强。</p>
+
+<p><strong>Embedding 化：</strong>将离散化后的桶 ID 通过 embedding 表映射为向量。这是推荐系统处理离散特征的标准方式。</p>
+
+<h3 class="subsection-title">14.5.3 缺失值处理</h3>
+
+<p>特征缺失在推荐系统中很常见——新用户没有历史特征，新物品没有统计特征。处理方式：</p>
+
+<p><strong>默认值填充：</strong>使用默认值（0、均值、中位数）填充缺失值。简单但可能引入偏差。</p>
+
+<p><strong>Embedding 缺失：</strong>为缺失特征学习一个特殊的"缺失 embedding"，让模型学习如何处理缺失情况。</p>
+
+<p><strong>指示特征：</strong>添加二值指示特征标记某特征是否缺失，让模型显式知道哪些特征是缺失的。</p>
+
+<p><strong>基于相似性填充：</strong>使用相似用户/物品的特征值填充。例如，用同类目物品的平均 CTR 填充新物品的 CTR。</p>
+
+<h3 class="subsection-title">14.5.4 特征穿越问题</h3>
+
+<p>特征穿越（Feature Leakage）是推荐系统中的常见陷阱——训练时使用了线上不可获得的特征，导致离线指标虚高但线上效果差。</p>
+
+<p><strong>时间穿越：</strong>使用未来信息作为特征。例如，使用当天全天的 CTR 作为特征训练，但线上推理时只有到当前时刻为止的 CTR。</p>
+
+<p><strong>标签穿越：</strong>使用与标签直接相关的特征。例如，使用"是否购买"作为特征预测"是否购买"，形成循环。</p>
+
+<p><strong>聚合穿越：</strong>使用包含当前样本的聚合统计特征。例如，物品 CTR 统计包含了当前用户的点击，造成信息泄漏。</p>
+
+<p><strong>防范措施：</strong></p>
+
+<ul>
+  <li>严格按时间切分训练/测试集</li>
+  <li>统计特征只使用历史数据，不包含当前样本</li>
+  <li>使用在线特征服务模拟线上推理环境</li>
+  <li>Code review 检查特征定义</li>
+</ul>
+
+<h2 class="section-title" id="sec-14-6">14.6 自动化特征工程</h2>
+
+<h3 class="subsection-title">14.6.1 自动特征生成</h3>
+
+<p>人工特征工程耗时且依赖经验，自动化特征工程旨在减少人工干预：</p>
+
+<p><strong>自动交叉：</strong>使用模型自动学习特征交叉。DeepFM 的 FM 组件、xDeepFM 的 CIN 组件、AutoInt 的注意力交叉都是自动学习特征交叉的方式。</p>
+
+<p><strong>自动分桶：</strong>使用可学习分桶（如 DICE 模型）替代人工分桶。模型自动学习最优分桶边界和每个桶的 embedding。</p>
+
+<p><strong>自动特征选择：</strong>使用 L1 正则化、树模型特征重要性或神经架构搜索（NAS）自动选择有效特征。</p>
+
+<p><strong>自动特征生成：</strong>使用 AutoFeat 等工具自动生成二阶、三阶交叉特征，然后通过特征选择保留有效组合。</p>
+
+<h3 class="subsection-title">14.6.2 特征监控</h3>
+
+<p>特征监控是推荐系统稳定运行的保障：</p>
+
+<p><strong>特征覆盖率监控：</strong>每个特征的非空比例。覆盖率突降可能表示数据管道故障。</p>
+
+<p><strong>特征分布监控：</strong>特征值的分布变化。分布漂移可能表示用户行为或数据管道变化，需要及时更新模型。</p>
+
+<p><strong>特征重要性监控：</strong>特征对模型预测的贡献度变化。重要性突降可能表示特征失效，需要排查原因。</p>
+
+<p><strong>特征相关性监控：</strong>特征间的相关性变化。高相关特征的冗余可能影响模型稳定性。</p>
+
+<h2 class="section-title" id="sec-14-7">14.7 工业实践</h2>
+
+<h3 class="subsection-title">14.7.1 淘宝特征体系</h3>
+
+<p>淘宝推荐系统的特征体系是工业级标杆，包含数百个特征：</p>
+
+<p><strong>用户特征层：</strong>基础属性（性别/年龄/地域）+ 活跃度统计 + 消费偏好 + 行为序列（短期 50 + 长期 500）。</p>
+
+<p><strong>物品特征层：</strong>基础属性 + 质量统计（CTR/CVR/退货率）+ 内容 embedding（BERT 文本 + CLIP 图像）。</p>
+
+<p><strong>交叉特征层：</strong>用户-类目偏好 + 用户-品牌偏好 + 用户-价格偏好 + 物品-时段 CTR。</p>
+
+<p><strong>实时特征层：</strong>用户最近 5 分钟/1 小时的行为序列和统计，通过实时特征服务提供。</p>
+
+<h3 class="subsection-title">14.7.2 抖音特征体系</h3>
+
+<p>抖音推荐系统的特征体系以多模态和实时性为特色：</p>
+
+<p><strong>视频特征：</strong>封面图 CLIP embedding + 视频内容 embedding + 音频特征 + 标签特征。</p>
+
+<p><strong>用户实时行为：</strong>最近 5 分钟的观看序列、完播率、互动行为。实时特征对短视频推荐至关重要。</p>
+
+<p><strong>上下文特征：</strong>时段、网络、设备、前后视频上下文。短视频的上下文依赖性强。</p>
+
+<h2 class="section-title" id="sec-14-8">14.8 本章小结</h2>
+
+<p>特征工程是推荐系统的基石，其质量直接决定推荐效果的上限。本章系统介绍了推荐系统特征工程的全貌——特征分类（用户/物品/上下文/交叉）、统计特征（CTR/CVR 平滑与时间衰减）、序列特征（行为序列构建与长序列处理）、Embedding 特征（ID/内容/预训练）、特征处理（归一化/离散化/缺失值/穿越防范）和自动化特征工程。</p>
+
+<p>在工业实践中，特征工程的核心原则是：<strong>先特征后模型</strong>。在模型复杂度达到一定程度后，增加特征的效果远超增加模型参数。特征工程需要持续迭代——监控特征效果、淘汰失效特征、添加新特征，形成闭环优化。</p>
+
+<p>随着 AutoML 和 LLM 技术的发展，自动化特征工程正在减少人工依赖。但好的特征工程仍然需要对业务和数据的深入理解——这是算法工程师不可替代的价值。</p>
+
+</body>
+</html>
